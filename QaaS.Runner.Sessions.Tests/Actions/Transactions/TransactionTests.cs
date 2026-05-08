@@ -10,11 +10,14 @@ using QaaS.Framework.Policies;
 using QaaS.Framework.Protocols.Protocols;
 using QaaS.Framework.SDK.ContextObjects;
 using QaaS.Framework.SDK.DataSourceObjects;
+using QaaS.Framework.SDK.Extensions;
 using QaaS.Framework.SDK.Hooks.Generator;
 using QaaS.Framework.SDK.Session;
 using QaaS.Framework.SDK.Session.DataObjects;
+using QaaS.Framework.SDK.Session.MetaDataObjects;
 using QaaS.Framework.SDK.Session.SessionDataObjects;
 using QaaS.Framework.Serialization;
+using QaaS.Runner.Sessions.Extensions;
 using QaaS.Runner.Sessions.Tests.Actions.Utils;
 using Serilog;
 using Serilog.Events;
@@ -209,6 +212,142 @@ public class TransactionTests
     private sealed class BinaryPayload
     {
         public string Value { get; set; } = string.Empty;
+    }
+
+    private const int TimeoutMsForWork = 10;
+    
+    private readonly System.Reflection.FieldInfo _iterableSerializableSaveIteratorField =
+        typeof(Sessions.Actions.Transactions.Transaction).GetField("_iterableSerializableSaveIterator",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+    [Test,
+     TestCase(1, 5),
+     TestCase(5, 5),
+     TestCase(10, 5),
+     TestCase(100, 5),
+     TestCase(10, 50),
+     TestCase(10, 100),
+     TestCase(2, 5)]
+    public void TestTransact_CallTransactionWithDifferentParallelism_ExpectToSendAllItemsInMatchingParallelism(
+        int parallelism, int numberOfItems)
+    {
+        var activeThreads = 0;
+        var maxActiveThreads = 0;
+        var dataIterated = 0;
+        var dataToPublish = Enumerable.Range(0, numberOfItems)
+            .Select(_ => new Data<object>
+            {
+                MetaData = new MetaData(),
+                Body = "A body of a message that is being published in chunks"
+            }).ToArray();
+        var transactorMock = new Mock<ITransactor>();
+        transactorMock.Setup(sender => sender.Transact(It.IsAny<Data<object>>()))
+            .Callback(() =>
+            {
+                System.Threading.Interlocked.Increment(ref activeThreads);
+                if (maxActiveThreads < activeThreads)
+                    System.Threading.Interlocked.Exchange(ref maxActiveThreads, activeThreads);
+                System.Threading.Thread.Sleep(TimeoutMsForWork);
+                System.Threading.Interlocked.Decrement(ref activeThreads);
+            })
+            .Returns(() => 
+            {
+                var inputData = dataToPublish[System.Threading.Interlocked.Increment(ref dataIterated) - 1].CloneDetailed();
+                var outputData = new DetailedData<object> 
+                { 
+                    Body = "response", 
+                    MetaData = inputData.MetaData, 
+                    Timestamp = inputData.Timestamp 
+                };
+                return new Tuple<DetailedData<object>, DetailedData<object>?>(inputData, outputData);
+            })
+            .Verifiable();
+
+        var transaction = new Sessions.Actions.Transactions.Transaction("test", transactorMock.Object, 0, new DataFilter(), new DataFilter(), null,
+            false, 1, 0, null, null, null, [], [], Globals.Logger, parallelism);
+        
+        var testActData = new Sessions.Actions.InternalCommunicationData<object>
+        {
+            Input = [],
+            InputSerializationType = SerializationType.Json,
+            Output = [],
+            OutputSerializationType = SerializationType.Json
+        };
+        _iterableSerializableSaveIteratorField.SetValue(transaction,
+            new IterableSerializableDataIterator(dataToPublish,
+                SerializerFactory.BuildSerializer(SerializationType.Json)));
+
+        typeof(Sessions.Actions.Transactions.Transaction).GetMethod("Transact",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .Invoke(transaction, [testActData]);
+
+        transactorMock.Verify(sender => sender.Transact(It.IsAny<Data<object>>()),
+            Times.Exactly(numberOfItems));
+        Assert.That(testActData.Input!.Count, Is.EqualTo(numberOfItems));
+        Assert.That(testActData.Output!.Count, Is.EqualTo(numberOfItems));
+        var expectedMaxConcurrency = Math.Min(numberOfItems, parallelism);
+        Assert.That(maxActiveThreads, Is.InRange(1, expectedMaxConcurrency));
+    }
+    
+    [Test]
+    public void TestTransact_WithParallelism_PreservesReturnedTimestampPerBody()
+    {
+        var baseTime = System.DateTime.UtcNow;
+        var dataToPublish = Enumerable.Range(0, 6)
+            .Select(index => new Data<object>
+            {
+                Body = $"body-{index}",
+                MetaData = new MetaData()
+            })
+            .ToArray();
+
+        var expectedTimestamps = dataToPublish.ToDictionary(
+            item => (string)item.Body!,
+            item => baseTime.AddMilliseconds(int.Parse(item.Body!.ToString()!.Split('-')[1])));
+
+        var transactorMock = new Mock<ITransactor>();
+        transactorMock.Setup(sender => sender.Transact(It.IsAny<Data<object>>()))
+            .Returns((Data<object> sentData) =>
+            {
+                var body = sentData.Body!.ToString()!;
+                var index = int.Parse(body.Split('-')[1]);
+                System.Threading.Thread.Sleep((dataToPublish.Length - index) * 2);
+                var inputDetail = new DetailedData<object>
+                {
+                    Body = sentData.Body,
+                    MetaData = sentData.MetaData,
+                    Timestamp = expectedTimestamps[body]
+                };
+                var outputDetail = new DetailedData<object>
+                {
+                    Body = "response",
+                    MetaData = sentData.MetaData,
+                    Timestamp = expectedTimestamps[body].AddMilliseconds(1)
+                };
+                return new Tuple<DetailedData<object>, DetailedData<object>?>(inputDetail, outputDetail);
+            });
+
+        var transaction = new Sessions.Actions.Transactions.Transaction("test", transactorMock.Object, 0, new DataFilter(), new DataFilter(), null,
+            false, 1, 0, null, null, null, [], [], Globals.Logger, 4);
+        var testActData = new Sessions.Actions.InternalCommunicationData<object>
+        {
+            Input = [],
+            InputSerializationType = SerializationType.Json,
+            Output = [],
+            OutputSerializationType = SerializationType.Json
+        };
+        _iterableSerializableSaveIteratorField.SetValue(transaction,
+            new IterableSerializableDataIterator(dataToPublish, null));
+
+        typeof(Sessions.Actions.Transactions.Transaction).GetMethod("Transact",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .Invoke(transaction, [testActData]);
+
+        Assert.That(testActData.Input, Has.Count.EqualTo(dataToPublish.Length));
+        Assert.That(testActData.Input!.All(item =>
+            item.Timestamp == expectedTimestamps[item.Body!.ToString()!]), Is.True);
+        Assert.That(testActData.Output!.All(item =>
+            item!.Timestamp == expectedTimestamps[$"body-{item.MetaData!.IoMatchIndex}"].AddMilliseconds(1)), Is.True);
     }
 
     private sealed class SingleItemGenerator : IGenerator

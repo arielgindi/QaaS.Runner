@@ -187,6 +187,16 @@ public class TransactionBuilderTests
     }
 
     [Test]
+    public void WithParallelism_Should_Set_Parallelism()
+    {
+        var builder = new TransactionBuilder();
+        builder.WithParallelism(5);
+
+        Assert.That(builder.Parallel, Is.Not.Null);
+        Assert.That(builder.Parallel!.Parallelism, Is.EqualTo(5));
+    }
+
+    [Test]
     public void Configure_With_HttpTransactorConfig_Should_Set_Http()
     {
         var httpConfig = new HttpTransactorConfig();

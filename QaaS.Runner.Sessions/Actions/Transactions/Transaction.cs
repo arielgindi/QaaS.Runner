@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.Extensions.Logging;
 using QaaS.Framework.Policies;
+using QaaS.Framework.Policies.Exceptions;
 using QaaS.Framework.Protocols.Protocols;
 using QaaS.Framework.SDK.ConfigurationObjectFilters;
 using QaaS.Framework.SDK.ConfigurationObjects;
@@ -31,6 +32,7 @@ public class Transaction : StagedAction
     private readonly bool _loop;
     private ulong _sleepTimeMs;
     private readonly DataFilter _outputDataFilter;
+    private readonly int? _parallelism;
 
     private readonly SerializationType? _serializationType;
     private readonly ISerializer? _serializer;
@@ -40,13 +42,15 @@ public class Transaction : StagedAction
     private IterableSerializableDataIterator _iterableSerializableSaveIterator = default!;
     private RunningCommunicationData<object> _receivedRunningCommunicationData;
     private RunningCommunicationData<object> _sentRunningCommunicationData;
+    private SemaphoreSlim? _parallelismSemaphore;
 
     public Transaction(string name,
         ITransactor transactor,
         int stage, DataFilter inputDataFilter, DataFilter outputDataFilter,
         Policy? policies, bool loop, int iterations, ulong sleepTimeMs,
         SerializationType? serializationType, SerializationType? deserializationType, Type? deserializerSpecificType,
-        string[]? dataSourcePatterns, string[]? dataSourceNames, ILogger logger) :
+        string[]? dataSourcePatterns, string[]? dataSourceNames, ILogger logger,
+        int? parallelism = null) :
         base(name, stage, policies, logger)
     {
         _transactor = transactor;
@@ -62,9 +66,11 @@ public class Transaction : StagedAction
         _deserializer = DeserializerFactory.BuildDeserializer(deserializationType);
         _deserializerSpecificType = deserializerSpecificType;
         _serializer = SerializerFactory.BuildSerializer(serializationType);
+        _parallelism = parallelism;
+        if (_parallelism != null) InitializeSemaphore(_parallelism.Value);
         Logger.LogInformation(
-            "Initializing Transaction {Name} with transactor of type {TransactorType} with Input Serializer {Serializer} and Output Deserializer {Deserializer}",
-            Name, transactor.GetType(), _serializer, _deserializer);
+            "Initializing Transaction {Name} with transactor of type {TransactorType} with Input Serializer {Serializer} and Output Deserializer {Deserializer}, Parallelism={Parallelism}",
+            Name, transactor.GetType(), _serializer, _deserializer, _parallelism);
         _sentRunningCommunicationData = new RunningCommunicationData<object>
         {
             Name = Name,
@@ -75,6 +81,18 @@ public class Transaction : StagedAction
             Name = Name,
             SerializationType = GetOutputCommunicationSerializationType()
         };
+    }
+
+    /// <summary>
+    /// Initializes the semaphore used to control the number of concurrent transactions.
+    /// </summary>
+    /// <param name="connectionAcceptanceValue">Base value for connection acceptance.</param>
+    private void InitializeSemaphore(int connectionAcceptanceValue)
+    {
+        var maxConnections = connectionAcceptanceValue;
+        _parallelismSemaphore = new SemaphoreSlim(maxConnections, maxConnections);
+        Logger.LogDebug("Transaction Parallelism Semaphore initiated with max parallelism of {MaxConnections}",
+            maxConnections);
     }
 
     public void InitializeIterableSerializableSaveIterator(List<SessionData?> ranSessions, List<DataSource> dataSources)
@@ -90,9 +108,9 @@ public class Transaction : StagedAction
                 ds.Retrieve(ranSessions.Where(sessionData => sessionData != null).ToImmutableList()!));
         _iterableSerializableSaveIterator = new IterableSerializableDataIterator(_generatedData, _serializer);
         Logger.LogDebug(
-            "Prepared transaction {ActionName}. DataSourceNames={DataSourceNames}, DataSourcePatterns={DataSourcePatterns}",
+            "Prepared transaction {ActionName}. DataSourceNames={DataSourceNames}, DataSourcePatterns={DataSourcePatterns}, Parallelism={Parallelism}",
             Name, _dataSourceNames == null ? "<none>" : string.Join(", ", _dataSourceNames),
-            _dataSourcePatterns == null ? "<none>" : string.Join(", ", _dataSourcePatterns));
+            _dataSourcePatterns == null ? "<none>" : string.Join(", ", _dataSourcePatterns), _parallelism);
     }
 
     internal override InternalCommunicationData<object> Act()
@@ -142,37 +160,53 @@ public class Transaction : StagedAction
     /// <returns>True if should continue and false if not.</returns>
     private bool Transact(InternalCommunicationData<object> actData)
     {
-        var dataToTransact = _iterableSerializableSaveIterator.IterateEnumerable();
+        var dataToTransact = _iterableSerializableSaveIterator.IterateWithOriginal();
         var pairIndex = 0;
 
-        foreach (var data in dataToTransact)
+        try
         {
-            var transactionData = _transactor.Transact(data);
-
-            var iteratedDataItem = _iterableSerializableSaveIterator.GetDataBeforeSerialization(pairIndex);
-
-            LogData(
-                actData,
-                iteratedDataItem
-                    .CloneDetailed(transactionData.Item1.Timestamp)
-                    .AddIoMatchIndexToDetailedData(pairIndex),
-                InputOutputState.OnlyInput
-            );
-            var response = transactionData.Item2?.AddIoMatchIndexToDetailedData(pairIndex);
-            if (response != null)
+            _iterableSerializableSaveIterator.ApplyToAll(dataToTransact, dataPair =>
             {
+                var currentIndex = _parallelism != null
+                    ? Interlocked.Increment(ref pairIndex) - 1
+                    : pairIndex++;
+
+                Tuple<DetailedData<object>, DetailedData<object>?> transactionData;
+                try
+                {
+                    _parallelismSemaphore?.Wait();
+                    transactionData = _transactor.Transact(dataPair.Serialized);
+                }
+                finally
+                {
+                    _parallelismSemaphore?.Release();
+                }
+
                 LogData(
                     actData,
-                    response.CloneDetailed(transactionData.Item2?.Timestamp)
-                        .AddIoMatchIndexToDetailedData(pairIndex),
-                    InputOutputState.OnlyOutput
+                    dataPair.Original
+                        .CloneDetailed(transactionData.Item1.Timestamp)
+                        .AddIoMatchIndexToDetailedData(currentIndex),
+                    InputOutputState.OnlyInput
                 );
-            }
+                var response = transactionData.Item2?.AddIoMatchIndexToDetailedData(currentIndex);
+                if (response != null)
+                {
+                    LogData(
+                        actData,
+                        response.CloneDetailed(transactionData.Item2?.Timestamp)
+                            .AddIoMatchIndexToDetailedData(currentIndex),
+                        InputOutputState.OnlyOutput
+                    );
+                }
 
-            pairIndex++;
-
-            if (Policies?.RunChain() != false) continue;
-
+                if (Policies?.RunChain() == false)
+                    throw new StopActionException("Policy ruled to be stopped");
+            }, _parallelism != null);
+        }
+        catch (StopActionException)
+        {
+            Logger.LogDebug("Policy ruled Transaction action to be stopped");
             return false;
         }
 
@@ -219,7 +253,11 @@ public class Transaction : StagedAction
     private void LogInputData(InternalCommunicationData<object> actData, DetailedData<object> itemBeforeSerialization)
     {
         itemBeforeSerialization = itemBeforeSerialization.FilterData(_inputDataFilter);
-        actData.Input!.Add(itemBeforeSerialization);
+
+        lock (actData.Input!)
+        {
+            actData.Input!.Add(itemBeforeSerialization);
+        }
 
         _sentRunningCommunicationData.Data.Add(itemBeforeSerialization);
         _sentRunningCommunicationData.Queue.Enqueue(itemBeforeSerialization);
@@ -230,7 +268,12 @@ public class Transaction : StagedAction
         itemBeforeSerialization =
             (_deserializer != null ? GetDeserializedData(itemBeforeSerialization) : itemBeforeSerialization)
             .FilterData(_outputDataFilter);
-        actData.Output!.Add(itemBeforeSerialization);
+
+        lock (actData.Output!)
+        {
+            actData.Output!.Add(itemBeforeSerialization);
+        }
+
         _receivedRunningCommunicationData.Data.Add(itemBeforeSerialization);
         _receivedRunningCommunicationData.Queue.Enqueue(itemBeforeSerialization);
     }
