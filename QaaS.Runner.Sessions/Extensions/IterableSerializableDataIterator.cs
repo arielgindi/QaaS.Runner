@@ -1,3 +1,4 @@
+using QaaS.Framework.Policies.Exceptions;
 using QaaS.Framework.SDK.Session.DataObjects;
 using QaaS.Framework.Serialization.Serializers;
 
@@ -55,7 +56,21 @@ public sealed class IterableSerializableDataIterator
         bool parallel)
     {
         iterator ??= IterateEnumerable().Cast<TData>();
-        if (parallel) Parallel.ForEach(iterator, methodToApply);
+        if (parallel)
+        {
+            try
+            {
+                Parallel.ForEach(iterator, methodToApply);
+            }
+            catch (AggregateException aggregate)
+            {
+                // Parallel.ForEach wraps worker exceptions in AggregateException.
+                // Surface a policy-driven StopActionException unwrapped so callers can catch it directly.
+                var stop = aggregate.Flatten().InnerExceptions.OfType<StopActionException>().FirstOrDefault();
+                if (stop != null) throw stop;
+                throw;
+            }
+        }
         else
             foreach (var data in iterator)
                 methodToApply.Invoke(data);
