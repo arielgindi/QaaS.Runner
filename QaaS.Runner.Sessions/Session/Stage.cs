@@ -11,7 +11,6 @@ using QaaS.Runner.Sessions.Actions.Transactions;
 using QaaS.Runner.Sessions.Extensions;
 using Action = QaaS.Runner.Sessions.Actions.Action;
 
-
 namespace QaaS.Runner.Sessions.Session;
 
 /// <summary>
@@ -24,8 +23,14 @@ public class Stage
     private readonly string _sessionName;
     private readonly int _stage;
 
-    public Stage(InternalContext context, ConcurrentBag<ActionFailure> actionFailures, string sessionName, int stage,
-        int? sleepBeforeMilliseconds = 0, int? sleepAfterMilliseconds = 2000)
+    public Stage(
+        InternalContext context,
+        ConcurrentBag<ActionFailure> actionFailures,
+        string sessionName,
+        int stage,
+        int? sleepBeforeMilliseconds = 0,
+        int? sleepAfterMilliseconds = 2000
+    )
     {
         _stage = stage;
         _context = context;
@@ -43,7 +48,6 @@ public class Stage
     {
         Actions.Add(stagedAction);
     }
-
 
     public void ExportRunningCommunicationData()
     {
@@ -64,7 +68,10 @@ public class Stage
                     publisher.InitializeIterableSerializableSaveIterator(ranSessions, dataSources);
                     break;
                 case Transaction transaction:
-                    transaction.InitializeIterableSerializableSaveIterator(ranSessions, dataSources);
+                    transaction.InitializeIterableSerializableSaveIterator(
+                        ranSessions,
+                        dataSources
+                    );
                     break;
                 case Probe probe:
                     probe.InitializeIterableSerializableSaveIterator(ranSessions, dataSources);
@@ -85,36 +92,70 @@ public class Stage
     {
         if (SleepBeforeMilliseconds is > 0)
         {
-            _context.Logger.LogDebug("Sleeping {WaitTimeMs} ms before session {SessionName} stage {StageNumber}",
-                SleepBeforeMilliseconds, _sessionName, _stage);
+            _context.Logger.LogDebug(
+                "Sleeping {WaitTimeMs} ms before session {SessionName} stage {StageNumber}",
+                SleepBeforeMilliseconds,
+                _sessionName,
+                _stage
+            );
             await Task.Delay((int)SleepBeforeMilliseconds);
         }
         _context.Logger.LogDebug(
             "Starting action stage {StageNumber} for session {SessionName} with {ActionCount} action(s)",
-            _stage, _sessionName, Actions.Count);
-        _context.AppendSessionLog(_sessionName,
-            $"Starting action stage {_stage} for session {_sessionName} with {Actions.Count} action(s)");
-        _context.Logger.LogDebug("Session {SessionName} stage {StageNumber} actions: {ActionNames}",
-            _sessionName, _stage, string.Join(", ", Actions.Select(action => $"{action.GetType().Name}:{action.Name}")));
+            _stage,
+            _sessionName,
+            Actions.Count
+        );
+        _context.AppendSessionLog(
+            _sessionName,
+            $"Starting action stage {_stage} for session {_sessionName} with {Actions.Count} action(s)"
+        );
+        _context.Logger.LogDebug(
+            "Session {SessionName} stage {StageNumber} actions: {ActionNames}",
+            _sessionName,
+            _stage,
+            string.Join(", ", Actions.Select(action => $"{action.GetType().Name}:{action.Name}"))
+        );
 
-        var stageTasks =
-            Actions.Select(action =>
-                SessionExtensions.CreateTaskFromAction(_context, action, _sessionName, _actionFailures)).ToList();
+        var stageTasks = Actions
+            .Select(action =>
+                SessionExtensions.CreateTaskFromAction(
+                    _context,
+                    action,
+                    _sessionName,
+                    _actionFailures
+                )
+            )
+            .ToList();
         var stageCompletionTask = Task.WhenAll(stageTasks);
-        _ = stageCompletionTask.ContinueWith(_ =>
+        _ = stageCompletionTask.ContinueWith(
+            _ =>
             {
-                _context.Logger.LogDebug("Finished action stage {StageNumber} for session {SessionName}",
-                    _stage, _sessionName);
-                _context.AppendSessionLog(_sessionName, $"Finished action stage {_stage} for session {_sessionName}");
+                _context.Logger.LogDebug(
+                    "Finished action stage {StageNumber} for session {SessionName}",
+                    _stage,
+                    _sessionName
+                );
+                _context.AppendSessionLog(
+                    _sessionName,
+                    $"Finished action stage {_stage} for session {_sessionName}"
+                );
             },
             CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously,
-            TaskScheduler.Default);
+            TaskScheduler.Default
+        );
+
+        await stageCompletionTask;
 
         if (SleepAfterMilliseconds is > 0)
         {
-            _context.Logger.LogDebug("Sleeping {WaitTimeMs} ms after session {SessionName} stage {StageNumber}",
-                SleepAfterMilliseconds, _sessionName, _stage);
+            _context.Logger.LogDebug(
+                "Sleeping {WaitTimeMs} ms after session {SessionName} stage {StageNumber}",
+                SleepAfterMilliseconds,
+                _sessionName,
+                _stage
+            );
             await Task.Delay((int)SleepAfterMilliseconds);
         }
 

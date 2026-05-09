@@ -1,10 +1,10 @@
-using QaaS.Runner.Sessions.Actions.Probes;
-using QaaS.Runner.Tests.TestObjects;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using QaaS.Framework.SDK.ContextObjects;
 using QaaS.Framework.SDK.Session.SessionDataObjects;
 using QaaS.Framework.SDK.Session.SessionDataObjects.RunningSessionsObjects;
+using QaaS.Runner.Sessions.Actions.Probes;
+using QaaS.Runner.Tests.TestObjects;
 
 namespace QaaS.Runner.Tests.Extensions;
 
@@ -27,9 +27,11 @@ public class ProbeExecutionContextTests
                 Logger = Globals.Logger,
                 ExecutionId = "execution-a",
                 CaseName = "case-a",
-                InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+                InternalRunningSessions = new RunningSessions(
+                    new Dictionary<string, RunningSessionData<object, object>>()
+                ),
             },
-            Configuration = new ProbeMarkerConfig { Marker = "ignored" }
+            Configuration = new ProbeMarkerConfig { Marker = "ignored" },
         };
 
         var probe = new Probe(
@@ -39,14 +41,15 @@ public class ProbeExecutionContextTests
             probeHook,
             [],
             [],
-            NullLogger.Instance);
+            NullLogger.Instance
+        );
 
         probe.Act();
 
-        Assert.That(ProbeRunRecorder.GetScopedRuns(), Is.EqualTo(new[]
-        {
-            ("recovery-session", "restore-queues")
-        }));
+        Assert.That(
+            ProbeRunRecorder.GetScopedRuns(),
+            Is.EqualTo(new[] { ("recovery-session", "restore-queues") })
+        );
         Assert.That(ProbeExecutionScope.TryGetCurrent(out _), Is.False);
     }
 }

@@ -1,5 +1,5 @@
-using QaaS.Framework.SDK.Session.DataObjects;
 using QaaS.Framework.SDK.Session.CommunicationDataObjects;
+using QaaS.Framework.SDK.Session.DataObjects;
 using QaaS.Framework.Serialization;
 
 namespace QaaS.Runner.Sessions.Actions;

@@ -17,16 +17,27 @@ public class Probe : StagedAction
     private readonly string[]? _dataSourcePatterns;
     private readonly string _sessionName;
 
-    public Probe(string name, string sessionName, int stage, IProbe probeHook, string[] dataSourceNames,
+    public Probe(
+        string name,
+        string sessionName,
+        int stage,
+        IProbe probeHook,
+        string[] dataSourceNames,
         string[] dataSourcePatterns,
-        ILogger logger) : base(name, stage, null, logger)
+        ILogger logger
+    )
+        : base(name, stage, null, logger)
     {
         _sessionName = sessionName;
         ProbeHook = probeHook;
         _dataSourceNames = dataSourceNames;
         _dataSourcePatterns = dataSourcePatterns;
-        Logger.LogInformation("Initializing Probe {ProbeName} for session {SessionName} with Hook type {HookType}",
-            Name, _sessionName, ProbeHook.GetType().Name);
+        Logger.LogInformation(
+            "Initializing Probe {ProbeName} for session {SessionName} with Hook type {HookType}",
+            Name,
+            _sessionName,
+            ProbeHook.GetType().Name
+        );
     }
 
     public List<DataSource> DataSources { get; set; } = [];
@@ -43,27 +54,44 @@ public class Probe : StagedAction
         return new InternalCommunicationData<object>();
     }
 
-    internal override void ExportRunningCommunicationData(InternalContext context, string sessionName)
-    {
-    }
+    internal override void ExportRunningCommunicationData(
+        InternalContext context,
+        string sessionName
+    ) { }
 
-    protected internal override void LogData(InternalCommunicationData<object> actData,
-        DetailedData<object> itemBeforeSerialization, InputOutputState? saveData = null)
-    {
-    }
+    protected internal override void LogData(
+        InternalCommunicationData<object> actData,
+        DetailedData<object> itemBeforeSerialization,
+        InputOutputState? saveData = null
+    ) { }
 
-    public void InitializeIterableSerializableSaveIterator(List<SessionData?> ranSessions, List<DataSource> dataSources)
+    public void InitializeIterableSerializableSaveIterator(
+        List<SessionData?> ranSessions,
+        List<DataSource> dataSources
+    )
     {
-        DataSources = EnumerableExtensions.GetFilteredConfigurationObjectList(dataSources.ToImmutableList(),
+        DataSources = EnumerableExtensions
+            .GetFilteredConfigurationObjectList(
+                dataSources.ToImmutableList(),
                 _dataSourcePatterns,
                 RegexFilters.DataSource,
-                "DataSource List")
-            .Union(EnumerableExtensions.GetFilteredConfigurationObjectList(dataSources.ToImmutableList(),
-                _dataSourceNames,
-                NameFilters.DataSource,
-                "DataSource List")).ToList();
+                "DataSource List"
+            )
+            .Union(
+                EnumerableExtensions.GetFilteredConfigurationObjectList(
+                    dataSources.ToImmutableList(),
+                    _dataSourceNames,
+                    NameFilters.DataSource,
+                    "DataSource List"
+                )
+            )
+            .ToList();
         SessionDataList = ranSessions.Where(sessionData => sessionData != null).ToList()!;
-        Logger.LogDebug("Prepared probe {ActionName}. SessionCount={SessionCount}, DataSourceCount={DataSourceCount}",
-            Name, SessionDataList.Count, DataSources.Count);
+        Logger.LogDebug(
+            "Prepared probe {ActionName}. SessionCount={SessionCount}, DataSourceCount={DataSourceCount}",
+            Name,
+            SessionDataList.Count,
+            DataSources.Count
+        );
     }
 }

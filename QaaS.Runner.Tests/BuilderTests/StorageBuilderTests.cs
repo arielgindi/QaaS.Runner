@@ -6,7 +6,7 @@ namespace QaaS.Runner.Tests.BuilderTests;
 public class StorageBuilderTests
 {
     public void TestBuild_CallFunctionWithDifferentConfiguration_ShouldReturnExpectedObject(
-        StorageBuilder storageBuilder, BaseStorage storage)
-    {
-    }
+        StorageBuilder storageBuilder,
+        BaseStorage storage
+    ) { }
 }

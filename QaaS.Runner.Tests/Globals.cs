@@ -13,22 +13,24 @@ namespace QaaS.Runner.Tests;
 public static class Globals
 {
     public static readonly ILogger Logger = new SerilogLoggerFactory(
-        new LoggerConfiguration().MinimumLevel.Warning()
-            .CreateLogger()).CreateLogger("TestsLogger");
+        new LoggerConfiguration().MinimumLevel.Warning().CreateLogger()
+    ).CreateLogger("TestsLogger");
 
     private static readonly InternalContext Context = new()
     {
-        Logger = Logger, RootConfiguration = new ConfigurationBuilder().Build(),
-        InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+        Logger = Logger,
+        RootConfiguration = new ConfigurationBuilder().Build(),
+        InternalRunningSessions = new RunningSessions(
+            new Dictionary<string, RunningSessionData<object, object>>()
+        ),
     };
 
     public static InternalContext GetContextWithMetadata()
     {
-        Context.InsertValueIntoGlobalDictionary(Context.GetMetaDataPath(), new MetaDataConfig
-        {
-            Team = "Smoke",
-            System = "QaaS"
-        });
+        Context.InsertValueIntoGlobalDictionary(
+            Context.GetMetaDataPath(),
+            new MetaDataConfig { Team = "Smoke", System = "QaaS" }
+        );
         return Context;
     }
 }

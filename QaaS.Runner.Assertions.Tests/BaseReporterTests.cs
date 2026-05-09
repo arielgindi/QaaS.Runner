@@ -10,9 +10,7 @@ public class BaseReporterTests
 {
     private sealed class TestReporter : BaseReporter
     {
-        public override void WriteTestResults(AssertionResult assertionResult)
-        {
-        }
+        public override void WriteTestResults(AssertionResult assertionResult) { }
 
         public static string ResolveAttachmentType(SerializationType? serializationType)
         {
@@ -29,7 +27,9 @@ public class BaseReporterTests
     [TestCase(SerializationType.MessagePack, "application/x-msgpack")]
     [TestCase(null, "application/octet-stream")]
     public void GetAttachmentTypeBySerializationType_WithKnownTypes_ReturnsExpectedMimeType(
-        SerializationType? serializationType, string expected)
+        SerializationType? serializationType,
+        string expected
+    )
     {
         var result = TestReporter.ResolveAttachmentType(serializationType);
 
@@ -40,6 +40,7 @@ public class BaseReporterTests
     public void GetAttachmentTypeBySerializationType_WithUnsupportedType_ThrowsInvalidOperationException()
     {
         Assert.Throws<InvalidOperationException>(() =>
-            TestReporter.ResolveAttachmentType((SerializationType)999));
+            TestReporter.ResolveAttachmentType((SerializationType)999)
+        );
     }
 }

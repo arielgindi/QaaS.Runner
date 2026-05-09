@@ -1,45 +1,57 @@
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using NUnit.Framework;
 using Moq;
+using NUnit.Framework;
 using QaaS.Framework.Configurations;
 using QaaS.Framework.Configurations.CustomExceptions;
 using QaaS.Framework.Configurations.References;
 using QaaS.Framework.SDK;
 using QaaS.Framework.SDK.ContextObjects;
 using QaaS.Framework.SDK.Session.SessionDataObjects;
-using QaaS.Runner.Loaders;
-using QaaS.Runner.Options;
 using QaaS.Framework.SDK.Session.SessionDataObjects.RunningSessionsObjects;
 using QaaS.Runner.Artifactory;
+using QaaS.Runner.Loaders;
+using QaaS.Runner.Options;
 
 namespace QaaS.Runner.Tests.LoadersTests
 {
     [TestFixture]
     public class RunLoaderTests
     {
-        private static readonly MethodInfo BuildContextMethodInfo = typeof(RunLoader<Runner, RunOptions>).GetMethod(
-            "BuildContext", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        private static readonly MethodInfo BuildContextMethodInfo = typeof(RunLoader<
+            Runner,
+            RunOptions
+        >).GetMethod("BuildContext", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
-        private static readonly MethodInfo GetLoadedContextsMethodInfo = typeof(RunLoader<Runner, RunOptions>).GetMethod(
-            "GetLoadedContexts", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        private static readonly MethodInfo GetLoadedContextsMethodInfo = typeof(RunLoader<
+            Runner,
+            RunOptions
+        >).GetMethod("GetLoadedContexts", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
         private sealed class TestRunLoader : RunLoader<Runner, RunOptions>
         {
             private readonly IReadOnlyList<IExecutionBuilderConfigurator> _configurators;
-            public List<(string? ExecutionId, string? RelativeCasePath)> BuildContextCalls { get; } = [];
+            public List<(
+                string? ExecutionId,
+                string? RelativeCasePath
+            )> BuildContextCalls { get; } = [];
 
             public TestRunLoader(
                 RunOptions options,
                 string? executionId = null,
-                IReadOnlyList<IExecutionBuilderConfigurator>? configurators = null) : base(options, executionId)
+                IReadOnlyList<IExecutionBuilderConfigurator>? configurators = null
+            )
+                : base(options, executionId)
             {
                 _configurators = configurators ?? [];
             }
 
-            protected override InternalContext BuildContext(string? executionId, string? relativeCaseFilePath = null,
-                IContextBuilder? contextBuilder = null)
+            protected override InternalContext BuildContext(
+                string? executionId,
+                string? relativeCaseFilePath = null,
+                IContextBuilder? contextBuilder = null
+            )
             {
                 BuildContextCalls.Add((executionId, relativeCaseFilePath));
                 return new InternalContext
@@ -49,7 +61,8 @@ namespace QaaS.Runner.Tests.LoadersTests
                     CaseName = relativeCaseFilePath,
                     RootConfiguration = new ConfigurationBuilder().Build(),
                     InternalRunningSessions = new RunningSessions(
-                        new Dictionary<string, RunningSessionData<object, object>>())
+                        new Dictionary<string, RunningSessionData<object, object>>()
+                    ),
                 };
             }
 
@@ -66,7 +79,9 @@ namespace QaaS.Runner.Tests.LoadersTests
             public ConfiguratorAwareRunLoader(
                 RunOptions options,
                 IReadOnlyList<IExecutionBuilderConfigurator>? configurators = null,
-                string? executionId = null) : base(options, executionId)
+                string? executionId = null
+            )
+                : base(options, executionId)
             {
                 _configurators = configurators ?? [];
             }
@@ -81,24 +96,28 @@ namespace QaaS.Runner.Tests.LoadersTests
         {
             public void Configure(ExecutionBuilder executionBuilder)
             {
-                executionBuilder.WithMetadata(new MetaDataConfig
-                {
-                    Team = "Smoke",
-                    System = "DummyApp"
-                });
+                executionBuilder.WithMetadata(
+                    new MetaDataConfig { Team = "Smoke", System = "DummyApp" }
+                );
             }
         }
 
-        private sealed class TestJfrogArtifactoryHelper(IEnumerable<string> files) : IJfrogArtifactoryHelper
+        private sealed class TestJfrogArtifactoryHelper(IEnumerable<string> files)
+            : IJfrogArtifactoryHelper
         {
-            public Task<IReadOnlyList<string>> GetUrlsToAllFilesInArtifactoryFolderAsync(string artifactoryFolderUrl,
-                HttpClient httpClient, CancellationToken cancellationToken = default)
+            public Task<IReadOnlyList<string>> GetUrlsToAllFilesInArtifactoryFolderAsync(
+                string artifactoryFolderUrl,
+                HttpClient httpClient,
+                CancellationToken cancellationToken = default
+            )
             {
                 return Task.FromResult<IReadOnlyList<string>>(files.ToList());
             }
 
-            public IEnumerable<string> GetUrlsToAllFilesInArtifactoryFolder(string artifactoryFolderUrl,
-                HttpClient httpClient)
+            public IEnumerable<string> GetUrlsToAllFilesInArtifactoryFolder(
+                string artifactoryFolderUrl,
+                HttpClient httpClient
+            )
             {
                 return files;
             }
@@ -114,23 +133,29 @@ namespace QaaS.Runner.Tests.LoadersTests
                 OverwriteFolders = new List<string>(),
                 OverwriteArguments = new List<string>(),
                 PushReferences = new List<string>(),
-                SendLogs = false
+                SendLogs = false,
             };
 
-            yield return new TestCaseData(basicOptions, null, null)
-                .SetName("BasicBuildWithContext");
+            yield return new TestCaseData(basicOptions, null, null).SetName(
+                "BasicBuildWithContext"
+            );
 
             // Test Case 2: Build context with execution ID
-            yield return new TestCaseData(basicOptions, "execution123", null)
-                .SetName("WithExecutionId");
+            yield return new TestCaseData(basicOptions, "execution123", null).SetName(
+                "WithExecutionId"
+            );
 
             // Test Case 3: Build context with case file path
-            yield return new TestCaseData(basicOptions, null, "cases/test-case.yaml")
-                .SetName("WithCaseFilePath");
+            yield return new TestCaseData(basicOptions, null, "cases/test-case.yaml").SetName(
+                "WithCaseFilePath"
+            );
 
             // Test Case 4: Build context with execution ID and case file path
-            yield return new TestCaseData(basicOptions, "exec456", "cases/another-case.yaml")
-                .SetName("WithExecutionIdAndCaseFilePath");
+            yield return new TestCaseData(
+                basicOptions,
+                "exec456",
+                "cases/another-case.yaml"
+            ).SetName("WithExecutionIdAndCaseFilePath");
 
             // Test Case 5: Build context with overwrite files
             var optionsWithOverwriteFiles = new RunOptions
@@ -140,10 +165,11 @@ namespace QaaS.Runner.Tests.LoadersTests
                 OverwriteFolders = new List<string>(),
                 OverwriteArguments = new List<string>(),
                 PushReferences = new List<string>(),
-                SendLogs = false
+                SendLogs = false,
             };
-            yield return new TestCaseData(optionsWithOverwriteFiles, null, null)
-                .SetName("WithOverwriteFiles");
+            yield return new TestCaseData(optionsWithOverwriteFiles, null, null).SetName(
+                "WithOverwriteFiles"
+            );
 
             // Test Case 6: Build context with overwrite folders
             var optionsWithOverwriteFolders = new RunOptions
@@ -153,10 +179,11 @@ namespace QaaS.Runner.Tests.LoadersTests
                 OverwriteFolders = new List<string> { "folder1", "folder2" },
                 OverwriteArguments = new List<string>(),
                 PushReferences = new List<string>(),
-                SendLogs = false
+                SendLogs = false,
             };
-            yield return new TestCaseData(optionsWithOverwriteFolders, null, null)
-                .SetName("WithOverwriteFolders");
+            yield return new TestCaseData(optionsWithOverwriteFolders, null, null).SetName(
+                "WithOverwriteFolders"
+            );
 
             // Test Case 7: Build context with overwrite arguments
             var optionsWithOverwriteArgs = new RunOptions
@@ -166,10 +193,11 @@ namespace QaaS.Runner.Tests.LoadersTests
                 OverwriteFolders = new List<string>(),
                 OverwriteArguments = new List<string> { "arg1=value1", "arg2=value2" },
                 PushReferences = new List<string>(),
-                SendLogs = false
+                SendLogs = false,
             };
-            yield return new TestCaseData(optionsWithOverwriteArgs, null, null)
-                .SetName("WithOverwriteArguments");
+            yield return new TestCaseData(optionsWithOverwriteArgs, null, null).SetName(
+                "WithOverwriteArguments"
+            );
 
             // Test Case 8: Build context with push references
             var optionsWithReferences = new RunOptions
@@ -179,10 +207,11 @@ namespace QaaS.Runner.Tests.LoadersTests
                 OverwriteFolders = new List<string>(),
                 OverwriteArguments = new List<string>(),
                 PushReferences = new List<string> { "Sessions", "ref1.yml", "ref2.yml" },
-                SendLogs = false
+                SendLogs = false,
             };
-            yield return new TestCaseData(optionsWithReferences, null, null)
-                .SetName("WithPushReferences");
+            yield return new TestCaseData(optionsWithReferences, null, null).SetName(
+                "WithPushReferences"
+            );
 
             // Test Case 9: Build context with all options enabled
             var allOptions = new RunOptions
@@ -194,10 +223,13 @@ namespace QaaS.Runner.Tests.LoadersTests
                 PushReferences = new List<string> { "Sessions", "ref1.yml", "ref2.yml" },
                 ResolveCasesLast = true,
                 DontResolveWithEnvironmentVariables = false,
-                SendLogs = false
+                SendLogs = false,
             };
-            yield return new TestCaseData(allOptions, "full-execution", "cases/full-case.yaml")
-                .SetName("FullOptionsEnabled");
+            yield return new TestCaseData(
+                allOptions,
+                "full-execution",
+                "cases/full-case.yaml"
+            ).SetName("FullOptionsEnabled");
 
             // Test Case 10: Build context without environment variable resolution
             var noEnvResolutionOptions = new RunOptions
@@ -208,18 +240,24 @@ namespace QaaS.Runner.Tests.LoadersTests
                 OverwriteArguments = new List<string>(),
                 PushReferences = new List<string>(),
                 DontResolveWithEnvironmentVariables = true,
-                SendLogs = false
+                SendLogs = false,
             };
-            yield return new TestCaseData(noEnvResolutionOptions, "no-env-execution", null)
-                .SetName("WithNoEnvironmentVariableResolution");
+            yield return new TestCaseData(noEnvResolutionOptions, "no-env-execution", null).SetName(
+                "WithNoEnvironmentVariableResolution"
+            );
         }
 
         [Test, TestCaseSource(nameof(TestBuildContextCaseData))]
         public void TestBuildContext_CallFunctionWithCustomRunOptions_ShouldBuildContextCorrectly(
-            RunOptions options, string? executionId, string? caseFilePath)
+            RunOptions options,
+            string? executionId,
+            string? caseFilePath
+        )
         {
             // Arrange
-            var createdConfigurationFilePath = EnsureConfigurationFileExists(options.ConfigurationFile);
+            var createdConfigurationFilePath = EnsureConfigurationFileExists(
+                options.ConfigurationFile
+            );
 
             try
             {
@@ -231,11 +269,16 @@ namespace QaaS.Runner.Tests.LoadersTests
                 var loader = new RunLoader<Runner, RunOptions>(options, executionId);
 
                 // Mock the BuildInternal method to return our mock context
-                mockContextBuilder.Setup(cb => cb.BuildInternal()).Returns(mockInternalContext.Object);
+                mockContextBuilder
+                    .Setup(cb => cb.BuildInternal())
+                    .Returns(mockInternalContext.Object);
 
                 // Act
-                var result = (InternalContext?)BuildContextMethodInfo.Invoke(loader,
-                    [executionId, caseFilePath, mockContextBuilder.Object]);
+                var result = (InternalContext?)
+                    BuildContextMethodInfo.Invoke(
+                        loader,
+                        [executionId, caseFilePath, mockContextBuilder.Object]
+                    );
 
                 // Assert
                 Assert.That(result, Is.EqualTo(mockInternalContext.Object));
@@ -243,17 +286,26 @@ namespace QaaS.Runner.Tests.LoadersTests
                 // Verify all expected method calls were made
                 mockContextBuilder.Verify(cb => cb.SetLogger(It.IsAny<ILogger>()), Times.Once);
                 mockContextBuilder.Verify(cb => cb.SetExecutionId(executionId), Times.Once);
-                mockContextBuilder.Verify(cb => cb.SetConfigurationFile(options.ConfigurationFile), Times.Once);
+                mockContextBuilder.Verify(
+                    cb => cb.SetConfigurationFile(options.ConfigurationFile),
+                    Times.Once
+                );
 
                 // Verify session setup
-                mockContextBuilder.Verify(cb => cb.SetCurrentRunningSessions(It.IsAny<RunningSessions>()), Times.Once);
+                mockContextBuilder.Verify(
+                    cb => cb.SetCurrentRunningSessions(It.IsAny<RunningSessions>()),
+                    Times.Once
+                );
 
                 // Verify overwrite files
                 if (options.OverwriteFiles != null && options.OverwriteFiles.Any())
                 {
                     foreach (var overwriteFile in options.OverwriteFiles)
                     {
-                        mockContextBuilder.Verify(cb => cb.WithOverwriteFile(overwriteFile), Times.Once);
+                        mockContextBuilder.Verify(
+                            cb => cb.WithOverwriteFile(overwriteFile),
+                            Times.Once
+                        );
                     }
                 }
 
@@ -261,7 +313,10 @@ namespace QaaS.Runner.Tests.LoadersTests
                 {
                     foreach (var overwriteFolder in options.OverwriteFolders)
                     {
-                        mockContextBuilder.Verify(cb => cb.WithOverwriteFolder(overwriteFolder), Times.Once);
+                        mockContextBuilder.Verify(
+                            cb => cb.WithOverwriteFolder(overwriteFolder),
+                            Times.Once
+                        );
                     }
                 }
 
@@ -280,15 +335,20 @@ namespace QaaS.Runner.Tests.LoadersTests
                 {
                     foreach (var overwriteArg in options.OverwriteArguments)
                     {
-                        mockContextBuilder.Verify(cb => cb.WithOverwriteArgument(overwriteArg), Times.Once);
+                        mockContextBuilder.Verify(
+                            cb => cb.WithOverwriteArgument(overwriteArg),
+                            Times.Once
+                        );
                     }
                 }
 
                 // Verify reference resolutions
                 if (options.PushReferences != null && options.PushReferences.Any())
                 {
-                    mockContextBuilder.Verify(cb => cb.WithReferenceResolution(It.IsAny<ReferenceConfig>()),
-                        Times.Once);
+                    mockContextBuilder.Verify(
+                        cb => cb.WithReferenceResolution(It.IsAny<ReferenceConfig>()),
+                        Times.Once
+                    );
                 }
 
                 // Verify case resolution flags
@@ -299,11 +359,17 @@ namespace QaaS.Runner.Tests.LoadersTests
 
                 if (!options.DontResolveWithEnvironmentVariables)
                 {
-                    mockContextBuilder.Verify(cb => cb.WithEnvironmentVariableResolution(), Times.Once);
+                    mockContextBuilder.Verify(
+                        cb => cb.WithEnvironmentVariableResolution(),
+                        Times.Once
+                    );
                 }
                 else
                 {
-                    mockContextBuilder.Verify(cb => cb.WithEnvironmentVariableResolution(), Times.Never);
+                    mockContextBuilder.Verify(
+                        cb => cb.WithEnvironmentVariableResolution(),
+                        Times.Never
+                    );
                 }
 
                 // Verify final build call
@@ -322,12 +388,14 @@ namespace QaaS.Runner.Tests.LoadersTests
             {
                 ConfigurationFile = "test.yaml",
                 SendLogs = false,
-                CasesRootDirectory = null
+                CasesRootDirectory = null,
             };
 
             var loader = new TestRunLoader(options, "exec-1");
 
-            var contexts = ((IEnumerable<InternalContext>)GetLoadedContextsMethodInfo.Invoke(loader, null)!).ToList();
+            var contexts = (
+                (IEnumerable<InternalContext>)GetLoadedContextsMethodInfo.Invoke(loader, null)!
+            ).ToList();
 
             Assert.That(contexts, Has.Count.EqualTo(1));
             Assert.That(loader.BuildContextCalls, Has.Count.EqualTo(1));
@@ -354,16 +422,19 @@ namespace QaaS.Runner.Tests.LoadersTests
                     ConfigurationFile = "test.yaml",
                     SendLogs = false,
                     CasesRootDirectory = relativeCasesDir,
-                    CasesNamesToRun = [Path.GetRelativePath(Environment.CurrentDirectory, caseA)]
+                    CasesNamesToRun = [Path.GetRelativePath(Environment.CurrentDirectory, caseA)],
                 };
 
                 var loader = new TestRunLoader(options, "exec-2");
-                var contexts =
-                    ((IEnumerable<InternalContext>)GetLoadedContextsMethodInfo.Invoke(loader, null)!).ToList();
+                var contexts = (
+                    (IEnumerable<InternalContext>)GetLoadedContextsMethodInfo.Invoke(loader, null)!
+                ).ToList();
 
                 Assert.That(contexts, Has.Count.EqualTo(1));
-                Assert.That(contexts[0].CaseName,
-                    Is.EqualTo(Path.GetRelativePath(Environment.CurrentDirectory, caseA)));
+                Assert.That(
+                    contexts[0].CaseName,
+                    Is.EqualTo(Path.GetRelativePath(Environment.CurrentDirectory, caseA))
+                );
             }
             finally
             {
@@ -386,16 +457,25 @@ namespace QaaS.Runner.Tests.LoadersTests
                     ConfigurationFile = "test.yaml",
                     SendLogs = false,
                     CasesRootDirectory = relativeCasesDir,
-                    CasesNamesToRun = ["missing-case.yaml"]
+                    CasesNamesToRun = ["missing-case.yaml"],
                 };
 
                 var loader = new TestRunLoader(options, "exec-3");
 
-                var ex = Assert.Throws<TargetInvocationException>(() => GetLoadedContextsMethodInfo.Invoke(loader, null));
+                var ex = Assert.Throws<TargetInvocationException>(() =>
+                    GetLoadedContextsMethodInfo.Invoke(loader, null)
+                );
                 Assert.That(ex!.InnerException, Is.TypeOf<InvalidOperationException>());
-                Assert.That(ex.InnerException!.Message,
-                    Does.Contain("The test-cases-to-run filter contains case names that were not discovered."));
-                Assert.That(ex.InnerException.Message, Does.Contain("Requested case names not found: missing-case.yaml"));
+                Assert.That(
+                    ex.InnerException!.Message,
+                    Does.Contain(
+                        "The test-cases-to-run filter contains case names that were not discovered."
+                    )
+                );
+                Assert.That(
+                    ex.InnerException.Message,
+                    Does.Contain("Requested case names not found: missing-case.yaml")
+                );
                 Assert.That(ex.InnerException.Message, Does.Contain("Discovered case names:"));
             }
             finally
@@ -423,17 +503,23 @@ namespace QaaS.Runner.Tests.LoadersTests
                     ConfigurationFile = "test.yaml",
                     SendLogs = false,
                     CasesRootDirectory = relativeCasesDir,
-                    CasesNamesToIgnore = [Path.GetRelativePath(Environment.CurrentDirectory, ignoreCase)]
+                    CasesNamesToIgnore =
+                    [
+                        Path.GetRelativePath(Environment.CurrentDirectory, ignoreCase),
+                    ],
                 };
 
                 var loader = new TestRunLoader(options, "exec-ignore-exact");
-                var contexts =
-                    ((IEnumerable<InternalContext>)GetLoadedContextsMethodInfo.Invoke(loader, null)!).ToList();
+                var contexts = (
+                    (IEnumerable<InternalContext>)GetLoadedContextsMethodInfo.Invoke(loader, null)!
+                ).ToList();
 
-                Assert.That(contexts.Select(context => context.CaseName).ToArray(), Is.EqualTo(new[]
-                {
-                    Path.GetRelativePath(Environment.CurrentDirectory, keepCase)
-                }));
+                Assert.That(
+                    contexts.Select(context => context.CaseName).ToArray(),
+                    Is.EqualTo(
+                        new[] { Path.GetRelativePath(Environment.CurrentDirectory, keepCase) }
+                    )
+                );
             }
             finally
             {
@@ -460,17 +546,20 @@ namespace QaaS.Runner.Tests.LoadersTests
                     ConfigurationFile = "test.yaml",
                     SendLogs = false,
                     CasesRootDirectory = relativeCasesDir,
-                    CasesNamePatternsToIgnore = [@"skip-.*\.yaml$"]
+                    CasesNamePatternsToIgnore = [@"skip-.*\.yaml$"],
                 };
 
                 var loader = new TestRunLoader(options, "exec-ignore-pattern");
-                var contexts =
-                    ((IEnumerable<InternalContext>)GetLoadedContextsMethodInfo.Invoke(loader, null)!).ToList();
+                var contexts = (
+                    (IEnumerable<InternalContext>)GetLoadedContextsMethodInfo.Invoke(loader, null)!
+                ).ToList();
 
-                Assert.That(contexts.Select(context => context.CaseName).ToArray(), Is.EqualTo(new[]
-                {
-                    Path.GetRelativePath(Environment.CurrentDirectory, keepCase)
-                }));
+                Assert.That(
+                    contexts.Select(context => context.CaseName).ToArray(),
+                    Is.EqualTo(
+                        new[] { Path.GetRelativePath(Environment.CurrentDirectory, keepCase) }
+                    )
+                );
             }
             finally
             {
@@ -485,26 +574,37 @@ namespace QaaS.Runner.Tests.LoadersTests
             {
                 ConfigurationFile = "test.yaml",
                 SendLogs = false,
-                CasesRootDirectory = "https://artifactory.example.com/cases"
+                CasesRootDirectory = "https://artifactory.example.com/cases",
             };
 
             var loader = new TestRunLoader(options, "exec-5");
-            var helperField = typeof(RunLoader<Runner, RunOptions>)
-                .GetField("_jfrogArtifactoryHelper", BindingFlags.Instance | BindingFlags.NonPublic)!;
-            helperField.SetValue(loader, new TestJfrogArtifactoryHelper(
-                [
+            var helperField = typeof(RunLoader<Runner, RunOptions>).GetField(
+                "_jfrogArtifactoryHelper",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!;
+            helperField.SetValue(
+                loader,
+                new TestJfrogArtifactoryHelper([
                     "https://artifactory.example.com/cases/case-b.yaml",
-                    "https://artifactory.example.com/cases/case-a.yaml"
-                ]));
+                    "https://artifactory.example.com/cases/case-a.yaml",
+                ])
+            );
 
-            var contexts = ((IEnumerable<InternalContext>)GetLoadedContextsMethodInfo.Invoke(loader, null)!).ToList();
+            var contexts = (
+                (IEnumerable<InternalContext>)GetLoadedContextsMethodInfo.Invoke(loader, null)!
+            ).ToList();
 
             Assert.That(contexts, Has.Count.EqualTo(2));
-            Assert.That(loader.BuildContextCalls.Select(call => call.RelativeCasePath).ToArray(), Is.EqualTo(new[]
-            {
-                "https://artifactory.example.com/cases/case-a.yaml",
-                "https://artifactory.example.com/cases/case-b.yaml"
-            }));
+            Assert.That(
+                loader.BuildContextCalls.Select(call => call.RelativeCasePath).ToArray(),
+                Is.EqualTo(
+                    new[]
+                    {
+                        "https://artifactory.example.com/cases/case-a.yaml",
+                        "https://artifactory.example.com/cases/case-b.yaml",
+                    }
+                )
+            );
         }
 
         [Test]
@@ -515,7 +615,7 @@ namespace QaaS.Runner.Tests.LoadersTests
                 ConfigurationFile = "test.yaml",
                 SendLogs = false,
                 EmptyAllureDirectory = true,
-                AutoServeTestResults = true
+                AutoServeTestResults = true,
             };
 
             var loader = new TestRunLoader(options, "exec-4");
@@ -525,14 +625,25 @@ namespace QaaS.Runner.Tests.LoadersTests
             Assert.That(runner, Is.Not.Null);
             Assert.That(runner.ExecutionBuilders, Has.Count.EqualTo(1));
 
-            var emptyResultsProperty = typeof(Runner).GetProperty("EmptyResults", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
-            var serveResultsProperty = typeof(Runner).GetProperty("ServeResults", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
-            var serveResultsFolderProperty = typeof(Runner).GetProperty("ServeResultsFolder", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var emptyResultsProperty = typeof(Runner).GetProperty(
+                "EmptyResults",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            )!;
+            var serveResultsProperty = typeof(Runner).GetProperty(
+                "ServeResults",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            )!;
+            var serveResultsFolderProperty = typeof(Runner).GetProperty(
+                "ServeResultsFolder",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!;
 
             Assert.That((bool)emptyResultsProperty.GetValue(runner)!, Is.True);
             Assert.That((bool)serveResultsProperty.GetValue(runner)!, Is.True);
-            Assert.That((string)serveResultsFolderProperty.GetValue(runner)!,
-                Is.EqualTo(AssertableOptions.DefaultServeResultsFolder));
+            Assert.That(
+                (string)serveResultsFolderProperty.GetValue(runner)!,
+                Is.EqualTo(AssertableOptions.DefaultServeResultsFolder)
+            );
         }
 
         [Test]
@@ -542,19 +653,28 @@ namespace QaaS.Runner.Tests.LoadersTests
             {
                 ConfigurationFile = "test.yaml",
                 SendLogs = false,
-                ServeResultsFolder = "allure-report"
+                ServeResultsFolder = "allure-report",
             };
 
             var loader = new TestRunLoader(options, "exec-custom-serve-folder");
 
             var runner = loader.GetLoadedRunner();
-            var serveResultsProperty = typeof(Runner).GetProperty("ServeResults", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
-            var serveResultsFolderProperty = typeof(Runner).GetProperty("ServeResultsFolder", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var serveResultsProperty = typeof(Runner).GetProperty(
+                "ServeResults",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            )!;
+            var serveResultsFolderProperty = typeof(Runner).GetProperty(
+                "ServeResultsFolder",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!;
 
             Assert.Multiple(() =>
             {
                 Assert.That((bool)serveResultsProperty.GetValue(runner)!, Is.True);
-                Assert.That((string)serveResultsFolderProperty.GetValue(runner)!, Is.EqualTo("allure-report"));
+                Assert.That(
+                    (string)serveResultsFolderProperty.GetValue(runner)!,
+                    Is.EqualTo("allure-report")
+                );
             });
         }
 
@@ -565,7 +685,7 @@ namespace QaaS.Runner.Tests.LoadersTests
             {
                 ConfigurationFile = "test.yaml",
                 SendLogs = false,
-                NoProcessExit = true
+                NoProcessExit = true,
             };
 
             var loader = new TestRunLoader(options, "exec-6");
@@ -578,27 +698,41 @@ namespace QaaS.Runner.Tests.LoadersTests
         [Test]
         public void GetLoadedRunner_WhenConfigurationYamlIsMalformed_ThrowsIndicativeInvalidConfigurationsException()
         {
-            var configurationFilePath = Path.Combine(Path.GetTempPath(), $"qaas-run-{Guid.NewGuid():N}.qaas.yaml");
-            File.WriteAllText(configurationFilePath,
+            var configurationFilePath = Path.Combine(
+                Path.GetTempPath(),
+                $"qaas-run-{Guid.NewGuid():N}.qaas.yaml"
+            );
+            File.WriteAllText(
+                configurationFilePath,
                 """
                 MetaData:
                   Team: Smoke
                   System: [broken
-                """);
+                """
+            );
 
             try
             {
-                var loader = new RunLoader<Runner, RunOptions>(new RunOptions
-                {
-                    ConfigurationFile = configurationFilePath,
-                    SendLogs = false
-                });
+                var loader = new RunLoader<Runner, RunOptions>(
+                    new RunOptions { ConfigurationFile = configurationFilePath, SendLogs = false }
+                );
 
-                var ex = Assert.Throws<InvalidConfigurationsException>(() => loader.GetLoadedRunner());
+                var ex = Assert.Throws<InvalidConfigurationsException>(() =>
+                    loader.GetLoadedRunner()
+                );
 
-                Assert.That(ex!.Message, Does.Contain("YAML configuration file is invalid and QaaS cannot continue."));
-                Assert.That(ex.Message, Does.Contain($"Resolved local path: {configurationFilePath}"));
-                Assert.That(ex.Message, Does.Contain("Parser detail: While parsing a flow sequence"));
+                Assert.That(
+                    ex!.Message,
+                    Does.Contain("YAML configuration file is invalid and QaaS cannot continue.")
+                );
+                Assert.That(
+                    ex.Message,
+                    Does.Contain($"Resolved local path: {configurationFilePath}")
+                );
+                Assert.That(
+                    ex.Message,
+                    Does.Contain("Parser detail: While parsing a flow sequence")
+                );
             }
             finally
             {
@@ -609,21 +743,27 @@ namespace QaaS.Runner.Tests.LoadersTests
         [Test]
         public void BuildContext_WhenConfigurationFileMissingAndCodeConfiguratorsExist_SkipsYamlLoading()
         {
-            var loader = new ConfiguratorAwareRunLoader(new RunOptions
-            {
-                ConfigurationFile = $"missing-{Guid.NewGuid():N}.qaas.yaml",
-                SendLogs = false
-            }, [new MetadataConfigurator()]);
+            var loader = new ConfiguratorAwareRunLoader(
+                new RunOptions
+                {
+                    ConfigurationFile = $"missing-{Guid.NewGuid():N}.qaas.yaml",
+                    SendLogs = false,
+                },
+                [new MetadataConfigurator()]
+            );
 
             var mockContextBuilder = new Mock<IContextBuilder>();
             var mockInternalContext = new Mock<InternalContext>();
             mockContextBuilder.Setup(cb => cb.BuildInternal()).Returns(mockInternalContext.Object);
 
-            var result = (InternalContext?)BuildContextMethodInfo.Invoke(loader,
-                [null, null, mockContextBuilder.Object]);
+            var result = (InternalContext?)
+                BuildContextMethodInfo.Invoke(loader, [null, null, mockContextBuilder.Object]);
 
             Assert.That(result, Is.EqualTo(mockInternalContext.Object));
-            mockContextBuilder.Verify(cb => cb.SetConfigurationFile(It.IsAny<string>()), Times.Never);
+            mockContextBuilder.Verify(
+                cb => cb.SetConfigurationFile(It.IsAny<string>()),
+                Times.Never
+            );
             mockContextBuilder.Verify(cb => cb.BuildInternal(), Times.Once);
         }
 
@@ -631,41 +771,56 @@ namespace QaaS.Runner.Tests.LoadersTests
         public void BuildContext_WhenConfigurationFileMissingAndNoConfigurators_ThrowsCouldNotFindConfigurationException()
         {
             var missingConfigurationFile = $"missing-{Guid.NewGuid():N}.qaas.yaml";
-            var loader = new ConfiguratorAwareRunLoader(new RunOptions
-            {
-                ConfigurationFile = missingConfigurationFile,
-                SendLogs = false
-            });
+            var loader = new ConfiguratorAwareRunLoader(
+                new RunOptions { ConfigurationFile = missingConfigurationFile, SendLogs = false }
+            );
 
             var mockContextBuilder = new Mock<IContextBuilder>();
 
             var ex = Assert.Throws<TargetInvocationException>(() =>
-                BuildContextMethodInfo.Invoke(loader, [null, null, mockContextBuilder.Object]));
+                BuildContextMethodInfo.Invoke(loader, [null, null, mockContextBuilder.Object])
+            );
 
             Assert.That(ex!.InnerException, Is.TypeOf<CouldNotFindConfigurationException>());
-            Assert.That(ex.InnerException!.Message, Does.Contain("Configuration file was not found and QaaS cannot continue."));
-            Assert.That(ex.InnerException.Message, Does.Contain($"Configured path: {missingConfigurationFile}"));
-            Assert.That(ex.InnerException.Message, Does.Contain("Discovered code configurators: 0"));
+            Assert.That(
+                ex.InnerException!.Message,
+                Does.Contain("Configuration file was not found and QaaS cannot continue.")
+            );
+            Assert.That(
+                ex.InnerException.Message,
+                Does.Contain($"Configured path: {missingConfigurationFile}")
+            );
+            Assert.That(
+                ex.InnerException.Message,
+                Does.Contain("Discovered code configurators: 0")
+            );
         }
 
         [Test]
         public void BuildContext_WhenConfigurationFilePathIsUnreadableAndCodeConfiguratorsExist_PreservesAccessFailure()
         {
-            var configurationDirectoryPath = Path.Combine(Path.GetTempPath(), $"qaas-run-dir-{Guid.NewGuid():N}");
+            var configurationDirectoryPath = Path.Combine(
+                Path.GetTempPath(),
+                $"qaas-run-dir-{Guid.NewGuid():N}"
+            );
             Directory.CreateDirectory(configurationDirectoryPath);
 
             try
             {
-                var loader = new ConfiguratorAwareRunLoader(new RunOptions
-                {
-                    ConfigurationFile = configurationDirectoryPath,
-                    SendLogs = false
-                }, [new MetadataConfigurator()]);
+                var loader = new ConfiguratorAwareRunLoader(
+                    new RunOptions
+                    {
+                        ConfigurationFile = configurationDirectoryPath,
+                        SendLogs = false,
+                    },
+                    [new MetadataConfigurator()]
+                );
 
                 var mockContextBuilder = new Mock<IContextBuilder>();
 
                 var ex = Assert.Throws<TargetInvocationException>(() =>
-                    BuildContextMethodInfo.Invoke(loader, [null, null, mockContextBuilder.Object]));
+                    BuildContextMethodInfo.Invoke(loader, [null, null, mockContextBuilder.Object])
+                );
 
                 Assert.That(ex!.InnerException, Is.TypeOf<UnauthorizedAccessException>());
                 mockContextBuilder.Verify(cb => cb.BuildInternal(), Times.Never);
@@ -683,26 +838,30 @@ namespace QaaS.Runner.Tests.LoadersTests
             {
                 ConfigurationFile = "test.yaml",
                 SendLogs = false,
-                CasesRootDirectory = $"missing-cases-{Guid.NewGuid():N}"
+                CasesRootDirectory = $"missing-cases-{Guid.NewGuid():N}",
             };
 
             var loader = new TestRunLoader(options, "exec-missing-cases");
 
-            var ex = Assert.Throws<TargetInvocationException>(() => GetLoadedContextsMethodInfo.Invoke(loader, null));
+            var ex = Assert.Throws<TargetInvocationException>(() =>
+                GetLoadedContextsMethodInfo.Invoke(loader, null)
+            );
 
             Assert.That(ex!.InnerException, Is.TypeOf<DirectoryNotFoundException>());
-            Assert.That(ex.InnerException!.Message, Does.Contain("Cases root directory was not found."));
-            Assert.That(ex.InnerException.Message, Does.Contain("Configured cases root directory:"));
+            Assert.That(
+                ex.InnerException!.Message,
+                Does.Contain("Cases root directory was not found.")
+            );
+            Assert.That(
+                ex.InnerException.Message,
+                Does.Contain("Configured cases root directory:")
+            );
         }
 
         [Test]
         public void GetLoadedRunner_WithExecutionBuilderConfigurators_AppliesCodeConfiguration()
         {
-            var options = new RunOptions
-            {
-                ConfigurationFile = "test.yaml",
-                SendLogs = false
-            };
+            var options = new RunOptions { ConfigurationFile = "test.yaml", SendLogs = false };
 
             var loader = new TestRunLoader(options, configurators: [new MetadataConfigurator()]);
 
@@ -720,18 +879,21 @@ namespace QaaS.Runner.Tests.LoadersTests
         [Test]
         public void GetLoadedRunner_WithEmptyConfigurationFileAndExecutionBuilderConfigurators_AppliesCodeConfiguration()
         {
-            var tempDirectory = Path.Combine(Path.GetTempPath(), "QaaS.Runner.Tests", Guid.NewGuid().ToString("N"));
+            var tempDirectory = Path.Combine(
+                Path.GetTempPath(),
+                "QaaS.Runner.Tests",
+                Guid.NewGuid().ToString("N")
+            );
             Directory.CreateDirectory(tempDirectory);
             var configurationFilePath = Path.Combine(tempDirectory, "test.qaas.yaml");
             File.WriteAllText(configurationFilePath, string.Empty);
 
             try
             {
-                var loader = new ConfiguratorAwareRunLoader(new RunOptions
-                {
-                    ConfigurationFile = configurationFilePath,
-                    SendLogs = false
-                }, [new MetadataConfigurator()]);
+                var loader = new ConfiguratorAwareRunLoader(
+                    new RunOptions { ConfigurationFile = configurationFilePath, SendLogs = false },
+                    [new MetadataConfigurator()]
+                );
 
                 var runner = loader.GetLoadedRunner();
                 var configuredBuilder = runner.ExecutionBuilders.Single();
@@ -751,12 +913,17 @@ namespace QaaS.Runner.Tests.LoadersTests
 
         private static string? EnsureConfigurationFileExists(string? configurationFile)
         {
-            if (string.IsNullOrWhiteSpace(configurationFile) || PathUtils.IsPathHttpUrl(configurationFile))
+            if (
+                string.IsNullOrWhiteSpace(configurationFile)
+                || PathUtils.IsPathHttpUrl(configurationFile)
+            )
             {
                 return null;
             }
 
-            var resolvedPath = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, configurationFile));
+            var resolvedPath = Path.GetFullPath(
+                Path.Combine(Environment.CurrentDirectory, configurationFile)
+            );
             var directoryPath = Path.GetDirectoryName(resolvedPath);
             if (!string.IsNullOrWhiteSpace(directoryPath))
             {

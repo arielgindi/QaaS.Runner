@@ -38,17 +38,39 @@ public class PublisherBuilderTests
 
     private static IEnumerable<TestCaseData> SupportedSenderConfigurationsForRead()
     {
-        yield return new TestCaseData(new RabbitMqSenderConfig()).SetName("ReadConfiguration_WithRabbitMq_ReturnsRabbitMq");
-        yield return new TestCaseData(new KafkaTopicSenderConfig()).SetName("ReadConfiguration_WithKafkaTopic_ReturnsKafkaTopic");
-        yield return new TestCaseData(new SocketSenderConfig()).SetName("ReadConfiguration_WithSocket_ReturnsSocket");
-        yield return new TestCaseData(new SftpSenderConfig()).SetName("ReadConfiguration_WithSftp_ReturnsSftp");
-        yield return new TestCaseData(new PostgreSqlSenderConfig()).SetName("ReadConfiguration_WithPostgreSql_ReturnsPostgreSql");
-        yield return new TestCaseData(new OracleSenderConfig()).SetName("ReadConfiguration_WithOracle_ReturnsOracle");
-        yield return new TestCaseData(new MsSqlSenderConfig()).SetName("ReadConfiguration_WithMsSql_ReturnsMsSql");
-        yield return new TestCaseData(new ElasticSenderConfig()).SetName("ReadConfiguration_WithElastic_ReturnsElastic");
-        yield return new TestCaseData(new RedisSenderConfig()).SetName("ReadConfiguration_WithRedis_ReturnsRedis");
-        yield return new TestCaseData(new S3BucketSenderConfig()).SetName("ReadConfiguration_WithS3_ReturnsS3");
-        yield return new TestCaseData(new MongoDbCollectionSenderConfig()).SetName("ReadConfiguration_WithMongo_ReturnsMongo");
+        yield return new TestCaseData(new RabbitMqSenderConfig()).SetName(
+            "ReadConfiguration_WithRabbitMq_ReturnsRabbitMq"
+        );
+        yield return new TestCaseData(new KafkaTopicSenderConfig()).SetName(
+            "ReadConfiguration_WithKafkaTopic_ReturnsKafkaTopic"
+        );
+        yield return new TestCaseData(new SocketSenderConfig()).SetName(
+            "ReadConfiguration_WithSocket_ReturnsSocket"
+        );
+        yield return new TestCaseData(new SftpSenderConfig()).SetName(
+            "ReadConfiguration_WithSftp_ReturnsSftp"
+        );
+        yield return new TestCaseData(new PostgreSqlSenderConfig()).SetName(
+            "ReadConfiguration_WithPostgreSql_ReturnsPostgreSql"
+        );
+        yield return new TestCaseData(new OracleSenderConfig()).SetName(
+            "ReadConfiguration_WithOracle_ReturnsOracle"
+        );
+        yield return new TestCaseData(new MsSqlSenderConfig()).SetName(
+            "ReadConfiguration_WithMsSql_ReturnsMsSql"
+        );
+        yield return new TestCaseData(new ElasticSenderConfig()).SetName(
+            "ReadConfiguration_WithElastic_ReturnsElastic"
+        );
+        yield return new TestCaseData(new RedisSenderConfig()).SetName(
+            "ReadConfiguration_WithRedis_ReturnsRedis"
+        );
+        yield return new TestCaseData(new S3BucketSenderConfig()).SetName(
+            "ReadConfiguration_WithS3_ReturnsS3"
+        );
+        yield return new TestCaseData(new MongoDbCollectionSenderConfig()).SetName(
+            "ReadConfiguration_WithMongo_ReturnsMongo"
+        );
     }
 
     [SetUp]
@@ -229,7 +251,9 @@ public class PublisherBuilderTests
     {
         var builder = new PublisherBuilder();
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => builder.UpdatePolicyAt(0, new PolicyBuilder()));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            builder.UpdatePolicyAt(0, new PolicyBuilder())
+        );
     }
 
     [Test]
@@ -288,26 +312,39 @@ public class PublisherBuilderTests
         builder.Configure(rabbitMq);
         builder.Configure(kafka);
 
-        Assert.That(builder.Build(Globals.GetContextWithMetadata(), _actionFailures, _sessionName), Is.Null);
+        Assert.That(
+            builder.Build(Globals.GetContextWithMetadata(), _actionFailures, _sessionName),
+            Is.Null
+        );
         Assert.That(_actionFailures.Count, Is.GreaterThan(0));
     }
 
     [Test]
     public void Build_WithMultipleSenderConfigsAndValidRequiredFields_ReturnsNullAndActionFailure()
     {
-        var builder = new PublisherBuilder()
-            .Named("publisher-conflict");
+        var builder = new PublisherBuilder().Named("publisher-conflict");
 
-        typeof(PublisherBuilder).GetProperty("RabbitMq", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+        typeof(PublisherBuilder)
+            .GetProperty(
+                "RabbitMq",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            )!
             .SetValue(builder, new RabbitMqSenderConfig());
-        typeof(PublisherBuilder).GetProperty("KafkaTopic", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .SetValue(builder, new KafkaTopicSenderConfig
-            {
-                TopicName = "topic",
-                HostNames = ["host:9092"],
-                Username = "user",
-                Password = "pass"
-            });
+        typeof(PublisherBuilder)
+            .GetProperty(
+                "KafkaTopic",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            )!
+            .SetValue(
+                builder,
+                new KafkaTopicSenderConfig
+                {
+                    TopicName = "topic",
+                    HostNames = ["host:9092"],
+                    Username = "user",
+                    Password = "pass",
+                }
+            );
 
         var result = builder.Build(Globals.GetContextWithMetadata(), _actionFailures, _sessionName);
 
@@ -325,7 +362,10 @@ public class PublisherBuilderTests
 
         builder.Configure(fakeConfig);
 
-        Assert.That(builder.Build(Globals.GetContextWithMetadata(), _actionFailures, _sessionName), Is.Null);
+        Assert.That(
+            builder.Build(Globals.GetContextWithMetadata(), _actionFailures, _sessionName),
+            Is.Null
+        );
         Assert.That(_actionFailures.Count, Is.GreaterThan(0));
     }
 
@@ -337,7 +377,11 @@ public class PublisherBuilderTests
             .AtStage(1)
             .Configure(new RabbitMqSenderConfig { Host = "https://test.com" });
 
-        var publisher = builder.Build(Globals.GetContextWithMetadata(), _actionFailures, "SessionName");
+        var publisher = builder.Build(
+            Globals.GetContextWithMetadata(),
+            _actionFailures,
+            "SessionName"
+        );
 
         Assert.That(publisher, Is.Not.Null);
         Assert.That(publisher!.Name, Is.EqualTo("TestPublisher"));
@@ -346,10 +390,13 @@ public class PublisherBuilderTests
     [Test]
     public void Build_WithoutSender_ThrowsInvalidOperationException()
     {
-        var builder = new PublisherBuilder()
-            .Named("TestPublisher");
+        var builder = new PublisherBuilder().Named("TestPublisher");
 
-        var result = builder.Build(Globals.GetContextWithMetadata(), _actionFailures, "SessionName");
+        var result = builder.Build(
+            Globals.GetContextWithMetadata(),
+            _actionFailures,
+            "SessionName"
+        );
 
         Assert.That(result, Is.Null);
         Assert.That(_actionFailures.Count, Is.GreaterThan(0));
@@ -360,7 +407,9 @@ public class PublisherBuilderTests
     {
         var builder = new PublisherBuilder();
 
-        Assert.Throws<InvalidOperationException>(() => builder.UpdateConfiguration(new { Host = "rabbit.local" }));
+        Assert.Throws<InvalidOperationException>(() =>
+            builder.UpdateConfiguration(new { Host = "rabbit.local" })
+        );
     }
 
     [Test]
@@ -392,30 +441,56 @@ public class PublisherBuilderTests
     {
         yield return new TestCaseData(new RabbitMqSenderConfig()).SetName("RabbitMqSender");
 
-        yield return new TestCaseData(new KafkaTopicSenderConfig
-                { TopicName = "Test", HostNames = ["Test"], Username = "Test", Password = "Test" })
-            .SetName("KafkaTopicSender");
+        yield return new TestCaseData(
+            new KafkaTopicSenderConfig
+            {
+                TopicName = "Test",
+                HostNames = ["Test"],
+                Username = "Test",
+                Password = "Test",
+            }
+        ).SetName("KafkaTopicSender");
 
-        yield return new TestCaseData(new SftpSenderConfig
-                { Hostname = "Test", Port = 123, Username = "Test", Password = "Test", Path = "Test" })
-            .SetName("SftpSender");
+        yield return new TestCaseData(
+            new SftpSenderConfig
+            {
+                Hostname = "Test",
+                Port = 123,
+                Username = "Test",
+                Password = "Test",
+                Path = "Test",
+            }
+        ).SetName("SftpSender");
 
-        yield return new TestCaseData(new SocketSenderConfig
-        {
-            Port = 100, Host = "Test", SocketType = SocketType.Stream, BufferSize = 10, ProtocolType = ProtocolType.IP
-        }).SetName("SocketSender");
+        yield return new TestCaseData(
+            new SocketSenderConfig
+            {
+                Port = 100,
+                Host = "Test",
+                SocketType = SocketType.Stream,
+                BufferSize = 10,
+                ProtocolType = ProtocolType.IP,
+            }
+        ).SetName("SocketSender");
 
         yield return new TestCaseData(new S3BucketSenderConfig()).SetName("S3BucketSender");
     }
 
     private static IEnumerable<TestCaseData> TestSendersWhichSupportChunkSending()
     {
-        yield return new TestCaseData(new ElasticSenderConfig
-                { Password = "Test", Username = "Test", Url = "http://localhost:8080", IndexName = "Test" })
-            .SetName("ElasticSender");
+        yield return new TestCaseData(
+            new ElasticSenderConfig
+            {
+                Password = "Test",
+                Username = "Test",
+                Url = "http://localhost:8080",
+                IndexName = "Test",
+            }
+        ).SetName("ElasticSender");
 
         yield return new TestCaseData(new MongoDbCollectionSenderConfig()).SetName(
-            "MongoDbCollectionSender");
+            "MongoDbCollectionSender"
+        );
 
         yield return new TestCaseData(new OracleSenderConfig()).SetName("OracleSender");
 
@@ -426,18 +501,21 @@ public class PublisherBuilderTests
 
     private static IEnumerable<TestCaseData> TestSendersWhichSupportAllSending()
     {
-        yield return new TestCaseData(new PostgreSqlSenderConfig
-                { TableName = "Test", ConnectionString = "Host=localhost;Port=100;Username=Test;Password=Test" })
-            .SetName("PostgreSqlSender");
+        yield return new TestCaseData(
+            new PostgreSqlSenderConfig
+            {
+                TableName = "Test",
+                ConnectionString = "Host=localhost;Port=100;Username=Test;Password=Test",
+            }
+        ).SetName("PostgreSqlSender");
     }
 
     [Test]
     [TestCaseSource(nameof(TestSendersWhichSupportSingleSending))]
     [TestCaseSource(nameof(TestSendersWhichSupportAllSending))]
-    public void
-        TestCreationOfSendersInPublisherBuilder_CreateSendersWhichSupportSingleSending_ShouldBuildWithSenderSuccessfully
-        (
-            ISenderConfig senderConfiguration)
+    public void TestCreationOfSendersInPublisherBuilder_CreateSendersWhichSupportSingleSending_ShouldBuildWithSenderSuccessfully(
+        ISenderConfig senderConfiguration
+    )
     {
         // Arrange
         var publisherBuilder = new PublisherBuilder();
@@ -446,7 +524,11 @@ public class PublisherBuilderTests
         var actionFailures = new List<ActionFailure>();
 
         // Act
-        var publisher = publisherBuilder.Build(Globals.GetContextWithMetadata(), actionFailures, "Test");
+        var publisher = publisherBuilder.Build(
+            Globals.GetContextWithMetadata(),
+            actionFailures,
+            "Test"
+        );
 
         // Extract sender and chunkSender fields safely
         var sender = GetFieldValue(publisher, "_sender");
@@ -460,19 +542,24 @@ public class PublisherBuilderTests
     [Test]
     [TestCaseSource(nameof(TestSendersWhichSupportChunkSending))]
     [TestCaseSource(nameof(TestSendersWhichSupportAllSending))]
-    public void
-        TestCreationOfSendersInPublisherBuilder_CreateSendersWhichSupportChunkSending_ShouldBuildWithChunkSenderSuccessfully
-        (
-            ISenderConfig senderConfiguration)
+    public void TestCreationOfSendersInPublisherBuilder_CreateSendersWhichSupportChunkSending_ShouldBuildWithChunkSenderSuccessfully(
+        ISenderConfig senderConfiguration
+    )
     {
         // Arrange
-        var publisherBuilder = new PublisherBuilder().WithChunks(new Chunks { ChunkSize = 1 })
-            .Configure(senderConfiguration).Named("Test");
+        var publisherBuilder = new PublisherBuilder()
+            .WithChunks(new Chunks { ChunkSize = 1 })
+            .Configure(senderConfiguration)
+            .Named("Test");
 
         var actionFailures = new List<ActionFailure>();
 
         // Act
-        var publisher = publisherBuilder.Build(Globals.GetContextWithMetadata(), actionFailures, "Test");
+        var publisher = publisherBuilder.Build(
+            Globals.GetContextWithMetadata(),
+            actionFailures,
+            "Test"
+        );
 
         // Extract sender and chunkSender fields safely
         var sender = GetFieldValue(publisher, "_sender");
@@ -486,13 +573,14 @@ public class PublisherBuilderTests
     [Test]
     [TestCaseSource(nameof(TestSendersWhichSupportChunkSending))]
     public void TestValidationOfChunks_ConfigureChunkableProtocolWithoutChunksField_ShouldNotBeValid(
-        ISenderConfig senderConfiguration)
+        ISenderConfig senderConfiguration
+    )
     {
         // Arrange
         var publisherBuilder = new PublisherBuilder();
         publisherBuilder.Configure(senderConfiguration);
 
-        // Act 
+        // Act
         var validationResults = ValidateBuilder(publisherBuilder);
 
         // Assert
@@ -502,14 +590,15 @@ public class PublisherBuilderTests
     [Test]
     [TestCaseSource(nameof(TestSendersWhichSupportSingleSending))]
     public void TestValidationOfChunks_ConfigureSingleProtocolWithChunksField_ShouldNotBeValid(
-        ISenderConfig senderConfiguration)
+        ISenderConfig senderConfiguration
+    )
     {
         // Arrange
         var publisherBuilder = new PublisherBuilder();
         publisherBuilder.WithChunks(new Chunks());
         publisherBuilder.Configure(senderConfiguration);
 
-        // Act 
+        // Act
         var validationResults = ValidateBuilder(publisherBuilder);
 
         // Assert
@@ -518,34 +607,33 @@ public class PublisherBuilderTests
 
     [Test]
     [TestCaseSource(nameof(TestSendersWhichSupportSingleSending))]
-    public void
-        TestValidationOfChunks_ConfigureValidConfigurationAccordingToIfTheProtocolNeedsChunksOrNot_ShouldBeValidOnSingleProtocols(
-            ISenderConfig senderConfiguration)
+    public void TestValidationOfChunks_ConfigureValidConfigurationAccordingToIfTheProtocolNeedsChunksOrNot_ShouldBeValidOnSingleProtocols(
+        ISenderConfig senderConfiguration
+    )
     {
         // Arrange
         var publisherBuilder = new PublisherBuilder();
         publisherBuilder.Configure(senderConfiguration);
 
-        // Act 
+        // Act
         var validationResults = ValidateBuilder(publisherBuilder);
 
         // Assert
         Assert.That(validationResults.Count(r => r.ErrorMessage!.Contains("Chunk")), Is.EqualTo(0));
     }
 
-
     [Test]
     [TestCaseSource(nameof(TestSendersWhichSupportChunkSending))]
-    public void
-        TestValidationOfChunks_ConfigureValidConfigurationAccordingToIfTheProtocolNeedsChunksOrNot_ShouldBeValidOnChunkProtocols(
-            ISenderConfig senderConfiguration)
+    public void TestValidationOfChunks_ConfigureValidConfigurationAccordingToIfTheProtocolNeedsChunksOrNot_ShouldBeValidOnChunkProtocols(
+        ISenderConfig senderConfiguration
+    )
     {
         // Arrange
         var publisherBuilder = new PublisherBuilder();
         publisherBuilder.WithChunks(new Chunks());
         publisherBuilder.Configure(senderConfiguration);
 
-        // Act 
+        // Act
         var validationResults = ValidateBuilder(publisherBuilder);
 
         // Assert
@@ -554,12 +642,11 @@ public class PublisherBuilderTests
 
     [Test]
     [TestCaseSource(nameof(TestSendersWhichSupportAllSending))]
-    public void
-        TestValidationOfChunks_ConfigureProtocolWhichSupportsSingleAndChunkModes_ShouldBeValidWithAndWithoutChunks(
-            ISenderConfig senderConfiguration)
+    public void TestValidationOfChunks_ConfigureProtocolWhichSupportsSingleAndChunkModes_ShouldBeValidWithAndWithoutChunks(
+        ISenderConfig senderConfiguration
+    )
     {
-        var withoutChunksBuilder = new PublisherBuilder()
-            .Configure(senderConfiguration);
+        var withoutChunksBuilder = new PublisherBuilder().Configure(senderConfiguration);
         var withChunksBuilder = new PublisherBuilder()
             .WithChunks(new Chunks())
             .Configure(senderConfiguration);
@@ -569,15 +656,25 @@ public class PublisherBuilderTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(withoutChunksResults.Count(result => result.ErrorMessage!.Contains("Chunk")), Is.EqualTo(0));
-            Assert.That(withChunksResults.Count(result => result.ErrorMessage!.Contains("Chunk")), Is.EqualTo(0));
+            Assert.That(
+                withoutChunksResults.Count(result => result.ErrorMessage!.Contains("Chunk")),
+                Is.EqualTo(0)
+            );
+            Assert.That(
+                withChunksResults.Count(result => result.ErrorMessage!.Contains("Chunk")),
+                Is.EqualTo(0)
+            );
         });
     }
 
     private static object? GetFieldValue(object? obj, string fieldName)
     {
-        var field = obj?.GetType()
-            .GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+        var field = obj
+            ?.GetType()
+            .GetField(
+                fieldName,
+                BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance
+            );
 
         return field?.GetValue(obj);
     }
@@ -589,5 +686,3 @@ public class PublisherBuilderTests
             : [];
     }
 }
-
-

@@ -12,7 +12,10 @@ public sealed class IterableSerializableDataIterator
     private readonly IEnumerable<Data<object>>? _iterableData;
     private readonly ISerializer? _serializer;
 
-    public IterableSerializableDataIterator(IEnumerable<Data<object>>? iterableData, ISerializer? serializer)
+    public IterableSerializableDataIterator(
+        IEnumerable<Data<object>>? iterableData,
+        ISerializer? serializer
+    )
     {
         IteratedData = new List<Data<object>>();
         _iterableData = iterableData;
@@ -52,22 +55,34 @@ public sealed class IterableSerializableDataIterator
     ///     and returning the serialized data
     /// </summary>
     /// <returns> The iterable enumerable with its items serialized </returns>
-    public void ApplyToAll<TData>(IEnumerable<TData>? iterator, Action<TData> methodToApply,
-        bool parallel)
+    public void ApplyToAll<TData>(
+        IEnumerable<TData>? iterator,
+        Action<TData> methodToApply,
+        bool parallel,
+        int? maxDegreeOfParallelism = null
+    )
     {
         iterator ??= IterateEnumerable().Cast<TData>();
         if (parallel)
         {
             try
             {
-                Parallel.ForEach(iterator, methodToApply);
+                var parallelOptions = new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = maxDegreeOfParallelism ?? -1,
+                };
+                Parallel.ForEach(iterator, parallelOptions, methodToApply);
             }
             catch (AggregateException aggregate)
             {
                 // Parallel.ForEach wraps worker exceptions in AggregateException.
                 // Surface a policy-driven StopActionException unwrapped so callers can catch it directly.
-                var stop = aggregate.Flatten().InnerExceptions.OfType<StopActionException>().FirstOrDefault();
-                if (stop != null) throw stop;
+                var stop = aggregate
+                    .Flatten()
+                    .InnerExceptions.OfType<StopActionException>()
+                    .FirstOrDefault();
+                if (stop != null)
+                    throw stop;
                 throw;
             }
         }
@@ -80,8 +95,15 @@ public sealed class IterableSerializableDataIterator
     /// Returns the data contained under the IteratedData list before it was serialized.
     /// </summary>
     /// <param name="indexToFetch"> The index of the data you wish to fetch </param>
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="IteratedData"/> is empty.</exception>
     public Data<object> GetDataBeforeSerialization(int indexToFetch)
-        => IteratedData[indexToFetch % IteratedData.Count];
+    {
+        if (IteratedData.Count == 0)
+            throw new InvalidOperationException(
+                "Cannot retrieve pre-serialization data: the iterator has not produced any data yet."
+            );
+        return IteratedData[indexToFetch % IteratedData.Count];
+    }
 
     private Data<object> Serialize(Data<object> item)
     {
@@ -91,7 +113,7 @@ public sealed class IterableSerializableDataIterator
         return new Data<object>
         {
             Body = _serializer.Serialize(item.Body),
-            MetaData = item.MetaData
+            MetaData = item.MetaData,
         };
     }
 }

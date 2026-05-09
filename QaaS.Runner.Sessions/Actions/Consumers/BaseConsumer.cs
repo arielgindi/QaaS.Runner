@@ -22,9 +22,18 @@ public abstract class BaseConsumer : StagedAction
     protected readonly TimeSpan? InitialTimeoutMs;
     protected RunningCommunicationData<object> RunningCommunicationData = default!;
 
-    protected BaseConsumer(string name, TimeSpan timeoutMs, TimeSpan? initialTimeOutMs, int stage, Policy? policies, DataFilter dataFilter,
-        SerializationType? serializationType, Type? deserializerSpecificType, ILogger logger) : base(name, stage,
-        policies, logger)
+    protected BaseConsumer(
+        string name,
+        TimeSpan timeoutMs,
+        TimeSpan? initialTimeOutMs,
+        int stage,
+        Policy? policies,
+        DataFilter dataFilter,
+        SerializationType? serializationType,
+        Type? deserializerSpecificType,
+        ILogger logger
+    )
+        : base(name, stage, policies, logger)
     {
         TimeoutMs = timeoutMs;
         InitialTimeoutMs = initialTimeOutMs;
@@ -39,7 +48,7 @@ public abstract class BaseConsumer : StagedAction
     /// </summary>
     /// <param name="actData">Object to store the consumed data under the Output list.</param>
     protected abstract void Consume(InternalCommunicationData<object> actData);
-    
+
     /// <summary>
     /// Should consume data initially with specialized timeout using configured Reader and save it to the actData.
     /// </summary>
@@ -58,30 +67,41 @@ public abstract class BaseConsumer : StagedAction
         var data = new InternalCommunicationData<object>
         {
             Output = [],
-            OutputSerializationType = GetCommunicationSerializationType()
+            OutputSerializationType = GetCommunicationSerializationType(),
         };
 
         Policies?.SetupChain();
         Logger.LogDebug(
             "Starting consumer {ActionName}. InitialTimeoutMs={InitialTimeoutMs}, TimeoutMs={TimeoutMs}, SerializationType={SerializationType}",
-            Name, InitialTimeoutMs?.TotalMilliseconds, TimeoutMs.TotalMilliseconds, SerializationType);
-        
+            Name,
+            InitialTimeoutMs?.TotalMilliseconds,
+            TimeoutMs.TotalMilliseconds,
+            SerializationType
+        );
+
         if (InitialConsume(data))
             Consume(data);
         TerminateConsumer();
-        
-        Logger.LogDebug("Finished consumer {ActionName}. CollectedOutputCount={OutputCount}",
-            Name, data.Output?.Count ?? 0);
+
+        Logger.LogDebug(
+            "Finished consumer {ActionName}. CollectedOutputCount={OutputCount}",
+            Name,
+            data.Output?.Count ?? 0
+        );
         return data;
     }
 
     /// <inheritdoc />
-    protected internal override void LogData(InternalCommunicationData<object> actData,
-        DetailedData<object> itemBeforeSerialization, InputOutputState? saveData = null)
+    protected internal override void LogData(
+        InternalCommunicationData<object> actData,
+        DetailedData<object> itemBeforeSerialization,
+        InputOutputState? saveData = null
+    )
     {
-        var readData = _deserializer != null
-            ? GetDeserializedData(itemBeforeSerialization).FilterData(DataFilter)
-            : itemBeforeSerialization.FilterData(DataFilter);
+        var readData =
+            _deserializer != null
+                ? GetDeserializedData(itemBeforeSerialization).FilterData(DataFilter)
+                : itemBeforeSerialization.FilterData(DataFilter);
 
         lock (actData.Output!)
             actData.Output!.Add(readData);
@@ -94,15 +114,19 @@ public abstract class BaseConsumer : StagedAction
     {
         return new DetailedData<object>
         {
-            Body = _deserializer!.Deserialize(readData.CastObjectData<byte[]>().Body, _deserializerSpecificType),
+            Body = _deserializer!.Deserialize(
+                readData.CastObjectData<byte[]>().Body,
+                _deserializerSpecificType
+            ),
             MetaData = readData.MetaData,
-            Timestamp = readData.Timestamp
+            Timestamp = readData.Timestamp,
         };
     }
 
+    internal override void ExportRunningCommunicationData(
+        InternalContext context,
+        string sessionName
+    ) => context.GetRunningSession(sessionName).Outputs!.Add(RunningCommunicationData);
 
-    internal override void ExportRunningCommunicationData(InternalContext context, string sessionName)
-        => context.GetRunningSession(sessionName).Outputs!.Add(RunningCommunicationData);
-    
     protected void TerminateConsumer() => RunningCommunicationData.Data.CompleteAdding();
 }

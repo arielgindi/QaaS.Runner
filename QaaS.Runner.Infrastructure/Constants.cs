@@ -17,6 +17,6 @@ public static class Constants
         "Sessions",
         "Assertions",
         "Links",
-        "MetaData"
+        "MetaData",
     ];
 }

@@ -7,7 +7,10 @@ namespace QaaS.Runner.Tests.TestObjects;
 
 public class TestAssertion : BaseAssertion<object>
 {
-    public override bool Assert(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+    public override bool Assert(
+        IImmutableList<SessionData> sessionDataList,
+        IImmutableList<DataSource> dataSourceList
+    )
     {
         return true;
     }

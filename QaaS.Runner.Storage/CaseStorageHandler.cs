@@ -14,7 +14,9 @@ public static class CaseStorageHandler
     /// </summary>
     public static string HandleCaseWithS3(S3Config config, string? caseName)
     {
-        return caseName == null ? config.Prefix : $"{config.Prefix}{caseName.Replace("/", "_").Replace("\\", "_")}/";
+        return caseName == null
+            ? config.Prefix
+            : $"{config.Prefix}{caseName.Replace("/", "_").Replace("\\", "_")}/";
     }
 
     /// <summary>
@@ -24,7 +26,6 @@ public static class CaseStorageHandler
     {
         return caseName == null
             ? config.Path!
-            : Path.Join(config.Path,
-                FileSystemExtensions.MakeValidDirectoryName(caseName));
+            : Path.Join(config.Path, FileSystemExtensions.MakeValidDirectoryName(caseName));
     }
 }

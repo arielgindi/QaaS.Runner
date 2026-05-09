@@ -1,4 +1,5 @@
 using System.Reflection;
+using Allure.Commons;
 using Autofac;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -7,12 +8,11 @@ using NUnit.Framework;
 using QaaS.Framework.Configurations.CustomExceptions;
 using QaaS.Framework.SDK;
 using QaaS.Framework.SDK.ContextObjects;
-using QaaS.Framework.SDK.Extensions;
 using QaaS.Framework.SDK.ExecutionObjects;
+using QaaS.Framework.SDK.Extensions;
 using QaaS.Framework.SDK.Session.SessionDataObjects;
 using QaaS.Framework.SDK.Session.SessionDataObjects.RunningSessionsObjects;
 using QaaS.Runner.WrappedExternals;
-using Allure.Commons;
 
 namespace QaaS.Runner.Tests.RunnerTests;
 
@@ -25,19 +25,25 @@ public class RunnerBehaviorTests
         Microsoft.Extensions.Logging.ILogger logger,
         Serilog.ILogger serilogLogger,
         bool emptyResults = false,
-        bool serveResults = false) : Runner(scope, executionBuilders, logger, serilogLogger, emptyResults, serveResults)
+        bool serveResults = false
+    ) : Runner(scope, executionBuilders, logger, serilogLogger, emptyResults, serveResults)
     {
         public void InvokeSetup() => base.Setup();
+
         public void InvokeTeardown() => base.Teardown();
+
         public List<Execution> InvokeBuildExecutions() => base.BuildExecutions();
-        public int InvokeStartExecutions(List<Execution> executions) => base.StartExecutions(executions);
+
+        public int InvokeStartExecutions(List<Execution> executions) =>
+            base.StartExecutions(executions);
     }
 
     private sealed class VariablesDisabledByOverrideRunner(
         ILifetimeScope scope,
         List<ExecutionBuilder> executionBuilders,
         Microsoft.Extensions.Logging.ILogger logger,
-        Serilog.ILogger serilogLogger) : Runner(scope, executionBuilders, logger, serilogLogger)
+        Serilog.ILogger serilogLogger
+    ) : Runner(scope, executionBuilders, logger, serilogLogger)
     {
         public override bool LoadVariablesIntoGlobalDict { get; set; } = false;
 
@@ -48,7 +54,8 @@ public class RunnerBehaviorTests
         ILifetimeScope scope,
         List<ExecutionBuilder> executionBuilders,
         Microsoft.Extensions.Logging.ILogger logger,
-        Serilog.ILogger serilogLogger) : Runner(scope, executionBuilders, logger, serilogLogger)
+        Serilog.ILogger serilogLogger
+    ) : Runner(scope, executionBuilders, logger, serilogLogger)
     {
         public void InvokeBaseExitProcess(int exitCode) => base.ExitProcess(exitCode);
     }
@@ -57,7 +64,8 @@ public class RunnerBehaviorTests
         ILifetimeScope scope,
         List<ExecutionBuilder> executionBuilders,
         Microsoft.Extensions.Logging.ILogger logger,
-        Serilog.ILogger serilogLogger) : Runner(scope, executionBuilders, logger, serilogLogger)
+        Serilog.ILogger serilogLogger
+    ) : Runner(scope, executionBuilders, logger, serilogLogger)
     {
         public List<string> Calls { get; } = [];
         public int? ExitCode { get; private set; }
@@ -89,7 +97,8 @@ public class RunnerBehaviorTests
         ILifetimeScope scope,
         List<ExecutionBuilder> executionBuilders,
         Microsoft.Extensions.Logging.ILogger logger,
-        Serilog.ILogger serilogLogger) : Runner(scope, executionBuilders, logger, serilogLogger)
+        Serilog.ILogger serilogLogger
+    ) : Runner(scope, executionBuilders, logger, serilogLogger)
     {
         public List<string> Calls { get; } = [];
         public int? ExitCode { get; private set; }
@@ -129,7 +138,8 @@ public class RunnerBehaviorTests
         List<ExecutionBuilder> executionBuilders,
         Microsoft.Extensions.Logging.ILogger logger,
         Serilog.ILogger serilogLogger,
-        bool serveResults) : Runner(scope, executionBuilders, logger, serilogLogger, serveResults: serveResults)
+        bool serveResults
+    ) : Runner(scope, executionBuilders, logger, serilogLogger, serveResults: serveResults)
     {
         public bool ServedResults { get; private set; }
 
@@ -152,8 +162,10 @@ public class RunnerBehaviorTests
             CleanCalled = true;
         }
 
-        public override void ServeTestResults(string allureRunnablePath = DefaultAllureRunnablePath,
-            string? resultsDirectoryName = null)
+        public override void ServeTestResults(
+            string allureRunnablePath = DefaultAllureRunnablePath,
+            string? resultsDirectoryName = null
+        )
         {
             ServeCalled = true;
             ServedResultsDirectoryName = resultsDirectoryName;
@@ -164,7 +176,8 @@ public class RunnerBehaviorTests
         ILifetimeScope scope,
         List<ExecutionBuilder> executionBuilders,
         Microsoft.Extensions.Logging.ILogger logger,
-        Serilog.ILogger serilogLogger) : Runner(scope, executionBuilders, logger, serilogLogger)
+        Serilog.ILogger serilogLogger
+    ) : Runner(scope, executionBuilders, logger, serilogLogger)
     {
         public List<string> Calls { get; } = [];
         public bool Disposed { get; private set; }
@@ -191,7 +204,8 @@ public class RunnerBehaviorTests
         ILifetimeScope scope,
         List<ExecutionBuilder> executionBuilders,
         Microsoft.Extensions.Logging.ILogger logger,
-        Serilog.ILogger serilogLogger) : Runner(scope, executionBuilders, logger, serilogLogger)
+        Serilog.ILogger serilogLogger
+    ) : Runner(scope, executionBuilders, logger, serilogLogger)
     {
         public List<string> Calls { get; } = [];
         public bool Disposed { get; private set; }
@@ -220,7 +234,8 @@ public class RunnerBehaviorTests
         Microsoft.Extensions.Logging.ILogger logger,
         Serilog.ILogger serilogLogger,
         bool emptyResults = false,
-        bool serveResults = false) : Runner(scope, executionBuilders, logger, serilogLogger, emptyResults, serveResults)
+        bool serveResults = false
+    ) : Runner(scope, executionBuilders, logger, serilogLogger, emptyResults, serveResults)
     {
         public List<string> Calls { get; } = [];
 
@@ -252,7 +267,8 @@ public class RunnerBehaviorTests
         List<ExecutionBuilder> executionBuilders,
         Microsoft.Extensions.Logging.ILogger logger,
         Serilog.ILogger serilogLogger,
-        List<Execution> executions) : Runner(scope, executionBuilders, logger, serilogLogger)
+        List<Execution> executions
+    ) : Runner(scope, executionBuilders, logger, serilogLogger)
     {
         private readonly List<Execution> _executions = executions;
 
@@ -275,7 +291,8 @@ public class RunnerBehaviorTests
         Exception? lifecycleException = null,
         Exception? disposeExecutionsException = null,
         Exception? teardownException = null,
-        Exception? disposeException = null) : Runner(scope, executionBuilders, logger, serilogLogger)
+        Exception? disposeException = null
+    ) : Runner(scope, executionBuilders, logger, serilogLogger)
     {
         private readonly Exception? _lifecycleException = lifecycleException;
         private readonly Exception? _disposeExecutionsException = disposeExecutionsException;
@@ -341,7 +358,8 @@ public class RunnerBehaviorTests
         Microsoft.Extensions.Logging.ILogger logger,
         Serilog.ILogger serilogLogger,
         List<Execution> executions,
-        Exception startFailure) : Runner(scope, executionBuilders, logger, serilogLogger)
+        Exception startFailure
+    ) : Runner(scope, executionBuilders, logger, serilogLogger)
     {
         private readonly List<Execution> _executions = executions;
         private readonly Exception _startFailure = startFailure;
@@ -385,7 +403,13 @@ public class RunnerBehaviorTests
     {
         var markerFile = CreateAllureMarkerFile();
         using var scope = BuildScope();
-        var runner = new ExposedRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object, emptyResults: true);
+        var runner = new ExposedRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object,
+            emptyResults: true
+        );
 
         runner.InvokeSetup();
 
@@ -397,7 +421,13 @@ public class RunnerBehaviorTests
     {
         var markerFile = CreateAllureMarkerFile();
         using var scope = BuildScope();
-        var runner = new ExposedRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object, emptyResults: false);
+        var runner = new ExposedRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object,
+            emptyResults: false
+        );
 
         runner.InvokeSetup();
 
@@ -422,7 +452,12 @@ public class RunnerBehaviorTests
     public void Teardown_WithNonDisposableLogger_DoesNotThrow()
     {
         using var scope = BuildScope();
-        var runner = new ExposedRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new ExposedRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
 
         Assert.DoesNotThrow(() => runner.InvokeTeardown());
     }
@@ -445,7 +480,13 @@ public class RunnerBehaviorTests
     public void Teardown_WithServeResultsEnabled_InvokesServeResultsHook()
     {
         using var scope = BuildScope();
-        var runner = new ServeResultsRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object, serveResults: true);
+        var runner = new ServeResultsRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object,
+            serveResults: true
+        );
 
         runner.InvokeTeardown();
 
@@ -457,8 +498,13 @@ public class RunnerBehaviorTests
     {
         var allureWrapper = new AllureSpyWrapper();
         using var scope = BuildScope(allureWrapper);
-        var runner = new ExposedRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object,
-            serveResults: true);
+        var runner = new ExposedRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object,
+            serveResults: true
+        );
         runner.WithServeResultsFolder("allure-report");
 
         runner.InvokeTeardown();
@@ -474,7 +520,13 @@ public class RunnerBehaviorTests
     public void Teardown_WithServeResultsDisabled_DoesNotInvokeServeResultsHook()
     {
         using var scope = BuildScope();
-        var runner = new ServeResultsRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object, serveResults: false);
+        var runner = new ServeResultsRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object,
+            serveResults: false
+        );
 
         runner.InvokeTeardown();
 
@@ -485,7 +537,12 @@ public class RunnerBehaviorTests
     public void StartExecutions_ReturnsSumOfExecutionExitCodes()
     {
         using var scope = BuildScope();
-        var runner = new ExposedRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new ExposedRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
         var context = CreateContext();
 
         var firstExecution = new Mock<Execution>(ExecutionType.Run, context);
@@ -506,18 +563,28 @@ public class RunnerBehaviorTests
         var builders = new List<ExecutionBuilder>
         {
             CreateTemplateExecutionBuilder("case-a"),
-            CreateTemplateExecutionBuilder("case-b")
+            CreateTemplateExecutionBuilder("case-b"),
         };
 
-        var runner = new ExposedRunner(scope, builders, Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new ExposedRunner(
+            scope,
+            builders,
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
 
         var executions = runner.InvokeBuildExecutions();
 
         Assert.That(executions, Has.Count.EqualTo(2));
 
-        var executionTypeProperty = typeof(Execution).GetProperty("Type", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        Assert.That(executions.Select(execution => executionTypeProperty!.GetValue(execution)),
-            Is.All.EqualTo(ExecutionType.Template));
+        var executionTypeProperty = typeof(Execution).GetProperty(
+            "Type",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+        );
+        Assert.That(
+            executions.Select(execution => executionTypeProperty!.GetValue(execution)),
+            Is.All.EqualTo(ExecutionType.Template)
+        );
     }
 
     [Test]
@@ -528,14 +595,20 @@ public class RunnerBehaviorTests
         var builders = new List<ExecutionBuilder>
         {
             CreateTemplateExecutionBuilder("case-1"),
-            CreateTemplateExecutionBuilder("case-2")
+            CreateTemplateExecutionBuilder("case-2"),
         };
 
         var runner = new ExposedRunner(scope, builders, logger, new Mock<Serilog.ILogger>().Object);
         runner.InvokeBuildExecutions();
 
-        var globalDictField = typeof(ExecutionBuilder).GetField("_globalDict", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var configuredLoggerField = typeof(ExecutionBuilder).GetField("_configuredLogger", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var globalDictField = typeof(ExecutionBuilder).GetField(
+            "_globalDict",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
+        var configuredLoggerField = typeof(ExecutionBuilder).GetField(
+            "_configuredLogger",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
 
         var firstGlobalDict = globalDictField.GetValue(builders[0]);
         var secondGlobalDict = globalDictField.GetValue(builders[1]);
@@ -552,22 +625,32 @@ public class RunnerBehaviorTests
     {
         using var scope = BuildScope();
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["variables:rabbitmq:host"] = "localhost",
-                ["variables:rabbitmq:port"] = "5672"
-            })
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["variables:rabbitmq:host"] = "localhost",
+                    ["variables:rabbitmq:port"] = "5672",
+                }
+            )
             .Build();
         var builders = new List<ExecutionBuilder>
         {
             CreateTemplateExecutionBuilder("case-1", configuration),
-            CreateTemplateExecutionBuilder("case-2", configuration)
+            CreateTemplateExecutionBuilder("case-2", configuration),
         };
 
-        var runner = new ExposedRunner(scope, builders, Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new ExposedRunner(
+            scope,
+            builders,
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
         runner.InvokeBuildExecutions();
 
-        var globalDictField = typeof(ExecutionBuilder).GetField("_globalDict", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var globalDictField = typeof(ExecutionBuilder).GetField(
+            "_globalDict",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
         var sharedGlobalDict = (Dictionary<string, object?>)globalDictField.GetValue(builders[0])!;
         var variables = (Dictionary<string, object?>)sharedGlobalDict["Variables"]!;
         var rabbitMq = (Dictionary<string, object?>)variables["rabbitmq"]!;
@@ -585,21 +668,31 @@ public class RunnerBehaviorTests
     {
         using var scope = BuildScope();
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["variables:rabbitmq:hosts:0"] = "primary",
-                ["variables:rabbitmq:hosts:1"] = "secondary"
-            })
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["variables:rabbitmq:hosts:0"] = "primary",
+                    ["variables:rabbitmq:hosts:1"] = "secondary",
+                }
+            )
             .Build();
         var builders = new List<ExecutionBuilder>
         {
-            CreateTemplateExecutionBuilder("case-1", configuration)
+            CreateTemplateExecutionBuilder("case-1", configuration),
         };
 
-        var runner = new ExposedRunner(scope, builders, Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new ExposedRunner(
+            scope,
+            builders,
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
         runner.InvokeBuildExecutions();
 
-        var globalDictField = typeof(ExecutionBuilder).GetField("_globalDict", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var globalDictField = typeof(ExecutionBuilder).GetField(
+            "_globalDict",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
         var sharedGlobalDict = (Dictionary<string, object?>)globalDictField.GetValue(builders[0])!;
         var variables = (Dictionary<string, object?>)sharedGlobalDict["Variables"]!;
         var rabbitMq = (Dictionary<string, object?>)variables["rabbitmq"]!;
@@ -619,20 +712,27 @@ public class RunnerBehaviorTests
     {
         using var scope = BuildScope();
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["variables:rabbitmq:host"] = "localhost"
-            })
+            .AddInMemoryCollection(
+                new Dictionary<string, string?> { ["variables:rabbitmq:host"] = "localhost" }
+            )
             .Build();
         var builders = new List<ExecutionBuilder>
         {
-            CreateTemplateExecutionBuilder("case-1", configuration)
+            CreateTemplateExecutionBuilder("case-1", configuration),
         };
 
-        var runner = new VariablesDisabledByOverrideRunner(scope, builders, Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new VariablesDisabledByOverrideRunner(
+            scope,
+            builders,
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
         runner.InvokeBuildExecutions();
 
-        var globalDictField = typeof(ExecutionBuilder).GetField("_globalDict", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var globalDictField = typeof(ExecutionBuilder).GetField(
+            "_globalDict",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
         var sharedGlobalDict = (Dictionary<string, object?>)globalDictField.GetValue(builders[0])!;
 
         Assert.That(sharedGlobalDict, Does.Not.ContainKey("Variables"));
@@ -642,7 +742,12 @@ public class RunnerBehaviorTests
     public void StartExecutions_WithNoExecutions_ReturnsZero()
     {
         using var scope = BuildScope();
-        var runner = new ExposedRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new ExposedRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
 
         var result = runner.InvokeStartExecutions([]);
 
@@ -653,11 +758,19 @@ public class RunnerBehaviorTests
     public void Run_InvokesLifecycleInOrder_AndPassesExitCode()
     {
         using var scope = BuildScope();
-        var runner = new RunLifecycleRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new RunLifecycleRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
 
         runner.Run();
 
-        Assert.That(runner.Calls, Is.EqualTo(new[] { "setup", "build", "start", "teardown", "exit" }));
+        Assert.That(
+            runner.Calls,
+            Is.EqualTo(new[] { "setup", "build", "start", "teardown", "exit" })
+        );
         Assert.That(runner.ExitCode, Is.EqualTo(7));
     }
 
@@ -665,14 +778,22 @@ public class RunnerBehaviorTests
     public void Run_WhenProcessExitIsDisabled_SetsProcessExitCodeWithoutCallingExit()
     {
         using var scope = BuildScope();
-        var runner = new NonExitingRunLifecycleRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object)
+        var runner = new NonExitingRunLifecycleRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        )
         {
-            ExitProcessOnCompletion = false
+            ExitProcessOnCompletion = false,
         };
 
         runner.Run();
 
-        Assert.That(runner.Calls, Is.EqualTo(new[] { "setup", "build", "start", "teardown", "set-exit-code" }));
+        Assert.That(
+            runner.Calls,
+            Is.EqualTo(new[] { "setup", "build", "start", "teardown", "set-exit-code" })
+        );
         Assert.That(runner.ProcessExitCode, Is.EqualTo(5));
         Assert.That(runner.ExitCode, Is.Null);
         Assert.That(runner.LastExitCode, Is.EqualTo(5));
@@ -682,7 +803,12 @@ public class RunnerBehaviorTests
     public void RunAndGetExitCode_ReturnsExitCodeWithoutCallingProcessExitHooks()
     {
         using var scope = BuildScope();
-        var runner = new NonExitingRunLifecycleRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new NonExitingRunLifecycleRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
 
         var exitCode = runner.RunAndGetExitCode();
 
@@ -699,7 +825,12 @@ public class RunnerBehaviorTests
         using var scope = BuildScope();
         var serilogLogger = new Mock<Serilog.ILogger>();
         var disposableLogger = serilogLogger.As<IDisposable>();
-        var runner = Bootstrap.CreateRunner<BootstrapHandledRunner>(scope, [], Globals.Logger, serilogLogger.Object);
+        var runner = Bootstrap.CreateRunner<BootstrapHandledRunner>(
+            scope,
+            [],
+            Globals.Logger,
+            serilogLogger.Object
+        );
         runner.WithBootstrapHandledExitCode(12);
 
         var exitCode = runner.RunAndGetExitCode();
@@ -719,9 +850,13 @@ public class RunnerBehaviorTests
         using var scope = BuildScope();
         var serilogLogger = new Mock<Serilog.ILogger>();
         var disposableLogger = serilogLogger.As<IDisposable>();
-        var runner = Bootstrap.CreateRunner<BootstrapHandledRunner>(scope, [], Globals.Logger, serilogLogger.Object);
-        runner.WithSerilogLoggerDisposal(false)
-            .WithBootstrapHandledExitCode(2);
+        var runner = Bootstrap.CreateRunner<BootstrapHandledRunner>(
+            scope,
+            [],
+            Globals.Logger,
+            serilogLogger.Object
+        );
+        runner.WithSerilogLoggerDisposal(false).WithBootstrapHandledExitCode(2);
 
         var exitCode = runner.RunAndGetExitCode();
 
@@ -733,7 +868,12 @@ public class RunnerBehaviorTests
     public void ExitProcess_UsesProcessExitHandler()
     {
         using var scope = BuildScope();
-        var runner = new BaseExitRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new BaseExitRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
         var originalExitHandler = Runner.ProcessExitHandler;
         int? capturedExitCode = null;
 
@@ -755,7 +895,12 @@ public class RunnerBehaviorTests
     public void Run_WhenBuildExecutionsThrows_StillRunsTeardownAndDispose()
     {
         using var scope = BuildScope();
-        var runner = new FailingBuildRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new FailingBuildRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
 
         Assert.Throws<InvalidOperationException>(() => runner.Run());
 
@@ -768,7 +913,12 @@ public class RunnerBehaviorTests
     public void RunAndGetExitCode_WhenBuildExecutionsThrows_RethrowsLifecycleFailure()
     {
         using var scope = BuildScope();
-        var runner = new FailingBuildRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new FailingBuildRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
 
         Assert.Throws<InvalidOperationException>(() => runner.RunAndGetExitCode());
     }
@@ -778,25 +928,37 @@ public class RunnerBehaviorTests
     {
         using var scope = BuildScope();
         var logger = new Mock<Microsoft.Extensions.Logging.ILogger>();
-        var runner = new InvalidConfigurationBuildRunner(scope, [], logger.Object, new Mock<Serilog.ILogger>().Object);
+        var runner = new InvalidConfigurationBuildRunner(
+            scope,
+            [],
+            logger.Object,
+            new Mock<Serilog.ILogger>().Object
+        );
 
         var exitCode = runner.RunAndGetExitCode();
 
         Assert.Multiple(() =>
         {
             Assert.That(exitCode, Is.EqualTo(1));
-            Assert.That(runner.Calls, Is.EqualTo(new[] { "setup", "build", "teardown", "dispose" }));
+            Assert.That(
+                runner.Calls,
+                Is.EqualTo(new[] { "setup", "build", "teardown", "dispose" })
+            );
             Assert.That(runner.Disposed, Is.True);
             Assert.That(runner.LastExitCode, Is.EqualTo(1));
         });
 
-        logger.Verify(log => log.Log(
-                It.Is<LogLevel>(level => level == LogLevel.Error),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((_, _) => true),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Never);
+        logger.Verify(
+            log =>
+                log.Log(
+                    It.Is<LogLevel>(level => level == LogLevel.Error),
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((_, _) => true),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Never
+        );
     }
 
     [Test]
@@ -806,8 +968,13 @@ public class RunnerBehaviorTests
         var context = CreateContext();
         var firstExecution = new Mock<Execution>(ExecutionType.Run, context);
         var secondExecution = new Mock<Execution>(ExecutionType.Run, context);
-        var runner = new PrebuiltExecutionRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object,
-            [firstExecution.Object, secondExecution.Object]);
+        var runner = new PrebuiltExecutionRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object,
+            [firstExecution.Object, secondExecution.Object]
+        );
 
         var exitCode = runner.RunAndGetExitCode();
 
@@ -823,15 +990,26 @@ public class RunnerBehaviorTests
         var context = CreateContext();
         var execution = new Mock<Execution>(ExecutionType.Run, context);
         var startFailure = new InvalidOperationException("start failed");
-        var runner = new FailingStartRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object,
-            [execution.Object], startFailure);
+        var runner = new FailingStartRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object,
+            [execution.Object],
+            startFailure
+        );
 
         var exception = Assert.Throws<InvalidOperationException>(() => runner.RunAndGetExitCode());
 
         Assert.Multiple(() =>
         {
             Assert.That(exception, Is.SameAs(startFailure));
-            Assert.That(runner.Calls, Is.EqualTo(new[] { "setup", "build", "start", "dispose-executions", "teardown", "dispose" }));
+            Assert.That(
+                runner.Calls,
+                Is.EqualTo(
+                    new[] { "setup", "build", "start", "dispose-executions", "teardown", "dispose" }
+                )
+            );
             Assert.That(runner.LastExitCode, Is.Null);
         });
         execution.Verify(currentExecution => currentExecution.Dispose(), Times.Once);
@@ -842,15 +1020,25 @@ public class RunnerBehaviorTests
     {
         using var scope = BuildScope();
         var teardownFailure = new InvalidOperationException("teardown failed");
-        var runner = new CleanupFailureRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object,
-            teardownException: teardownFailure);
+        var runner = new CleanupFailureRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object,
+            teardownException: teardownFailure
+        );
 
         var exception = Assert.Throws<InvalidOperationException>(() => runner.RunAndGetExitCode());
 
         Assert.Multiple(() =>
         {
             Assert.That(exception, Is.SameAs(teardownFailure));
-            Assert.That(runner.Calls, Is.EqualTo(new[] { "setup", "build", "start", "dispose-executions", "teardown", "dispose" }));
+            Assert.That(
+                runner.Calls,
+                Is.EqualTo(
+                    new[] { "setup", "build", "start", "dispose-executions", "teardown", "dispose" }
+                )
+            );
             Assert.That(runner.LastExitCode, Is.EqualTo(0));
         });
     }
@@ -862,17 +1050,28 @@ public class RunnerBehaviorTests
         var lifecycleFailure = new InvalidOperationException("build failed");
         var teardownFailure = new InvalidOperationException("teardown failed");
         var disposeFailure = new InvalidOperationException("dispose failed");
-        var runner = new CleanupFailureRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object,
+        var runner = new CleanupFailureRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object,
             lifecycleException: lifecycleFailure,
             teardownException: teardownFailure,
-            disposeException: disposeFailure);
+            disposeException: disposeFailure
+        );
 
         var exception = Assert.Throws<AggregateException>(() => runner.RunAndGetExitCode());
 
         Assert.Multiple(() =>
         {
-            Assert.That(exception!.InnerExceptions, Is.EqualTo(new[] { lifecycleFailure, teardownFailure, disposeFailure }));
-            Assert.That(runner.Calls, Is.EqualTo(new[] { "setup", "build", "dispose-executions", "teardown", "dispose" }));
+            Assert.That(
+                exception!.InnerExceptions,
+                Is.EqualTo(new[] { lifecycleFailure, teardownFailure, disposeFailure })
+            );
+            Assert.That(
+                runner.Calls,
+                Is.EqualTo(new[] { "setup", "build", "dispose-executions", "teardown", "dispose" })
+            );
             Assert.That(runner.LastExitCode, Is.Null);
         });
     }
@@ -883,16 +1082,29 @@ public class RunnerBehaviorTests
         using var scope = BuildScope();
         var disposeExecutionsFailure = new InvalidOperationException("dispose-executions failed");
         var teardownFailure = new InvalidOperationException("teardown failed");
-        var runner = new CleanupFailureRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object,
+        var runner = new CleanupFailureRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object,
             disposeExecutionsException: disposeExecutionsFailure,
-            teardownException: teardownFailure);
+            teardownException: teardownFailure
+        );
 
         var exception = Assert.Throws<AggregateException>(() => runner.RunAndGetExitCode());
 
         Assert.Multiple(() =>
         {
-            Assert.That(exception!.InnerExceptions, Is.EqualTo(new[] { disposeExecutionsFailure, teardownFailure }));
-            Assert.That(runner.Calls, Is.EqualTo(new[] { "setup", "build", "start", "dispose-executions", "teardown", "dispose" }));
+            Assert.That(
+                exception!.InnerExceptions,
+                Is.EqualTo(new[] { disposeExecutionsFailure, teardownFailure })
+            );
+            Assert.That(
+                runner.Calls,
+                Is.EqualTo(
+                    new[] { "setup", "build", "start", "dispose-executions", "teardown", "dispose" }
+                )
+            );
             Assert.That(runner.LastExitCode, Is.EqualTo(0));
         });
     }
@@ -901,7 +1113,12 @@ public class RunnerBehaviorTests
     public void Dispose_WhenCalledTwice_DisposesScopeOnlyOnce()
     {
         using var scope = BuildScope();
-        var runner = new ExposedRunner(scope, [], Globals.Logger, new Mock<Serilog.ILogger>().Object);
+        var runner = new ExposedRunner(
+            scope,
+            [],
+            Globals.Logger,
+            new Mock<Serilog.ILogger>().Object
+        );
 
         Assert.DoesNotThrow(() =>
         {
@@ -934,7 +1151,10 @@ public class RunnerBehaviorTests
         return markerFile;
     }
 
-    private static ExecutionBuilder CreateTemplateExecutionBuilder(string caseName, IConfiguration? rootConfiguration = null)
+    private static ExecutionBuilder CreateTemplateExecutionBuilder(
+        string caseName,
+        IConfiguration? rootConfiguration = null
+    )
     {
         var context = new InternalContext
         {
@@ -942,22 +1162,19 @@ public class RunnerBehaviorTests
             CaseName = caseName,
             ExecutionId = $"exec-{caseName}",
             RootConfiguration = rootConfiguration ?? new ConfigurationBuilder().Build(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
         };
-        context.InsertValueIntoGlobalDictionary(context.GetMetaDataPath(), new MetaDataConfig
-        {
-            Team = "Smoke",
-            System = "QaaS"
-        });
+        context.InsertValueIntoGlobalDictionary(
+            context.GetMetaDataPath(),
+            new MetaDataConfig { Team = "Smoke", System = "QaaS" }
+        );
 
         return new ExecutionBuilder(context, ExecutionType.Template, null, null, null, null)
             .SetExecutionId($"exec-{caseName}")
             .SetCase(caseName)
-            .WithMetadata(new MetaDataConfig
-            {
-                Team = "Smoke",
-                System = "QaaS"
-            });
+            .WithMetadata(new MetaDataConfig { Team = "Smoke", System = "QaaS" });
     }
 
     private static InternalContext CreateContext()
@@ -968,13 +1185,14 @@ public class RunnerBehaviorTests
             CaseName = "case",
             ExecutionId = "id",
             RootConfiguration = new ConfigurationBuilder().Build(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
         };
-        context.InsertValueIntoGlobalDictionary(context.GetMetaDataPath(), new MetaDataConfig
-        {
-            Team = "Smoke",
-            System = "QaaS"
-        });
+        context.InsertValueIntoGlobalDictionary(
+            context.GetMetaDataPath(),
+            new MetaDataConfig { Team = "Smoke", System = "QaaS" }
+        );
         return context;
     }
 }

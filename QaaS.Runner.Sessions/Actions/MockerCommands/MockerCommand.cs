@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Diagnostics;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using MoreLinq.Extensions;
 using QaaS.Framework.SDK.ConfigurationObjects;
 using QaaS.Framework.SDK.ContextObjects;
@@ -11,8 +13,6 @@ using Qaas.Mocker.CommunicationObjects.ConfigurationObjects.Ping;
 using QaaS.Runner.Sessions.ConfigurationObjects;
 using QaaS.Runner.Sessions.Extensions;
 using StackExchange.Redis;
-using System.Diagnostics;
-using System.Text.Json;
 using CommunicationInputOutputState = QaaS.Framework.SDK.ConfigurationObjects.InputOutputState;
 
 namespace QaaS.Runner.Sessions.Actions.MockerCommands;
@@ -45,10 +45,21 @@ public abstract class MockerCommand : StagedAction
     private RunningCommunicationData<object> _sentRunningCommunicationData = default!;
     private IList<string> _serverInstanceNames;
 
-    protected MockerCommand(string name, int stage, object commandConfig, RedisConfig redisConfig, string serverName,
-        int requestDurationMs, int requestRetries, ILogger logger) : base(name, stage, null, logger)
+    protected MockerCommand(
+        string name,
+        int stage,
+        object commandConfig,
+        RedisConfig redisConfig,
+        string serverName,
+        int requestDurationMs,
+        int requestRetries,
+        ILogger logger
+    )
+        : base(name, stage, null, logger)
     {
-        _redisConnection = ConnectionMultiplexer.Connect(redisConfig.CreateRedisConfigurationOptions());
+        _redisConnection = ConnectionMultiplexer.Connect(
+            redisConfig.CreateRedisConfigurationOptions()
+        );
         _redisHost = redisConfig.Host!;
         _redisSubscriber = _redisConnection.GetSubscriber();
         RedisDatabase = _redisConnection.GetDatabase(redisConfig.RedisDataBase);
@@ -66,7 +77,11 @@ public abstract class MockerCommand : StagedAction
 
         _receivedRunningCommunicationData = new RunningCommunicationData<object>();
 
-        Logger.LogDebug("Initializing Mocker Command {Name} of type {MockerCommandType}", Name, GetType());
+        Logger.LogDebug(
+            "Initializing Mocker Command {Name} of type {MockerCommandType}",
+            Name,
+            GetType()
+        );
     }
 
     /// <summary>
@@ -97,14 +112,23 @@ public abstract class MockerCommand : StagedAction
         {
             Logger.LogDebug(
                 "No mocker instances of {ServerName} found in redis server {RedisServer} and database {RedisDataBase}",
-                ServerName, _redisHost, RedisDatabase.Database);
+                ServerName,
+                _redisHost,
+                RedisDatabase.Database
+            );
             throw new ArgumentException($"No mocker server instances found for '{ServerName}'");
         }
 
-        Logger.LogInformation("Found {ServerInstances} instances for server {ServerName}", serverInstanceNames.Count,
-            ServerName);
-        Logger.LogDebug("Discovered mocker instances for server {ServerName}: {ServerInstances}",
-            ServerName, string.Join(", ", serverInstanceNames));
+        Logger.LogInformation(
+            "Found {ServerInstances} instances for server {ServerName}",
+            serverInstanceNames.Count,
+            ServerName
+        );
+        Logger.LogDebug(
+            "Discovered mocker instances for server {ServerName}: {ServerInstances}",
+            ServerName,
+            string.Join(", ", serverInstanceNames)
+        );
 
         CommandTheMockerInstances();
 
@@ -116,12 +140,15 @@ public abstract class MockerCommand : StagedAction
             var failedResponses = GetFailedResponsesSnapshot();
             Logger.LogDebug(
                 "Received {SuccessfulCommandResponses} successful commands responses from {ServerInstancesCount} server instances",
-                successfulInstances.Count, serverInstanceNames.Count);
+                successfulInstances.Count,
+                serverInstanceNames.Count
+            );
             throw new MockerCommandRequestFailedException(
-                $"Not all command requests were successful for server '{ServerName}'. " +
-                $"Expected instances: {string.Join(", ", serverInstanceNames)}. " +
-                $"Succeeded: {string.Join(", ", successfulInstances.Distinct(StringComparer.Ordinal))}. " +
-                $"Failures: {string.Join(" | ", failedResponses.Distinct(StringComparer.Ordinal))}");
+                $"Not all command requests were successful for server '{ServerName}'. "
+                    + $"Expected instances: {string.Join(", ", serverInstanceNames)}. "
+                    + $"Succeeded: {string.Join(", ", successfulInstances.Distinct(StringComparer.Ordinal))}. "
+                    + $"Failures: {string.Join(" | ", failedResponses.Distinct(StringComparer.Ordinal))}"
+            );
         }
 
         if (!HandlesData)
@@ -149,20 +176,36 @@ public abstract class MockerCommand : StagedAction
     /// </summary>
     private void ScanForMockerInstances()
     {
-        var pingRequestChannel = CommunicationMethods.CreateChannelRunnerToMocker(PingContentType, ServerName);
-        var pingResponseChannel = CommunicationMethods.CreateChannelMockerToRunner(PingContentType, ServerName);
+        var pingRequestChannel = CommunicationMethods.CreateChannelRunnerToMocker(
+            PingContentType,
+            ServerName
+        );
+        var pingResponseChannel = CommunicationMethods.CreateChannelMockerToRunner(
+            PingContentType,
+            ServerName
+        );
         var responseChannel = RedisChannel.Literal(pingResponseChannel);
 
         _redisSubscriber.Subscribe(responseChannel, PingResponseHandler);
-        Logger.LogInformation("Subscribed to ping response channel '{PingResponseChannel}'", pingResponseChannel);
+        Logger.LogInformation(
+            "Subscribed to ping response channel '{PingResponseChannel}'",
+            pingResponseChannel
+        );
 
         try
         {
             for (var retryIndex = 1; retryIndex <= _requestRetries; retryIndex++)
             {
-                Logger.LogDebug("Publishing ping request attempt {Attempt}/{MaxAttempts} for server {ServerName}",
-                    retryIndex, _requestRetries, ServerName);
-                _redisSubscriber.Publish(RedisChannel.Literal(pingRequestChannel), PingRequestConstructor());
+                Logger.LogDebug(
+                    "Publishing ping request attempt {Attempt}/{MaxAttempts} for server {ServerName}",
+                    retryIndex,
+                    _requestRetries,
+                    ServerName
+                );
+                _redisSubscriber.Publish(
+                    RedisChannel.Literal(pingRequestChannel),
+                    PingRequestConstructor()
+                );
                 WaitForDiscoveryResponses();
                 if (GetServerInstanceNamesSnapshot().Count != 0)
                     break;
@@ -171,7 +214,10 @@ public abstract class MockerCommand : StagedAction
         finally
         {
             _redisSubscriber.Unsubscribe(responseChannel, PingResponseHandler);
-            Logger.LogDebug("Unsubscribed from ping response channels for server {ServerName}", ServerName);
+            Logger.LogDebug(
+                "Unsubscribed from ping response channels for server {ServerName}",
+                ServerName
+            );
 
             lock (_responseStateLock)
             {
@@ -188,10 +234,7 @@ public abstract class MockerCommand : StagedAction
     /// </summary>
     private string PingRequestConstructor()
     {
-        return JsonSerializer.Serialize(new PingRequest
-        {
-            Id = _commandId
-        });
+        return JsonSerializer.Serialize(new PingRequest { Id = _commandId });
     }
 
     /// <summary>
@@ -201,15 +244,22 @@ public abstract class MockerCommand : StagedAction
     {
         Logger.LogDebug("Received ping response on channel {Channel}", channel);
         var pingResponse = JsonSerializer.Deserialize<PingResponse>((byte[])serializedMessage!)!;
-        if (pingResponse.Id != _commandId) return;
-        if (pingResponse.ServerName != ServerName) return;
+        if (pingResponse.Id != _commandId)
+            return;
+        if (pingResponse.ServerName != ServerName)
+            return;
 
         if (string.IsNullOrWhiteSpace(pingResponse.ServerInstanceId))
             return;
 
         lock (_responseStateLock)
         {
-            if (!_serverInstanceNames.Contains(pingResponse.ServerInstanceId, StringComparer.Ordinal))
+            if (
+                !_serverInstanceNames.Contains(
+                    pingResponse.ServerInstanceId,
+                    StringComparer.Ordinal
+                )
+            )
             {
                 _serverInstanceNames.Add(pingResponse.ServerInstanceId);
             }
@@ -221,12 +271,16 @@ public abstract class MockerCommand : StagedAction
             else if (ServerInputOutputState != pingResponse.ServerInputOutputState)
             {
                 throw new InvalidOperationException(
-                    $"Mocker Server instances does not have matching {nameof(InputOutputState)} across all ping responses");
+                    $"Mocker Server instances does not have matching {nameof(InputOutputState)} across all ping responses"
+                );
             }
         }
 
-        Logger.LogInformation("Discovered mocker server instance '{ServerInstanceId}' for server '{ServerName}'",
-            pingResponse.ServerInstanceId, ServerName);
+        Logger.LogInformation(
+            "Discovered mocker server instance '{ServerInstanceId}' for server '{ServerName}'",
+            pingResponse.ServerInstanceId,
+            ServerName
+        );
     }
 
     /// <summary>
@@ -237,31 +291,53 @@ public abstract class MockerCommand : StagedAction
         var serverInstances = GetServerInstanceNamesSnapshot();
         var responseChannels = serverInstances.ToDictionary(
             serverInstance => serverInstance,
-            serverInstance => RedisChannel.Literal(CommunicationMethods.CreateChannelMockerToRunner(CommandContentType,
-                ServerName, serverInstance)),
-            StringComparer.Ordinal);
+            serverInstance =>
+                RedisChannel.Literal(
+                    CommunicationMethods.CreateChannelMockerToRunner(
+                        CommandContentType,
+                        ServerName,
+                        serverInstance
+                    )
+                ),
+            StringComparer.Ordinal
+        );
 
         foreach (var (serverInstance, responseChannel) in responseChannels)
         {
             _redisSubscriber.Subscribe(responseChannel, CommandResponseHandler);
             Logger.LogInformation(
                 "Subscribed to command response channel '{ResponseChannel}' for server instance '{ServerInstance}'",
-                responseChannel, serverInstance);
+                responseChannel,
+                serverInstance
+            );
         }
 
         try
         {
             for (var retryIndex = 1; retryIndex <= _requestRetries; retryIndex++)
             {
-                Logger.LogDebug("Publishing command request attempt {Attempt}/{MaxAttempts} for server {ServerName}",
-                    retryIndex, _requestRetries, ServerName);
+                Logger.LogDebug(
+                    "Publishing command request attempt {Attempt}/{MaxAttempts} for server {ServerName}",
+                    retryIndex,
+                    _requestRetries,
+                    ServerName
+                );
                 var pendingInstances = GetPendingCommandResponseNamesSnapshot(serverInstances);
                 foreach (var serverInstance in pendingInstances)
                 {
-                    var requestChannel = CommunicationMethods.CreateChannelRunnerToMocker(CommandContentType,
-                        ServerName, serverInstance);
-                    Logger.LogDebug("Publishing command request to channel '{RequestChannel}'", requestChannel);
-                    _redisSubscriber.Publish(RedisChannel.Literal(requestChannel), CommandRequestConstructor());
+                    var requestChannel = CommunicationMethods.CreateChannelRunnerToMocker(
+                        CommandContentType,
+                        ServerName,
+                        serverInstance
+                    );
+                    Logger.LogDebug(
+                        "Publishing command request to channel '{RequestChannel}'",
+                        requestChannel
+                    );
+                    _redisSubscriber.Publish(
+                        RedisChannel.Literal(requestChannel),
+                        CommandRequestConstructor()
+                    );
                 }
 
                 if (pendingInstances.Count == 0)
@@ -277,7 +353,10 @@ public abstract class MockerCommand : StagedAction
             foreach (var responseChannel in responseChannels.Values)
                 _redisSubscriber.Unsubscribe(responseChannel, CommandResponseHandler);
 
-            Logger.LogDebug("Unsubscribed from command response channels for server {ServerName}", ServerName);
+            Logger.LogDebug(
+                "Unsubscribed from command response channels for server {ServerName}",
+                ServerName
+            );
         }
     }
 
@@ -289,10 +368,13 @@ public abstract class MockerCommand : StagedAction
                 .Where(id => !string.IsNullOrWhiteSpace(id))
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(id => id, StringComparer.Ordinal)
-                .SequenceEqual(_successfulCommandResponseToServerInstanceNames
-                    .Where(id => !string.IsNullOrWhiteSpace(id))
-                    .Distinct(StringComparer.Ordinal)
-                    .OrderBy(id => id, StringComparer.Ordinal), StringComparer.Ordinal);
+                .SequenceEqual(
+                    _successfulCommandResponseToServerInstanceNames
+                        .Where(id => !string.IsNullOrWhiteSpace(id))
+                        .Distinct(StringComparer.Ordinal)
+                        .OrderBy(id => id, StringComparer.Ordinal),
+                    StringComparer.Ordinal
+                );
         }
     }
 
@@ -301,10 +383,7 @@ public abstract class MockerCommand : StagedAction
     /// </summary>
     private string CommandRequestConstructor()
     {
-        var commandRequest = new CommandRequest
-        {
-            Id = _commandId, Command = CommandType
-        };
+        var commandRequest = new CommandRequest { Id = _commandId, Command = CommandType };
         commandRequest.AppendObjectToRelevantCommandConfig(SupportedCommandConfiguration);
         return JsonSerializer.Serialize(commandRequest);
     }
@@ -315,9 +394,13 @@ public abstract class MockerCommand : StagedAction
     private void CommandResponseHandler(RedisChannel channel, RedisValue serializedMessage)
     {
         Logger.LogDebug("Received command response on channel {Channel}", channel);
-        var commandResponse = JsonSerializer.Deserialize<CommandResponse>((byte[])serializedMessage!)!;
-        if (commandResponse.Id != _commandId) return;
-        if (commandResponse.Command != CommandType) return;
+        var commandResponse = JsonSerializer.Deserialize<CommandResponse>(
+            (byte[])serializedMessage!
+        )!;
+        if (commandResponse.Id != _commandId)
+            return;
+        if (commandResponse.Command != CommandType)
+            return;
         if (commandResponse.Status == Status.Succeeded)
         {
             if (string.IsNullOrWhiteSpace(commandResponse.ServerInstanceId))
@@ -325,29 +408,40 @@ public abstract class MockerCommand : StagedAction
 
             lock (_responseStateLock)
             {
-                if (!_successfulCommandResponseToServerInstanceNames.Contains(commandResponse.ServerInstanceId,
-                        StringComparer.Ordinal))
+                if (
+                    !_successfulCommandResponseToServerInstanceNames.Contains(
+                        commandResponse.ServerInstanceId,
+                        StringComparer.Ordinal
+                    )
+                )
                 {
-                    _successfulCommandResponseToServerInstanceNames.Add(commandResponse.ServerInstanceId);
+                    _successfulCommandResponseToServerInstanceNames.Add(
+                        commandResponse.ServerInstanceId
+                    );
                 }
             }
 
             Logger.LogInformation(
                 "Command '{CommandType}' succeeded on server instance '{ServerInstanceId}'",
-                commandResponse.Command, commandResponse.ServerInstanceId);
+                commandResponse.Command,
+                commandResponse.ServerInstanceId
+            );
         }
         else
         {
             lock (_responseStateLock)
             {
                 _failedCommandResponses.Add(
-                    $"{commandResponse.ServerInstanceId}: {commandResponse.ExceptionMessage ?? "Unknown command error"}");
+                    $"{commandResponse.ServerInstanceId}: {commandResponse.ExceptionMessage ?? "Unknown command error"}"
+                );
             }
 
             Logger.LogWarning(
                 "Command '{CommandType}' failed on server instance '{ServerInstanceId}' with error '{Error}'",
-                commandResponse.Command, commandResponse.ServerInstanceId,
-                commandResponse.ExceptionMessage ?? "Unknown command error");
+                commandResponse.Command,
+                commandResponse.ServerInstanceId,
+                commandResponse.ExceptionMessage ?? "Unknown command error"
+            );
         }
     }
 
@@ -361,8 +455,10 @@ public abstract class MockerCommand : StagedAction
     /// </summary>
     protected abstract SerializationType? GetOutputCommunicationSerializationType();
 
-    protected virtual (IEnumerable<DetailedData<object>>?, IEnumerable<DetailedData<object>>?)
-        AdditionalDataExchangeWithTheMocker()
+    protected virtual (
+        IEnumerable<DetailedData<object>>?,
+        IEnumerable<DetailedData<object>>?
+    ) AdditionalDataExchangeWithTheMocker()
     {
         return (null, null);
     }
@@ -379,7 +475,7 @@ public abstract class MockerCommand : StagedAction
             Input = commandResults.Item1?.ToList(),
             Output = commandResults.Item2?.ToList()!,
             InputSerializationType = GetInputCommunicationSerializationType(),
-            OutputSerializationType = GetOutputCommunicationSerializationType()
+            OutputSerializationType = GetOutputCommunicationSerializationType(),
         };
     }
 
@@ -388,18 +484,26 @@ public abstract class MockerCommand : StagedAction
         _redisConnection?.Dispose();
     }
 
-    protected internal override void LogData(InternalCommunicationData<object> actData,
-        DetailedData<object> itemBeforeSerialization, InputOutputState? saveData = null) { }
+    protected internal override void LogData(
+        InternalCommunicationData<object> actData,
+        DetailedData<object> itemBeforeSerialization,
+        InputOutputState? saveData = null
+    ) { }
 
-    internal override void ExportRunningCommunicationData(InternalContext context, string sessionName)
+    internal override void ExportRunningCommunicationData(
+        InternalContext context,
+        string sessionName
+    )
     {
         _sentRunningCommunicationData = new RunningCommunicationData<object>
         {
-            Name = Name, SerializationType = GetInputCommunicationSerializationType()
+            Name = Name,
+            SerializationType = GetInputCommunicationSerializationType(),
         };
         _receivedRunningCommunicationData = new RunningCommunicationData<object>
         {
-            Name = Name, SerializationType = GetOutputCommunicationSerializationType()
+            Name = Name,
+            SerializationType = GetOutputCommunicationSerializationType(),
         };
 
         context.AddRunningInputData(sessionName, _sentRunningCommunicationData);
@@ -435,13 +539,18 @@ public abstract class MockerCommand : StagedAction
         }
     }
 
-    private List<string> GetPendingCommandResponseNamesSnapshot(IEnumerable<string> expectedServerInstances)
+    private List<string> GetPendingCommandResponseNamesSnapshot(
+        IEnumerable<string> expectedServerInstances
+    )
     {
         lock (_responseStateLock)
         {
-            var successfulInstances = new HashSet<string>(_successfulCommandResponseToServerInstanceNames
-                .Where(id => !string.IsNullOrWhiteSpace(id))
-                .Distinct(StringComparer.Ordinal), StringComparer.Ordinal);
+            var successfulInstances = new HashSet<string>(
+                _successfulCommandResponseToServerInstanceNames
+                    .Where(id => !string.IsNullOrWhiteSpace(id))
+                    .Distinct(StringComparer.Ordinal),
+                StringComparer.Ordinal
+            );
             return expectedServerInstances
                 .Where(id => !string.IsNullOrWhiteSpace(id))
                 .Distinct(StringComparer.Ordinal)
@@ -486,8 +595,7 @@ public abstract class MockerCommand : StagedAction
                 continue;
             }
 
-            if (currentCount > 0 &&
-                unchangedSinceStopwatch?.ElapsedMilliseconds >= quietPeriodMs)
+            if (currentCount > 0 && unchangedSinceStopwatch?.ElapsedMilliseconds >= quietPeriodMs)
             {
                 break;
             }

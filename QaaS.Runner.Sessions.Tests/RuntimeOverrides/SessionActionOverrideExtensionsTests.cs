@@ -26,8 +26,8 @@ public class SessionActionOverrideExtensionsTests
         {
             InternalGlobalDict = new Dictionary<string, object?>
             {
-                ["QaaS.Runner.Sessions.SessionActionOverrides"] = new object()
-            }
+                ["QaaS.Runner.Sessions.SessionActionOverrides"] = new object(),
+            },
         };
 
         Assert.That(context.GetSessionActionOverrides(), Is.Null);
@@ -46,7 +46,7 @@ public class SessionActionOverrideExtensionsTests
     {
         var context = new InternalContext
         {
-            InternalGlobalDict = new Dictionary<string, object?>()
+            InternalGlobalDict = new Dictionary<string, object?>(),
         };
 
         Assert.That(context.GetSessionActionOverrides(), Is.Null);
@@ -56,10 +56,7 @@ public class SessionActionOverrideExtensionsTests
     public void SetSessionActionOverrides_When_Global_Dictionary_Already_Exists_Reuses_It()
     {
         var existingDictionary = new Dictionary<string, object?>();
-        var context = new InternalContext
-        {
-            InternalGlobalDict = existingDictionary
-        };
+        var context = new InternalContext { InternalGlobalDict = existingDictionary };
         var overrides = new SessionActionOverrides();
 
         context.SetSessionActionOverrides(overrides);
@@ -75,8 +72,8 @@ public class SessionActionOverrideExtensionsTests
         {
             InternalGlobalDict = new Dictionary<string, object?>
             {
-                ["QaaS.Runner.Sessions.SessionActionOverrides"] = null
-            }
+                ["QaaS.Runner.Sessions.SessionActionOverrides"] = null,
+            },
         };
 
         Assert.That(context.GetSessionActionOverrides(), Is.Null);

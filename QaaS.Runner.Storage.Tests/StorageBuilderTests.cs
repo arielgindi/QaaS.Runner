@@ -15,15 +15,18 @@ public class StorageBuilderTests
     {
         var builder = new StorageBuilder();
 
-        var exception = Assert.Throws<TargetInvocationException>(() => InvokeBuild(builder, Globals.Context));
+        var exception = Assert.Throws<TargetInvocationException>(() =>
+            InvokeBuild(builder, Globals.Context)
+        );
         Assert.That(exception!.InnerException, Is.TypeOf<InvalidOperationException>());
     }
 
     [Test]
     public void Build_WithFileSystemConfiguration_ReturnsFileSystemStorageAndSetsContext()
     {
-        var builder = new StorageBuilder()
-            .Configure(new FilesInFileSystemConfig { Path = "some/path" });
+        var builder = new StorageBuilder().Configure(
+            new FilesInFileSystemConfig { Path = "some/path" }
+        );
 
         var storage = InvokeBuild(builder, Globals.Context);
 
@@ -34,8 +37,7 @@ public class StorageBuilderTests
     [Test]
     public void Build_WithS3Configuration_ReturnsS3StorageAndSetsContext()
     {
-        var builder = new StorageBuilder()
-            .Configure(new S3Config());
+        var builder = new StorageBuilder().Configure(new S3Config());
 
         var storage = InvokeBuild(builder, Globals.Context);
 
@@ -71,7 +73,8 @@ public class StorageBuilderTests
         var builder = new StorageBuilder();
 
         Assert.Throws<InvalidOperationException>(() =>
-            builder.UpdateConfiguration(new { Path = "some/path" }));
+            builder.UpdateConfiguration(new { Path = "some/path" })
+        );
     }
 
     [Test]
@@ -87,9 +90,11 @@ public class StorageBuilderTests
 
     private static IStorage InvokeBuild(StorageBuilder builder, Context context)
     {
-        var buildMethod = typeof(StorageBuilder).GetMethod("Build", BindingFlags.Instance | BindingFlags.NonPublic);
+        var buildMethod = typeof(StorageBuilder).GetMethod(
+            "Build",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        );
         Assert.That(buildMethod, Is.Not.Null);
         return (IStorage)buildMethod!.Invoke(builder, [context])!;
     }
 }
-

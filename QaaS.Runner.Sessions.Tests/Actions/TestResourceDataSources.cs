@@ -27,11 +27,36 @@ public static class TestResourceDataSources
     {
         var dataSources = new List<DataSource>()
         {
-            new() { Generator = new TestGenerator1(), Lazy = true, Name = "Test" },
-            new() {Generator = new TestGenerator2(), Lazy = true, Name = "Test2"},
-            new() {Generator = new TestGenerator2(), Lazy = true, Name = "OtherTest"},
-            new() {Generator = new TestGenerator1(), Lazy = true, Name = "OtherTest2"},
-            new() {Generator = new TestGenerator2(), Lazy = true, Name = "ImNotIncluded..."}
+            new()
+            {
+                Generator = new TestGenerator1(),
+                Lazy = true,
+                Name = "Test",
+            },
+            new()
+            {
+                Generator = new TestGenerator2(),
+                Lazy = true,
+                Name = "Test2",
+            },
+            new()
+            {
+                Generator = new TestGenerator2(),
+                Lazy = true,
+                Name = "OtherTest",
+            },
+            new()
+            {
+                Generator = new TestGenerator1(),
+                Lazy = true,
+                Name = "OtherTest2",
+            },
+            new()
+            {
+                Generator = new TestGenerator2(),
+                Lazy = true,
+                Name = "ImNotIncluded...",
+            },
         };
 
         // generators that should be used with the filters
@@ -40,18 +65,20 @@ public static class TestResourceDataSources
             new TestGenerator2(),
             new TestGenerator1(),
             new TestGenerator1(),
-            new TestGenerator2()
+            new TestGenerator2(),
         };
         var expectedData = generators.SelectMany(generator =>
-            generator.Generate(ImmutableList<SessionData>.Empty, ImmutableList<DataSource>.Empty));
-        
+            generator.Generate(ImmutableList<SessionData>.Empty, ImmutableList<DataSource>.Empty)
+        );
+
         yield return new TestCaseData(
             new List<string>() { "Test", "Test2" }, // name filters
             new List<string>() { "^Other" }, // pattern filters
             dataSources,
-            expectedData.ToList());
+            expectedData.ToList()
+        );
     }
-    
+
     public class TestGenerator1 : IGenerator
     {
         public List<ValidationResult>? LoadAndValidateConfiguration(IConfiguration configuration)
@@ -61,7 +88,10 @@ public static class TestResourceDataSources
 
         public Context Context { get; set; } = null!;
 
-        public IEnumerable<Data<object>> Generate(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+        public IEnumerable<Data<object>> Generate(
+            IImmutableList<SessionData> sessionDataList,
+            IImmutableList<DataSource> dataSourceList
+        )
         {
             for (var i = 0; i < 100; i++)
             {
@@ -69,7 +99,7 @@ public static class TestResourceDataSources
             }
         }
     }
-    
+
     public class TestGenerator2 : IGenerator
     {
         public List<ValidationResult>? LoadAndValidateConfiguration(IConfiguration configuration)
@@ -79,7 +109,10 @@ public static class TestResourceDataSources
 
         public Context Context { get; set; } = null!;
 
-        public IEnumerable<Data<object>> Generate(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+        public IEnumerable<Data<object>> Generate(
+            IImmutableList<SessionData> sessionDataList,
+            IImmutableList<DataSource> dataSourceList
+        )
         {
             var minuses = new List<int> { -100, -101, -102 };
             foreach (var minuse in minuses)

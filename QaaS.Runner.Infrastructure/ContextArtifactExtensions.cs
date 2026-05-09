@@ -29,8 +29,8 @@ public static class ContextArtifactExtensions
     /// </summary>
     public static string? GetRenderedConfigurationTemplate(this Context context)
     {
-        return TryGetValue<string>(context, GetRenderedTemplatePath(context)) ??
-               TryGetValue<string>(context, [ArtifactsRootKey, RenderedTemplateKey]);
+        return TryGetValue<string>(context, GetRenderedTemplatePath(context))
+            ?? TryGetValue<string>(context, [ArtifactsRootKey, RenderedTemplateKey]);
     }
 
     /// <summary>
@@ -53,8 +53,10 @@ public static class ContextArtifactExtensions
     /// </summary>
     public static string? GetSessionLog(this Context context, string sessionName)
     {
-        if (!TryGetSessionLogStore(context, GetSessionLogsPath(context), out var sessionLogs) &&
-            !TryGetSessionLogStore(context, [ArtifactsRootKey, SessionLogsKey], out sessionLogs))
+        if (
+            !TryGetSessionLogStore(context, GetSessionLogsPath(context), out var sessionLogs)
+            && !TryGetSessionLogStore(context, [ArtifactsRootKey, SessionLogsKey], out sessionLogs)
+        )
         {
             return null;
         }
@@ -79,7 +81,9 @@ public static class ContextArtifactExtensions
         return builder.ToString();
     }
 
-    private static ConcurrentDictionary<string, ConcurrentQueue<string>> GetOrCreateSessionLogStore(Context context)
+    private static ConcurrentDictionary<string, ConcurrentQueue<string>> GetOrCreateSessionLogStore(
+        Context context
+    )
     {
         var sessionLogsPath = GetSessionLogsPath(context);
         if (TryGetSessionLogStore(context, sessionLogsPath, out var existingStore))
@@ -94,14 +98,19 @@ public static class ContextArtifactExtensions
                 return existingStore;
             }
 
-            var newStore = new ConcurrentDictionary<string, ConcurrentQueue<string>>(StringComparer.Ordinal);
+            var newStore = new ConcurrentDictionary<string, ConcurrentQueue<string>>(
+                StringComparer.Ordinal
+            );
             context.InsertValueIntoGlobalDictionary(sessionLogsPath, newStore);
             return newStore;
         }
     }
 
-    private static bool TryGetSessionLogStore(Context context, List<string> path,
-        out ConcurrentDictionary<string, ConcurrentQueue<string>> sessionLogs)
+    private static bool TryGetSessionLogStore(
+        Context context,
+        List<string> path,
+        out ConcurrentDictionary<string, ConcurrentQueue<string>> sessionLogs
+    )
     {
         sessionLogs = default!;
         var existingStore = TryGetValue<object>(context, path);
@@ -114,7 +123,8 @@ public static class ContextArtifactExtensions
         return true;
     }
 
-    private static T? TryGetValue<T>(Context context, List<string> path) where T : class
+    private static T? TryGetValue<T>(Context context, List<string> path)
+        where T : class
     {
         try
         {
@@ -128,7 +138,13 @@ public static class ContextArtifactExtensions
 
     private static List<string> GetRenderedTemplatePath(Context context)
     {
-        return [ArtifactsRootKey, ScopedArtifactsKey, GetArtifactScopeKey(context), RenderedTemplateKey];
+        return
+        [
+            ArtifactsRootKey,
+            ScopedArtifactsKey,
+            GetArtifactScopeKey(context),
+            RenderedTemplateKey,
+        ];
     }
 
     private static List<string> GetSessionLogsPath(Context context)
@@ -138,7 +154,10 @@ public static class ContextArtifactExtensions
 
     private static string GetArtifactScopeKey(Context context)
     {
-        if (!string.IsNullOrWhiteSpace(context.ExecutionId) || !string.IsNullOrWhiteSpace(context.CaseName))
+        if (
+            !string.IsNullOrWhiteSpace(context.ExecutionId)
+            || !string.IsNullOrWhiteSpace(context.CaseName)
+        )
         {
             return $"{context.ExecutionId ?? "<null>"}::{context.CaseName ?? "<null>"}";
         }

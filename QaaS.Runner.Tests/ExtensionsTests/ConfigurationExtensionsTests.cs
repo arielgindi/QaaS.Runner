@@ -18,38 +18,44 @@ public class ConfigurationExtensionsTests
         {
             if (i == 3)
             {
-                allAssertionsConfig.Add(new AssertionBuilder
-                {
-                    Assertion = "test",
-                    Name = "3",
-                    Category = "c1",
-                    AssertionInstance = null,
-                    Reporter = null
-                });
+                allAssertionsConfig.Add(
+                    new AssertionBuilder
+                    {
+                        Assertion = "test",
+                        Name = "3",
+                        Category = "c1",
+                        AssertionInstance = null,
+                        Reporter = null,
+                    }
+                );
                 continue;
             }
 
             if (i == 5)
             {
-                allAssertionsConfig.Add(new AssertionBuilder
-                {
-                    Assertion = "test",
-                    Name = "5",
-                    Category = null,
-                    AssertionInstance = null,
-                    Reporter = null
-                });
+                allAssertionsConfig.Add(
+                    new AssertionBuilder
+                    {
+                        Assertion = "test",
+                        Name = "5",
+                        Category = null,
+                        AssertionInstance = null,
+                        Reporter = null,
+                    }
+                );
                 continue;
             }
 
-            allAssertionsConfig.Add(new AssertionBuilder
-            {
-                Assertion = "test",
-                Name = i.ToString(),
-                Category = "c" + i,
-                AssertionInstance = null,
-                Reporter = null
-            });
+            allAssertionsConfig.Add(
+                new AssertionBuilder
+                {
+                    Assertion = "test",
+                    Name = i.ToString(),
+                    Category = "c" + i,
+                    AssertionInstance = null,
+                    Reporter = null,
+                }
+            );
         }
 
         return allAssertionsConfig.ToArray();
@@ -74,30 +80,35 @@ public class ConfigurationExtensionsTests
         ).SetName("only categories");
 
         config = GetAssertionConfig(5);
-        yield return new TestCaseData(
-            config,
-            new[] { "1" },
-            null,
-            new[] { "1" }
-        ).SetName("only name");
+        yield return new TestCaseData(config, new[] { "1" }, null, new[] { "1" }).SetName(
+            "only name"
+        );
     }
 
     [Test]
     [TestCaseSource(nameof(FilterAssertionsInput))]
-    public void
-        TestFilterConfigurationByAssertionNames_CallFunctionToFilterSpecificAssertions_ShouldFilterAssertionsGiven(
-            AssertionBuilder[] config,
-            string[]? assertionNamesToRun, string[]? assertionCategoriesToRun,
-            string[] expectedFilteredAssertionNames)
+    public void TestFilterConfigurationByAssertionNames_CallFunctionToFilterSpecificAssertions_ShouldFilterAssertionsGiven(
+        AssertionBuilder[] config,
+        string[]? assertionNamesToRun,
+        string[]? assertionCategoriesToRun,
+        string[] expectedFilteredAssertionNames
+    )
     {
         var context = new InternalContext
         {
-            Logger = Globals.Logger, RootConfiguration = new ConfigurationBuilder().Build(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+            Logger = Globals.Logger,
+            RootConfiguration = new ConfigurationBuilder().Build(),
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
         };
 
         // Act
-        config = config.FilterConfigurationByAssertion(assertionNamesToRun, assertionCategoriesToRun, context);
+        config = config.FilterConfigurationByAssertion(
+            assertionNamesToRun,
+            assertionCategoriesToRun,
+            context
+        );
 
         // Assert
         var filteredAssertionNames = config.Select(assertion => assertion.Name!).ToList();
@@ -113,29 +124,17 @@ public class ConfigurationExtensionsTests
         {
             if (i == 3)
             {
-                allSessionsConfig.Add(new SessionBuilder
-                {
-                    Name = "3",
-                    Category = "c1"
-                });
+                allSessionsConfig.Add(new SessionBuilder { Name = "3", Category = "c1" });
                 continue;
             }
 
             if (i == 5)
             {
-                allSessionsConfig.Add(new SessionBuilder
-                {
-                    Name = "5",
-                    Category = null
-                });
+                allSessionsConfig.Add(new SessionBuilder { Name = "5", Category = null });
                 continue;
             }
 
-            allSessionsConfig.Add(new SessionBuilder
-            {
-                Name = i.ToString(),
-                Category = "c" + i
-            });
+            allSessionsConfig.Add(new SessionBuilder { Name = i.ToString(), Category = "c" + i });
         }
 
         return allSessionsConfig.ToArray();
@@ -218,38 +217,46 @@ public class ConfigurationExtensionsTests
 
     [Test]
     [TestCaseSource(nameof(FilterAssertionsAndSessions))]
-    public void
-        TestFilterConfigurationBySessionNamesAndAssertionNames_CallFunctionToFilterSpecificSessions_ShouldFilterSessionsGiven(
-            SessionBuilder[] sessionConfig,
-            AssertionBuilder[] assertionConfig,
-            string[]? assertionNamesToRun, string[]? assertionCategoriesToRun,
-            string[]? sessionNamesToRun, string[]? sessionCategoriesToRun,
-            string[] expectedFilteredSessionNames)
+    public void TestFilterConfigurationBySessionNamesAndAssertionNames_CallFunctionToFilterSpecificSessions_ShouldFilterSessionsGiven(
+        SessionBuilder[] sessionConfig,
+        AssertionBuilder[] assertionConfig,
+        string[]? assertionNamesToRun,
+        string[]? assertionCategoriesToRun,
+        string[]? sessionNamesToRun,
+        string[]? sessionCategoriesToRun,
+        string[] expectedFilteredSessionNames
+    )
     {
         var context = new InternalContext
         {
-            Logger = Globals.Logger, RootConfiguration = new ConfigurationBuilder().Build(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+            Logger = Globals.Logger,
+            RootConfiguration = new ConfigurationBuilder().Build(),
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
         };
         // Act
         if (!expectedFilteredSessionNames.Any())
-            Assert.Throws<InvalidOperationException>(() => sessionConfig.FilterConfigurationBySessionsAndAssertions(
-                assertionConfig,
-                sessionNamesToRun,
-                assertionNamesToRun,
-                sessionCategoriesToRun,
-                assertionCategoriesToRun,
-                context));
-        else
-        {
-            sessionConfig =
+            Assert.Throws<InvalidOperationException>(() =>
                 sessionConfig.FilterConfigurationBySessionsAndAssertions(
                     assertionConfig,
                     sessionNamesToRun,
                     assertionNamesToRun,
                     sessionCategoriesToRun,
                     assertionCategoriesToRun,
-                    context);
+                    context
+                )
+            );
+        else
+        {
+            sessionConfig = sessionConfig.FilterConfigurationBySessionsAndAssertions(
+                assertionConfig,
+                sessionNamesToRun,
+                assertionNamesToRun,
+                sessionCategoriesToRun,
+                assertionCategoriesToRun,
+                context
+            );
 
             // Assert
             var filteredSessionNames = sessionConfig.Select(session => session.Name).ToList();
@@ -260,24 +267,26 @@ public class ConfigurationExtensionsTests
     }
 
     [Test]
-    public void
-        TestFilterConfigurationByAssertions_CallFunctionWithNoFilters_ReturnAllAssertions()
+    public void TestFilterConfigurationByAssertions_CallFunctionWithNoFilters_ReturnAllAssertions()
     {
         var context = new InternalContext
         {
-            Logger = Globals.Logger, RootConfiguration = new ConfigurationBuilder().Build(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+            Logger = Globals.Logger,
+            RootConfiguration = new ConfigurationBuilder().Build(),
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
         };
         var assertionConfig = GetAssertionConfig(5);
 
-        assertionConfig = assertionConfig.FilterConfigurationByAssertion(
-            null,
-            null,
-            context);
+        assertionConfig = assertionConfig.FilterConfigurationByAssertion(null, null, context);
 
         var filteredAssertionNames = assertionConfig.Select(assertion => assertion.Name).ToList();
         filteredAssertionNames.Sort();
-        Assert.That(filteredAssertionNames, Is.EqualTo(new List<string> { "1", "2", "3", "4", "5" }));
+        Assert.That(
+            filteredAssertionNames,
+            Is.EqualTo(new List<string> { "1", "2", "3", "4", "5" })
+        );
     }
 
     [Test]
@@ -285,8 +294,11 @@ public class ConfigurationExtensionsTests
     {
         var context = new InternalContext
         {
-            Logger = Globals.Logger, RootConfiguration = new ConfigurationBuilder().Build(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+            Logger = Globals.Logger,
+            RootConfiguration = new ConfigurationBuilder().Build(),
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
         };
         var sessionsConfig = CreateSessionConfiguration(5);
         var assertionConfig = GetAssertionConfig(5);
@@ -297,7 +309,8 @@ public class ConfigurationExtensionsTests
             null,
             null,
             null,
-            context);
+            context
+        );
 
         var filteredSessionNames = sessionsConfig.Select(session => session.Name).ToList();
         filteredSessionNames.Sort();

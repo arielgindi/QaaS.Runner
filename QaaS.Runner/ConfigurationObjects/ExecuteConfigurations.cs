@@ -13,5 +13,6 @@ public record ExecuteConfigurations
     [UniquePropertyInEnumerable(nameof(CommandConfig.Id))]
     [Description("The list of QaaS commands to execute in the order they will be executed")]
     public CommandConfig[]? Commands { get; internal set; }
+
     public IReadOnlyList<CommandConfig> ReadCommands() => Commands ?? [];
 }

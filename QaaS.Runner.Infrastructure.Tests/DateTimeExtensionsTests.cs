@@ -57,7 +57,10 @@ public class DateTimeExtensionsTests
 
         var result = utcTime.ConvertDateTimeFromUtcToTimeZoneByTimeZoneOffset(3, true);
 
-        Assert.That(result, Is.EqualTo(new DateTime(2025, 7, 1, 12, 0, 0, DateTimeKind.Unspecified)));
+        Assert.That(
+            result,
+            Is.EqualTo(new DateTime(2025, 7, 1, 12, 0, 0, DateTimeKind.Unspecified))
+        );
     }
 
     [Test]
@@ -67,7 +70,10 @@ public class DateTimeExtensionsTests
 
         var result = utcTime.ConvertDateTimeFromUtcToTimeZoneByTimeZoneOffset(3, false);
 
-        Assert.That(result, Is.EqualTo(new DateTime(2025, 1, 1, 11, 0, 0, DateTimeKind.Unspecified)));
+        Assert.That(
+            result,
+            Is.EqualTo(new DateTime(2025, 1, 1, 11, 0, 0, DateTimeKind.Unspecified))
+        );
     }
 
     [Test]
@@ -77,7 +83,10 @@ public class DateTimeExtensionsTests
 
         var result = utcTime.ConvertDateTimeFromUtcToTimeZoneByTimeZoneOffset(0, false);
 
-        Assert.That(result, Is.EqualTo(new DateTime(2025, 1, 1, 9, 0, 0, DateTimeKind.Unspecified)));
+        Assert.That(
+            result,
+            Is.EqualTo(new DateTime(2025, 1, 1, 9, 0, 0, DateTimeKind.Unspecified))
+        );
     }
 
     [Test]
@@ -111,7 +120,8 @@ public class DateTimeExtensionsTests
         Assert.That(result, Is.EqualTo(expected));
     }
 
-    private static TimeZoneInfo GetDefaultTimeZone() => ResolveTimeZoneInfo(TimeZoneInfoResolver.DefaultTimeZoneId);
+    private static TimeZoneInfo GetDefaultTimeZone() =>
+        ResolveTimeZoneInfo(TimeZoneInfoResolver.DefaultTimeZoneId);
 
     private static TimeZoneInfo ResolveTimeZoneInfo(string timeZoneId)
     {

@@ -23,43 +23,54 @@ namespace QaaS.Runner.Loaders;
 /// <typeparam name="TRunner">The runner type (must inherit from Runner).</typeparam>
 /// <typeparam name="TOptions">The options type (must inherit from BaseOptions).</typeparam>
 public class RunLoader<TRunner, TOptions> : BaseLoader<TOptions, TRunner>
-    where TRunner : Runner where TOptions : BaseOptions
+    where TRunner : Runner
+    where TOptions : BaseOptions
 {
     private const uint HttpClientTimeoutSeconds = 100;
     private readonly IFileSystem _fileSystem = new FileSystem();
     private readonly IJfrogArtifactoryHelper _jfrogArtifactoryHelper = new JfrogArtifactoryHelper();
     private readonly ILifetimeScope _runScope;
-    private readonly Lazy<IReadOnlyList<IExecutionBuilderConfigurator>> _executionBuilderConfigurators;
+    private readonly Lazy<
+        IReadOnlyList<IExecutionBuilderConfigurator>
+    > _executionBuilderConfigurators;
     private bool _missingConfigurationFileWarningLogged;
 
     /// <summary>
     /// Creates the runner scope used later for setup/teardown services such as Allure cleanup/serving.
     /// Context construction in this loader is done directly and does not rely on Autofac registrations.
     /// </summary>
-    public RunLoader(TOptions options, string? executionId = null) : base(options,
-        executionId)
+    public RunLoader(TOptions options, string? executionId = null)
+        : base(options, executionId)
     {
         _runScope = Bootstrap.CreateRunnerScope();
         _executionBuilderConfigurators = new Lazy<IReadOnlyList<IExecutionBuilderConfigurator>>(
-            DiscoverExecutionBuilderConfigurators);
+            DiscoverExecutionBuilderConfigurators
+        );
     }
 
     /// <summary>
     /// Builds Context from scope and an optional caseFilePath.
     /// </summary>
     /// <returns>The built Context</returns>
-    protected virtual InternalContext BuildContext(string? executionId, string? relativeCaseFilePath = null,
-        IContextBuilder? contextBuilder = null)
+    protected virtual InternalContext BuildContext(
+        string? executionId,
+        string? relativeCaseFilePath = null,
+        IContextBuilder? contextBuilder = null
+    )
     {
-        contextBuilder ??= new ContextBuilder(new ConfigurationBuilder(),
-            Constants.SupportedReferenceLists, Constants.SupportedUniqueIdsPathRegexes);
+        contextBuilder ??= new ContextBuilder(
+            new ConfigurationBuilder(),
+            Constants.SupportedReferenceLists,
+            Constants.SupportedUniqueIdsPathRegexes
+        );
         contextBuilder.SetLogger(Logger);
         contextBuilder.SetExecutionId(executionId);
         var shouldLoadConfigurationFile = ShouldLoadConfigurationFile();
         if (shouldLoadConfigurationFile)
             contextBuilder.SetConfigurationFile(Options.ConfigurationFile!);
         contextBuilder.SetCurrentRunningSessions(
-            new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>()));
+            new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+        );
         foreach (var overwriteFile in Options.OverwriteFiles)
             contextBuilder.WithOverwriteFile(overwriteFile);
         foreach (var overwriteFolder in Options.OverwriteFolders)
@@ -69,27 +80,36 @@ public class RunLoader<TRunner, TOptions> : BaseLoader<TOptions, TRunner>
             contextBuilder.WithOverwriteArgument(overwriteArgument);
         foreach (var referenceConfig in Options.GetParsedPushReferences())
             contextBuilder.WithReferenceResolution(referenceConfig);
-        if (Options.ResolveCasesLast) contextBuilder.ResolveCaseLast();
-        if (!Options.DontResolveWithEnvironmentVariables) contextBuilder.WithEnvironmentVariableResolution();
+        if (Options.ResolveCasesLast)
+            contextBuilder.ResolveCaseLast();
+        if (!Options.DontResolveWithEnvironmentVariables)
+            contextBuilder.WithEnvironmentVariableResolution();
 
         try
         {
             return contextBuilder.BuildInternal();
         }
-        catch (Exception exception) when (shouldLoadConfigurationFile &&
-                                         RunnerYamlConfigurationExceptionFactory.ShouldWrap(exception))
+        catch (Exception exception)
+            when (shouldLoadConfigurationFile
+                && RunnerYamlConfigurationExceptionFactory.ShouldWrap(exception)
+            )
         {
             throw RunnerYamlConfigurationExceptionFactory.CreateLocalFileLoadException(
                 Options.ConfigurationFile!,
-                exception);
+                exception
+            );
         }
     }
 
-    private List<InternalContext> GetContextsWithJfrogArtifactoryCases(string? executionId, string casesDirectoryPath)
+    private List<InternalContext> GetContextsWithJfrogArtifactoryCases(
+        string? executionId,
+        string casesDirectoryPath
+    )
     {
         using var httpClient = new HttpClient();
         httpClient.Timeout = TimeSpan.FromSeconds(HttpClientTimeoutSeconds);
-        return _jfrogArtifactoryHelper.GetUrlsToAllFilesInArtifactoryFolderAsync(casesDirectoryPath, httpClient)
+        return _jfrogArtifactoryHelper
+            .GetUrlsToAllFilesInArtifactoryFolderAsync(casesDirectoryPath, httpClient)
             .GetAwaiter()
             .GetResult()
             .OrderBy(f => f)
@@ -97,27 +117,35 @@ public class RunLoader<TRunner, TOptions> : BaseLoader<TOptions, TRunner>
             .ToList();
     }
 
-    private List<InternalContext> GetContextsWithFileSystemCases(string? executionId, string casesDirectoryPath)
+    private List<InternalContext> GetContextsWithFileSystemCases(
+        string? executionId,
+        string casesDirectoryPath
+    )
     {
         var resolvedCasesDirectoryPath = ResolveLocalPath(casesDirectoryPath);
         if (!_fileSystem.Directory.Exists(resolvedCasesDirectoryPath))
-            throw new DirectoryNotFoundException(RunnerDiagnosticMessageFormatter.Format(
-                "Cases root directory was not found.",
-                [
-                    $"Configured cases root directory: {casesDirectoryPath}",
-                    $"Resolved local path: {resolvedCasesDirectoryPath}"
-                ],
-                null,
-                null,
-                [
-                    "Set a valid cases directory path or remove the cases-root setting and retry."
-                ]));
+            throw new DirectoryNotFoundException(
+                RunnerDiagnosticMessageFormatter.Format(
+                    "Cases root directory was not found.",
+                    [
+                        $"Configured cases root directory: {casesDirectoryPath}",
+                        $"Resolved local path: {resolvedCasesDirectoryPath}",
+                    ],
+                    null,
+                    null,
+                    ["Set a valid cases directory path or remove the cases-root setting and retry."]
+                )
+            );
 
-        return _fileSystem.Directory.GetFiles(resolvedCasesDirectoryPath,
-                "*", SearchOption.AllDirectories)
+        return _fileSystem
+            .Directory.GetFiles(resolvedCasesDirectoryPath, "*", SearchOption.AllDirectories)
             .OrderBy(f => f)
             .Select(caseFile =>
-                BuildContext(executionId, Path.GetRelativePath(Environment.CurrentDirectory, caseFile)))
+                BuildContext(
+                    executionId,
+                    Path.GetRelativePath(Environment.CurrentDirectory, caseFile)
+                )
+            )
             .ToList();
     }
 
@@ -137,25 +165,32 @@ public class RunLoader<TRunner, TOptions> : BaseLoader<TOptions, TRunner>
             contexts = FilterIgnoredCases(contexts).ToList();
 
             // If casesNamesToRun is 0 all cases would run.
-            if (Options.CasesNamesToRun.Count <= 0) return contexts;
+            if (Options.CasesNamesToRun.Count <= 0)
+                return contexts;
 
-            var notFoundGivenCases =
-                Options.CasesNamesToRun.Except(contexts.Select(context => context.CaseName!)).ToList();
+            var notFoundGivenCases = Options
+                .CasesNamesToRun.Except(contexts.Select(context => context.CaseName!))
+                .ToList();
             if (notFoundGivenCases.Count > 0)
-                throw new InvalidOperationException(RunnerDiagnosticMessageFormatter.Format(
-                    "The test-cases-to-run filter contains case names that were not discovered.",
-                    [
-                        $"Cases root directory: {Options.CasesRootDirectory}",
-                        $"Requested case names not found: {RunnerDiagnosticMessageFormatter.SummarizeValues(notFoundGivenCases)}",
-                        $"Discovered case names: {RunnerDiagnosticMessageFormatter.SummarizeValues(contexts.Select(context => context.CaseName))}"
-                    ],
-                    null,
-                    null,
-                    [
-                        "Update the test-cases-to-run values or the cases directory contents and retry."
-                    ]));
+                throw new InvalidOperationException(
+                    RunnerDiagnosticMessageFormatter.Format(
+                        "The test-cases-to-run filter contains case names that were not discovered.",
+                        [
+                            $"Cases root directory: {Options.CasesRootDirectory}",
+                            $"Requested case names not found: {RunnerDiagnosticMessageFormatter.SummarizeValues(notFoundGivenCases)}",
+                            $"Discovered case names: {RunnerDiagnosticMessageFormatter.SummarizeValues(contexts.Select(context => context.CaseName))}",
+                        ],
+                        null,
+                        null,
+                        [
+                            "Update the test-cases-to-run values or the cases directory contents and retry.",
+                        ]
+                    )
+                );
 
-            contexts = contexts.Where(context => Options.CasesNamesToRun.Contains(context.CaseName!)).ToList();
+            contexts = contexts
+                .Where(context => Options.CasesNamesToRun.Contains(context.CaseName!))
+                .ToList();
         }
 
         return contexts;
@@ -163,7 +198,10 @@ public class RunLoader<TRunner, TOptions> : BaseLoader<TOptions, TRunner>
 
     private IEnumerable<InternalContext> FilterIgnoredCases(IEnumerable<InternalContext> contexts)
     {
-        var ignoredCaseNames = new HashSet<string>(Options.CasesNamesToIgnore ?? [], StringComparer.Ordinal);
+        var ignoredCaseNames = new HashSet<string>(
+            Options.CasesNamesToIgnore ?? [],
+            StringComparer.Ordinal
+        );
         var ignoredCasePatterns = (Options.CasesNamePatternsToIgnore ?? [])
             .Select(pattern => new Regex(pattern, RegexOptions.Compiled))
             .ToArray();
@@ -186,14 +224,21 @@ public class RunLoader<TRunner, TOptions> : BaseLoader<TOptions, TRunner>
 
     private ExecutionBuilder LoadContextToExecutionBuilder(InternalContext context)
     {
-        var runBuilder = new ExecutionBuilder(context, Options.GetExecutionType(), Options.SessionNamesToRun,
-            Options.SessionCategoriesToRun, Options.AssertionNamesToRun, Options.AssertionCategoriesToRun);
+        var runBuilder = new ExecutionBuilder(
+            context,
+            Options.GetExecutionType(),
+            Options.SessionNamesToRun,
+            Options.SessionCategoriesToRun,
+            Options.AssertionNamesToRun,
+            Options.AssertionCategoriesToRun
+        );
 
         foreach (var configurator in _executionBuilderConfigurators.Value)
         {
             Logger.LogDebug(
                 "Applying runner execution configurator {ConfiguratorType}",
-                configurator.GetType().FullName);
+                configurator.GetType().FullName
+            );
             configurator.Configure(runBuilder);
         }
 
@@ -211,17 +256,20 @@ public class RunLoader<TRunner, TOptions> : BaseLoader<TOptions, TRunner>
     public override TRunner GetLoadedRunner()
     {
         var executionBuilders = GetLoadedExecutionBuilders().ToList();
-        var serveResultsFolder = Options is AssertableOptions assertableOptions && assertableOptions.AutoServeTestResults
-            ? assertableOptions.GetServeResultsFolderOrDefault()
-            : null;
+        var serveResultsFolder =
+            Options is AssertableOptions assertableOptions && assertableOptions.AutoServeTestResults
+                ? assertableOptions.GetServeResultsFolderOrDefault()
+                : null;
 
         var runner = Bootstrap.CreateRunner<TRunner>(
             _runScope,
             executionBuilders,
             Logger,
             SerilogLogger,
-            Options is AssertableOptions emptyResultsOptions && emptyResultsOptions.EmptyAllureDirectory,
-            serveResultsFolder is not null);
+            Options is AssertableOptions emptyResultsOptions
+                && emptyResultsOptions.EmptyAllureDirectory,
+            serveResultsFolder is not null
+        );
         runner.WithServeResultsFolder(serveResultsFolder);
         runner.ExitProcessOnCompletion = !Options.NoProcessExit;
         return runner;
@@ -244,11 +292,16 @@ public class RunLoader<TRunner, TOptions> : BaseLoader<TOptions, TRunner>
 
         try
         {
-            using var _ = _fileSystem.File.Open(resolvedConfigurationFilePath, FileMode.Open, FileAccess.Read,
-                FileShare.Read);
+            using var _ = _fileSystem.File.Open(
+                resolvedConfigurationFilePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read
+            );
             return true;
         }
-        catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
+        catch (Exception exception)
+            when (exception is FileNotFoundException or DirectoryNotFoundException)
         {
             if (_executionBuilderConfigurators.Value.Count == 0)
                 throw new CouldNotFindConfigurationException(
@@ -257,15 +310,17 @@ public class RunLoader<TRunner, TOptions> : BaseLoader<TOptions, TRunner>
                         [
                             $"Configured path: {Options.ConfigurationFile}",
                             $"Resolved local path: {resolvedConfigurationFilePath}",
-                            "Discovered code configurators: 0"
+                            "Discovered code configurators: 0",
                         ],
                         null,
                         null,
                         [
                             "Provide a valid .qaas.yaml file.",
-                            "Or register at least one IExecutionBuilderConfigurator so QaaS can build the execution in code."
-                        ]),
-                    exception);
+                            "Or register at least one IExecutionBuilderConfigurator so QaaS can build the execution in code.",
+                        ]
+                    ),
+                    exception
+                );
 
             if (!_missingConfigurationFileWarningLogged)
             {
@@ -273,7 +328,8 @@ public class RunLoader<TRunner, TOptions> : BaseLoader<TOptions, TRunner>
                     "Configuration file {ConfigurationFile} was not found at {ResolvedConfigurationFilePath}. Continuing because {ConfiguratorCount} code configurator(s) were discovered and can build the execution in code.",
                     Options.ConfigurationFile,
                     resolvedConfigurationFilePath,
-                    _executionBuilderConfigurators.Value.Count);
+                    _executionBuilderConfigurators.Value.Count
+                );
                 _missingConfigurationFileWarningLogged = true;
             }
 
@@ -283,6 +339,8 @@ public class RunLoader<TRunner, TOptions> : BaseLoader<TOptions, TRunner>
 
     private string ResolveLocalPath(string configuredPath)
     {
-        return _fileSystem.Path.GetFullPath(_fileSystem.Path.Combine(Environment.CurrentDirectory, configuredPath));
+        return _fileSystem.Path.GetFullPath(
+            _fileSystem.Path.Combine(Environment.CurrentDirectory, configuredPath)
+        );
     }
 }

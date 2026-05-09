@@ -4,13 +4,13 @@ using QaaS.Framework.Serialization;
 using AssertionResult = QaaS.Runner.Assertions.AssertionObjects.AssertionResult;
 using AssertionSeverity = QaaS.Runner.Assertions.AssertionObjects.AssertionSeverity;
 
-
 namespace QaaS.Runner.Assertions;
 
 /// <inheritdoc />
 public abstract class BaseReporter : IReporter
 {
-    protected const string TraceDisplayFalseMessage = "Assertion configured to not display assertion trace",
+    protected const string TraceDisplayFalseMessage =
+            "Assertion configured to not display assertion trace",
         QaaSTag = "QaaS",
         RawDataAttachmentType = "application/octet-stream",
         JsonAttachmentType = "application/json",
@@ -35,7 +35,9 @@ public abstract class BaseReporter : IReporter
 
     public abstract void WriteTestResults(AssertionResult assertionResult);
 
-    protected static string GetAttachmentTypeBySerializationType(SerializationType? serializationType)
+    protected static string GetAttachmentTypeBySerializationType(
+        SerializationType? serializationType
+    )
     {
         return serializationType switch
         {
@@ -47,7 +49,9 @@ public abstract class BaseReporter : IReporter
             SerializationType.XmlElement => XmlAttachmentType,
             SerializationType.MessagePack => MessagePackAttachmentType,
             null => RawDataAttachmentType,
-            _ => throw new InvalidOperationException($"Unsupported serialization type {serializationType} given")
+            _ => throw new InvalidOperationException(
+                $"Unsupported serialization type {serializationType} given"
+            ),
         };
     }
 }

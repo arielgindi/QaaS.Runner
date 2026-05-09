@@ -32,8 +32,8 @@ using QaaS.Runner.Assertions.AssertionObjects;
 using QaaS.Runner.Assertions.ConfigurationObjects;
 using QaaS.Runner.Extensions;
 using QaaS.Runner.Infrastructure;
-using QaaS.Runner.Sessions.Actions.Probes;
 using QaaS.Runner.Logics;
+using QaaS.Runner.Sessions.Actions.Probes;
 using QaaS.Runner.Sessions.Session;
 using QaaS.Runner.Sessions.Session.Builders;
 using QaaS.Runner.Storage;
@@ -49,7 +49,7 @@ namespace QaaS.Runner;
 /// Builds <see cref="Execution" /> instance
 /// </summary>
 [JsonSchema]
-public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, ExecutionData>
+public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, ExecutionData>, IDisposable
 {
     /// <summary>
     /// List of all sessions to run.
@@ -57,42 +57,57 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
     /// in order to receive response data from the tested system to assert on.
     /// </summary>
     [UniquePropertyInEnumerable(nameof(SessionBuilder.Name))]
-    [UniquePropertyInEnumerableProperties("Name",
+    [UniquePropertyInEnumerableProperties(
+        "Name",
         "Can't have the same name across multiple publishers/transactions since they all produce `SessionData.Input`.",
-        "Publishers", "Transactions")]
-    [UniquePropertyInEnumerableProperties("Name",
+        "Publishers",
+        "Transactions"
+    )]
+    [UniquePropertyInEnumerableProperties(
+        "Name",
         "Can't have the same name across multiple consumers/transactions/collectors since they all produce `SessionData.Output`.",
-        "Consumers", "Transactions", "Collectors")]
-    [Description("List of all sessions to run. Sessions contain the actions" +
-                 " performed against the tested system and its underlying infrastructure in order to receive" +
-                 " response data from the tested system to assert on.")]
+        "Consumers",
+        "Transactions",
+        "Collectors"
+    )]
+    [Description(
+        "List of all sessions to run. Sessions contain the actions"
+            + " performed against the tested system and its underlying infrastructure in order to receive"
+            + " response data from the tested system to assert on."
+    )]
     public SessionBuilder[]? Sessions { get; internal set; } = [];
+
     /// <summary>
     /// External storages qaas inner objects can be stored in or retrieved from when
     /// using the `qaas act` (to create and store) or `qaas assert` (to retrieve and use) commands
     /// </summary>
     [Description(
-        "External storages qaas inner objects can be stored in or retrieved from when using " +
-        "the `qaas act` (to create and store) or `qaas assert` (to retrieve and use) commands")]
-
+        "External storages qaas inner objects can be stored in or retrieved from when using "
+            + "the `qaas act` (to create and store) or `qaas assert` (to retrieve and use) commands"
+    )]
     public StorageBuilder[]? Storages { get; internal set; } = [];
+
     /// <summary>
     /// The list of assertions performed on the sessions' results in order to decide the test's status,
     /// each assertion produces a different test result.
     /// </summary>
     [UniquePropertyInEnumerable(nameof(AssertionBuilder.Name))]
     [Description(
-        "The list of assertions performed on the sessions' results in order to decide the test's status," +
-        " each assertion produces a different test result.")]
+        "The list of assertions performed on the sessions' results in order to decide the test's status,"
+            + " each assertion produces a different test result."
+    )]
     public AssertionBuilder[]? Assertions { get; internal set; } = [];
+
     /// <summary>
     /// The links generated on test results, used to view observability data outputted by the tested application.
     /// These links are generated per test result to be relevant specifically to that test and the time it ran at
     /// </summary>
     [Description(
-        "The links generated on test results, used to view observability data outputted by the tested application. " +
-        "These links are generated per test result to be relevant specifically to that test and the time it ran at")]
+        "The links generated on test results, used to view observability data outputted by the tested application. "
+            + "These links are generated per test result to be relevant specifically to that test and the time it ran at"
+    )]
     public LinkBuilder[]? Links { get; internal set; } = [];
+
     /// <summary>
     /// The metadata for the tests' run
     /// </summary>
@@ -124,17 +139,26 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
     private const BindingFlags ValidationBindingFlags =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
-    internal ExecutionBuilder(InternalContext context, ExecutionType executionType, IList<string>? sessionNamesToRun,
-        IList<string>? sessionCategoriesToRun, IList<string>? assertionNamesToRun,
-        IList<string>? assertionCategoriesToRun) : this()
+    internal ExecutionBuilder(
+        InternalContext context,
+        ExecutionType executionType,
+        IList<string>? sessionNamesToRun,
+        IList<string>? sessionCategoriesToRun,
+        IList<string>? assertionNamesToRun,
+        IList<string>? assertionCategoriesToRun
+    )
+        : this()
     {
         LoadedContext = true;
         Type = executionType;
 
         Context = context;
         _templateSourceConfiguration = context.RootConfiguration;
-        var blankRunBuilderFromContext = Bind.BindFromContext<ExecutionBuilder>(Context, _validationResults,
-            new BinderOptions() { BindNonPublicProperties = true });
+        var blankRunBuilderFromContext = Bind.BindFromContext<ExecutionBuilder>(
+            Context,
+            _validationResults,
+            new BinderOptions() { BindNonPublicProperties = true }
+        );
 
         DataSources = blankRunBuilderFromContext.DataSources;
         Storages = blankRunBuilderFromContext.Storages;
@@ -143,27 +167,35 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         Links = blankRunBuilderFromContext.Links;
         MetaData = blankRunBuilderFromContext.MetaData;
 
-        _sessionNamesToRun = sessionNamesToRun != null && !sessionNamesToRun.Any() ? null : sessionNamesToRun;
-        _sessionCategoriesToRun = sessionCategoriesToRun != null && !sessionCategoriesToRun.Any()
-            ? null
-            : sessionCategoriesToRun;
-        _assertionNamesToRun = assertionNamesToRun != null && !assertionNamesToRun.Any() ? null : assertionNamesToRun;
-        _assertionCategoriesToRun = assertionCategoriesToRun != null && !assertionCategoriesToRun.Any()
-            ? null
-            : assertionCategoriesToRun;
+        _sessionNamesToRun =
+            sessionNamesToRun != null && !sessionNamesToRun.Any() ? null : sessionNamesToRun;
+        _sessionCategoriesToRun =
+            sessionCategoriesToRun != null && !sessionCategoriesToRun.Any()
+                ? null
+                : sessionCategoriesToRun;
+        _assertionNamesToRun =
+            assertionNamesToRun != null && !assertionNamesToRun.Any() ? null : assertionNamesToRun;
+        _assertionCategoriesToRun =
+            assertionCategoriesToRun != null && !assertionCategoriesToRun.Any()
+                ? null
+                : assertionCategoriesToRun;
     }
 
     /// <inheritdoc />
     protected override IEnumerable<DataSource> BuildDataSources()
     {
-        return BuildDataSources(_buildScope ?? throw new InvalidOperationException(
-            "ExecutionBuilder scope is not initialized."));
+        return BuildDataSources(
+            _buildScope
+                ?? throw new InvalidOperationException("ExecutionBuilder scope is not initialized.")
+        );
     }
 
     private IEnumerable<DataSource> BuildDataSources(ILifetimeScope scope)
     {
         var configuredDataSources = DataSources ?? [];
-        var dataSources = configuredDataSources.Select(dataSourceBuilder => dataSourceBuilder.Register()).ToImmutableList();
+        var dataSources = configuredDataSources
+            .Select(dataSourceBuilder => dataSourceBuilder.Register())
+            .ToImmutableList();
         var resolvedGenerators = scope.Resolve<IList<KeyValuePair<string, IGenerator>>>();
         var resolvedDataSources = configuredDataSources.Select(dataSourceBuilder =>
         {
@@ -188,49 +220,63 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
     private IEnumerable<ISession> BuildSessions(ILifetimeScope scope)
     {
         // Assigning session stage default as the index in Sessions list
-        Sessions = Sessions is null ? [] : Sessions.Select((session, index) =>
-        {
-            session.Stage ??= index;
-            return session;
-        }).ToArray();
+        Sessions = Sessions is null
+            ? []
+            : Sessions
+                .Select(
+                    (session, index) =>
+                    {
+                        session.Stage ??= index;
+                        return session;
+                    }
+                )
+                .ToArray();
 
         // Build sessions
-        var sessions = Sessions.Select(session =>
-        {
-            // Resolve hooks
-            var hooks = session.Probes != null
-                ? scope.Resolve<IList<KeyValuePair<string, IProbe>>>()
-                : new List<KeyValuePair<string, IProbe>>();
+        var sessions = Sessions
+            .Select(session =>
+            {
+                // Resolve hooks
+                var hooks =
+                    session.Probes != null
+                        ? scope.Resolve<IList<KeyValuePair<string, IProbe>>>()
+                        : new List<KeyValuePair<string, IProbe>>();
 
-            return session.Build(Context, hooks);
-        }).ToList();
+                return session.Build(Context, hooks);
+            })
+            .ToList();
 
         return sessions;
     }
 
     private IEnumerable<Assertion> BuildAssertions(ILifetimeScope scope)
     {
-        if (Assertions is null) return [];
+        if (Assertions is null)
+            return [];
         var assertions = Assertions.Select(assertion =>
-            assertion.Build(scope.Resolve<IList<KeyValuePair<string, IAssertion>>>(), Links));
+            assertion.Build(scope.Resolve<IList<KeyValuePair<string, IAssertion>>>(), Links)
+        );
         return assertions;
     }
 
     private IEnumerable<IReporter> BuildReports()
     {
-        if (Assertions is null) return [];
+        if (Assertions is null)
+            return [];
         var testSuiteStartTimeUtc = DateTime.UtcNow;
         var resolvedReports = Assertions
             .GroupBy(assertionReport => assertionReport.GetReporterType())
-            .Select(assertionReportGroup => assertionReportGroup.First().Build(Context, testSuiteStartTimeUtc));
+            .Select(assertionReportGroup =>
+                assertionReportGroup.First().Build(Context, testSuiteStartTimeUtc)
+            );
         return resolvedReports;
     }
 
     private IEnumerable<IStorage> BuildStorages()
     {
-        if (Storages is null) return [];
-        var resolvedStorages = Storages.Select(storage =>
-            storage.Build(Context));
+        if (Storages is null)
+            return [];
+        var resolvedStorages = Storages.Select(storage => storage.Build(Context));
         return resolvedStorages;
     }
 
@@ -317,7 +363,9 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
     /// <qaas-docs group="Configuration as Code" subgroup="Executions" />
     public ExecutionBuilder AddAssertion(AssertionBuilder assertionBuilder)
     {
-        Assertions = Assertions is null ? [assertionBuilder] : Assertions.Append(assertionBuilder).ToArray();
+        Assertions = Assertions is null
+            ? [assertionBuilder]
+            : Assertions.Append(assertionBuilder).ToArray();
         return this;
     }
 
@@ -330,7 +378,12 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
     /// <qaas-docs group="Configuration as Code" subgroup="Executions" />
     public ExecutionBuilder UpdateAssertion(string assertionName, AssertionBuilder assertionBuilder)
     {
-        Assertions = UpdateByName(Assertions, assertionName, assertionBuilder, assertion => assertion.Name);
+        Assertions = UpdateByName(
+            Assertions,
+            assertionName,
+            assertionBuilder,
+            assertion => assertion.Name
+        );
         return this;
     }
 
@@ -408,7 +461,9 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
     /// <qaas-docs group="Configuration as Code" subgroup="Executions" />
     public ExecutionBuilder AddDataSource(DataSourceBuilder dataSourceBuilder)
     {
-        DataSources = DataSources is null ? [dataSourceBuilder] : DataSources.Append(dataSourceBuilder).ToArray();
+        DataSources = DataSources is null
+            ? [dataSourceBuilder]
+            : DataSources.Append(dataSourceBuilder).ToArray();
         return this;
     }
 
@@ -419,9 +474,17 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
     /// Use this method when working with the documented Runner execution builder API surface in code. The change is stored on the current builder instance and is consumed by later build, validation, or execution steps.
     /// </remarks>
     /// <qaas-docs group="Configuration as Code" subgroup="Executions" />
-    public ExecutionBuilder UpdateDataSource(string dataSourceName, DataSourceBuilder dataSourceBuilder)
+    public ExecutionBuilder UpdateDataSource(
+        string dataSourceName,
+        DataSourceBuilder dataSourceBuilder
+    )
     {
-        DataSources = UpdateByName(DataSources, dataSourceName, dataSourceBuilder, source => source.Name);
+        DataSources = UpdateByName(
+            DataSources,
+            dataSourceName,
+            dataSourceBuilder,
+            source => source.Name
+        );
         return this;
     }
 
@@ -571,43 +634,51 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
             // Loads context into scope
             containerBuilder.RegisterInstance(Context).As<InternalContext>().SingleInstance();
             containerBuilder.RegisterInstance(Context).As<Context>().SingleInstance();
-            containerBuilder.RegisterInstance(new ByNameObjectCreator(Context.Logger)).As<IByNameObjectCreator>();
+            containerBuilder
+                .RegisterInstance(new ByNameObjectCreator(Context.Logger))
+                .As<IByNameObjectCreator>();
             ValidateProbeDefinitions();
 
-            containerBuilder.Register<IComponentContext, IEnumerable<HookData<IAssertion>>>(_ =>
-                (Assertions ?? []).Select(assertion => new HookData<IAssertion>
-                {
-                    Type = assertion.Assertion!,
-                    Configuration = assertion.AssertionConfiguration,
-                    Name = assertion.Name!
-                })
-            ).InstancePerLifetimeScope(); // Loads all IAssertion hooks
-            containerBuilder.Register<IComponentContext, IEnumerable<HookData<IGenerator>>>(_ =>
-                (DataSources ?? []).Select(dataSourceConfig => new HookData<IGenerator>
-                {
-                    Type = dataSourceConfig.Generator!,
-                    Configuration = dataSourceConfig.GeneratorConfiguration,
-                    Name = dataSourceConfig.Name!
-                })
-            ).InstancePerLifetimeScope(); // Loads all IGenerator hooks
+            containerBuilder
+                .Register<IComponentContext, IEnumerable<HookData<IAssertion>>>(_ =>
+                    (Assertions ?? []).Select(assertion => new HookData<IAssertion>
+                    {
+                        Type = assertion.Assertion!,
+                        Configuration = assertion.AssertionConfiguration,
+                        Name = assertion.Name!,
+                    })
+                )
+                .InstancePerLifetimeScope(); // Loads all IAssertion hooks
+            containerBuilder
+                .Register<IComponentContext, IEnumerable<HookData<IGenerator>>>(_ =>
+                    (DataSources ?? []).Select(dataSourceConfig => new HookData<IGenerator>
+                    {
+                        Type = dataSourceConfig.Generator!,
+                        Configuration = dataSourceConfig.GeneratorConfiguration,
+                        Name = dataSourceConfig.Name!,
+                    })
+                )
+                .InstancePerLifetimeScope(); // Loads all IGenerator hooks
             containerBuilder
                 .Register<IComponentContext, IEnumerable<HookData<IProbe>>>(_ =>
-                    BuildProbeHookData())
+                    BuildProbeHookData()
+                )
                 .InstancePerLifetimeScope(); // Loads all IProbe hooks
-            containerBuilder.RegisterModule(
-                new HooksLoaderModule<IAssertion>(_validationResults)); // Loads all IAssertion hooks
-            containerBuilder.RegisterModule(
-                new HooksLoaderModule<IGenerator>(_validationResults)); // Loads all IGenerator hooks
-            containerBuilder.Register<IComponentContext, IList<KeyValuePair<string, IProbe>>>(scope =>
-            {
-                var objectCreator = scope.Resolve<IByNameObjectCreator>();
-                return LoadProbeHooks(
-                    Context,
-                    scope.Resolve<IEnumerable<HookData<IProbe>>>(),
-                    new HookProvider<IProbe>(Context, objectCreator),
-                    objectCreator,
-                    _validationResults);
-            }).InstancePerLifetimeScope();
+            containerBuilder.RegisterModule(new HooksLoaderModule<IAssertion>(_validationResults)); // Loads all IAssertion hooks
+            containerBuilder.RegisterModule(new HooksLoaderModule<IGenerator>(_validationResults)); // Loads all IGenerator hooks
+            containerBuilder
+                .Register<IComponentContext, IList<KeyValuePair<string, IProbe>>>(scope =>
+                {
+                    var objectCreator = scope.Resolve<IByNameObjectCreator>();
+                    return LoadProbeHooks(
+                        Context,
+                        scope.Resolve<IEnumerable<HookData<IProbe>>>(),
+                        new HookProvider<IProbe>(Context, objectCreator),
+                        objectCreator,
+                        _validationResults
+                    );
+                })
+                .InstancePerLifetimeScope();
 
             // loads logics
             containerBuilder.RegisterType<DataSourceLogic>().As<DataSourceLogic>();
@@ -625,16 +696,44 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         {
             foreach (var probeBuilder in sessionBuilder.Probes ?? [])
             {
-                if (string.IsNullOrWhiteSpace(sessionBuilder.Name) ||
-                    string.IsNullOrWhiteSpace(probeBuilder.Name) ||
-                    string.IsNullOrWhiteSpace(probeBuilder.Probe))
+                if (string.IsNullOrWhiteSpace(sessionBuilder.Name))
+                {
+                    _validationResults.Add(
+                        new ValidationResult(
+                            "A session is missing its Name; probe configuration will be skipped.",
+                            [nameof(SessionBuilder.Name)]
+                        )
+                    );
                     continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(probeBuilder.Name))
+                {
+                    _validationResults.Add(
+                        new ValidationResult(
+                            $"A probe in session '{sessionBuilder.Name}' is missing its Name; probe configuration will be skipped.",
+                            [nameof(ProbeBuilder.Name)]
+                        )
+                    );
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(probeBuilder.Probe))
+                {
+                    _validationResults.Add(
+                        new ValidationResult(
+                            $"Probe '{probeBuilder.Name}' in session '{sessionBuilder.Name}' is missing its Probe type; probe configuration will be skipped.",
+                            [nameof(ProbeBuilder.Probe)]
+                        )
+                    );
+                    continue;
+                }
 
                 yield return new HookData<IProbe>
                 {
                     Type = probeBuilder.Probe,
                     Configuration = probeBuilder.ProbeConfiguration,
-                    Name = ProbeBuilder.BuildScopedHookName(sessionBuilder.Name, probeBuilder.Name)
+                    Name = ProbeBuilder.BuildScopedHookName(sessionBuilder.Name, probeBuilder.Name),
                 };
             }
         }
@@ -651,10 +750,13 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         IEnumerable<HookData<IProbe>> probeHookData,
         IHookProvider<IProbe> hookProvider,
         IByNameObjectCreator objectCreator,
-        List<ValidationResult> validationResults)
+        List<ValidationResult> validationResults
+    )
     {
-        context.Logger.LogDebug("Starting loading and validation of all hooks of type {HookType}",
-            typeof(IProbe).Name);
+        context.Logger.LogDebug(
+            "Starting loading and validation of all hooks of type {HookType}",
+            typeof(IProbe).Name
+        );
 
         var resolvedProbeTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
         var loadedHooks = new List<KeyValuePair<string, IProbe>>();
@@ -672,9 +774,15 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
                 }
                 else
                 {
+                    var fullName =
+                        resolvedProbeType.FullName
+                        ?? throw new InvalidOperationException(
+                            $"Resolved probe type '{resolvedProbeType.Name}' has a null FullName; cannot create additional instances."
+                        );
                     hook = objectCreator.GetInstanceOfSubClassOfTByNameFromAssemblies<IProbe>(
-                        resolvedProbeType.FullName!,
-                        [resolvedProbeType.Assembly]);
+                        fullName,
+                        [resolvedProbeType.Assembly]
+                    );
                     hook.Context = context;
                 }
             }
@@ -682,17 +790,38 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
             {
                 context.Logger.LogCritical(
                     "Encountered exception while loading {HookType} instance {InstanceName} - {Exception}",
-                    typeof(IProbe).Name, hookData.Type, e);
+                    typeof(IProbe).Name,
+                    hookData.Type,
+                    e
+                );
+                throw;
+            }
+            catch (Exception e)
+                when (e
+                        is TypeLoadException
+                            or MissingMethodException
+                            or ReflectionTypeLoadException
+                )
+            {
+                context.Logger.LogCritical(
+                    "Reflection error while loading {HookType} instance {InstanceName} - {Exception}",
+                    typeof(IProbe).Name,
+                    hookData.Type,
+                    e
+                );
                 throw;
             }
 
             var (sessionName, probeName) = ProbeBuilder.ParseScopedHookName(hookData.Name);
             using var probeExecutionScope = ProbeExecutionScope.Enter(sessionName, probeName);
-            var configurationsValidationResults = (hook.LoadAndValidateConfiguration(
-                hookData.Configuration) ?? Enumerable.Empty<ValidationResult>()).ToList();
+            var configurationsValidationResults = (
+                hook.LoadAndValidateConfiguration(hookData.Configuration)
+                ?? Enumerable.Empty<ValidationResult>()
+            ).ToList();
             foreach (var validationResult in configurationsValidationResults)
-                validationResult.ErrorMessage = $"In Hook of {typeof(IProbe).Name} named {hookData.Name} of type" +
-                                                $" {hookData.Type} {validationResult.ErrorMessage}";
+                validationResult.ErrorMessage =
+                    $"In Hook of {typeof(IProbe).Name} named {hookData.Name} of type"
+                    + $" {hookData.Type} {validationResult.ErrorMessage}";
 
             validationResults.AddRange(configurationsValidationResults);
             loadedHooks.Add(new KeyValuePair<string, IProbe>(hookData.Name, hook));
@@ -709,21 +838,29 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
             {
                 if (string.IsNullOrWhiteSpace(sessionBuilder.Name))
                 {
-                    _validationResults.Add(new ValidationResult("Session name is required when configuring probes."));
+                    _validationResults.Add(
+                        new ValidationResult("Session name is required when configuring probes.")
+                    );
                 }
 
                 if (string.IsNullOrWhiteSpace(probeBuilder.Name))
                 {
-                    _validationResults.Add(new ValidationResult(
-                        $"Probe name is required for session '{sessionBuilder.Name}'.",
-                        [nameof(ProbeBuilder.Name)]));
+                    _validationResults.Add(
+                        new ValidationResult(
+                            $"Probe name is required for session '{sessionBuilder.Name}'.",
+                            [nameof(ProbeBuilder.Name)]
+                        )
+                    );
                 }
 
                 if (string.IsNullOrWhiteSpace(probeBuilder.Probe))
                 {
-                    _validationResults.Add(new ValidationResult(
-                        $"Probe type is required for probe '{probeBuilder.Name}' in session '{sessionBuilder.Name}'.",
-                        [nameof(ProbeBuilder.Probe)]));
+                    _validationResults.Add(
+                        new ValidationResult(
+                            $"Probe type is required for probe '{probeBuilder.Name}' in session '{sessionBuilder.Name}'.",
+                            [nameof(ProbeBuilder.Probe)]
+                        )
+                    );
                 }
             }
         }
@@ -743,13 +880,16 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         var logger = _configuredLogger ?? existingContext?.Logger ?? NullLogger.Instance;
         var caseName = _configuredCaseName ?? existingContext?.CaseName;
         var executionId = _configuredExecutionId ?? existingContext?.ExecutionId;
-        var rootConfiguration = existingContext?.RootConfiguration ?? new ConfigurationBuilder().Build();
-        var internalRunningSessions = existingContext?.InternalRunningSessions ??
-                                      new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>());
+        var rootConfiguration =
+            existingContext?.RootConfiguration ?? new ConfigurationBuilder().Build();
+        var internalRunningSessions =
+            existingContext?.InternalRunningSessions
+            ?? new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>());
 
-        var internalGlobalDict = existingContext?.InternalGlobalDict != null
-            ? new Dictionary<string, object?>(existingContext.InternalGlobalDict)
-            : new Dictionary<string, object?>();
+        var internalGlobalDict =
+            existingContext?.InternalGlobalDict != null
+                ? new Dictionary<string, object?>(existingContext.InternalGlobalDict)
+                : new Dictionary<string, object?>();
         foreach (var (key, value) in _globalDict)
         {
             internalGlobalDict[key] = value;
@@ -762,7 +902,7 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
             ExecutionId = executionId,
             RootConfiguration = rootConfiguration,
             InternalRunningSessions = internalRunningSessions,
-            InternalGlobalDict = internalGlobalDict
+            InternalGlobalDict = internalGlobalDict,
         };
 
         // saved context's metadata in globalDict
@@ -770,7 +910,11 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         LoadVariablesIntoGlobalDictionary(rootConfiguration);
         Context.Logger.LogDebug(
             "Initialized execution context. LoadedContext={LoadedContext}, ExecutionId={ExecutionId}, CaseName={CaseName}, GlobalKeys={GlobalKeyCount}",
-            LoadedContext, Context.ExecutionId, Context.CaseName, Context.InternalGlobalDict.Count);
+            LoadedContext,
+            Context.ExecutionId,
+            Context.CaseName,
+            Context.InternalGlobalDict.Count
+        );
     }
 
     private void LoadVariablesIntoGlobalDictionary(IConfiguration rootConfiguration)
@@ -787,7 +931,9 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         _globalDict["Variables"] = loadedVariables;
     }
 
-    private static object? ConvertConfigurationSectionToGlobalValue(IConfigurationSection configurationSection)
+    private static object? ConvertConfigurationSectionToGlobalValue(
+        IConfigurationSection configurationSection
+    )
     {
         var children = configurationSection.GetChildren().ToList();
         if (children.Count == 0)
@@ -806,7 +952,8 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         return children.ToDictionary(
             child => child.Key,
             ConvertConfigurationSectionToGlobalValue,
-            StringComparer.Ordinal);
+            StringComparer.Ordinal
+        );
     }
 
     /// <summary>
@@ -816,13 +963,26 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
     {
         var sessionsBeforeFiltering = Sessions?.Length ?? 0;
         var assertionsBeforeFiltering = Assertions?.Length ?? 0;
-        Assertions = (Assertions ?? [])
-            .FilterConfigurationByAssertion(_assertionNamesToRun, _assertionCategoriesToRun, Context);
-        Sessions = (Sessions ?? []).FilterConfigurationBySessionsAndAssertions(Assertions, _sessionNamesToRun,
-            _assertionNamesToRun, _sessionCategoriesToRun, _assertionCategoriesToRun, Context);
+        Assertions = (Assertions ?? []).FilterConfigurationByAssertion(
+            _assertionNamesToRun,
+            _assertionCategoriesToRun,
+            Context
+        );
+        Sessions = (Sessions ?? []).FilterConfigurationBySessionsAndAssertions(
+            Assertions,
+            _sessionNamesToRun,
+            _assertionNamesToRun,
+            _sessionCategoriesToRun,
+            _assertionCategoriesToRun,
+            Context
+        );
         Context.Logger.LogDebug(
             "Filtered execution configuration. Sessions: {SessionCountBefore} -> {SessionCountAfter}, Assertions: {AssertionCountBefore} -> {AssertionCountAfter}",
-            sessionsBeforeFiltering, Sessions.Length, assertionsBeforeFiltering, Assertions.Length);
+            sessionsBeforeFiltering,
+            Sessions.Length,
+            assertionsBeforeFiltering,
+            Assertions.Length
+        );
     }
 
     private void DeduplicateValidationResults()
@@ -836,8 +996,10 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
             .GroupBy(result => new
             {
                 Message = result.ErrorMessage ?? string.Empty,
-                MemberNames = string.Join("|", result.MemberNames.OrderBy(memberName => memberName,
-                    StringComparer.Ordinal))
+                MemberNames = string.Join(
+                    "|",
+                    result.MemberNames.OrderBy(memberName => memberName, StringComparer.Ordinal)
+                ),
             })
             .Select(group => group.First())
             .ToList();
@@ -861,10 +1023,11 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
             .Where(assertion => !string.IsNullOrWhiteSpace(assertion.Name))
             .ToDictionary(
                 assertion => assertion.Name!,
-                assertion => (IReadOnlyList<string>)assertion.StatusesToReport
-                    .Select(status => status.ToString())
-                    .ToList(),
-                StringComparer.Ordinal);
+                assertion =>
+                    (IReadOnlyList<string>)
+                        assertion.StatusesToReport.Select(status => status.ToString()).ToList(),
+                StringComparer.Ordinal
+            );
         var renderedTemplate = ConfigurationTemplateRenderer.Render(
             _templateSourceConfiguration ?? Context.RootConfiguration,
             [
@@ -873,11 +1036,12 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
                 new KeyValuePair<string, object?>("Sessions", Sessions),
                 new KeyValuePair<string, object?>("Assertions", Assertions),
                 new KeyValuePair<string, object?>("Links", Links),
-                new KeyValuePair<string, object?>("MetaData", MetaData)
+                new KeyValuePair<string, object?>("MetaData", MetaData),
             ],
             Infrastructure.Constants.ConfigurationSectionNames,
             includedSessionNames,
-            assertionStatusesToReport);
+            assertionStatusesToReport
+        );
 
         Context.SetRenderedConfigurationTemplate(renderedTemplate);
     }
@@ -893,10 +1057,11 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
     {
         InitializeContext();
         Context.Logger.LogInformation(
-            "Started building {Type} execution with executionId {ExecutionId} and case name {CaseName}", Type,
+            "Started building {Type} execution with executionId {ExecutionId} and case name {CaseName}",
+            Type,
             Context.ExecutionId,
-            Context.CaseName);
-
+            Context.CaseName
+        );
 
         // loads all hooks & logics validate them
         var scope = LoadContextScopeDependencies();
@@ -914,20 +1079,24 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
 
             if (_validationResults.Any())
             {
-                Context.Logger.LogDebug("Validation produced {ValidationResultCount} result(s)", _validationResults.Count);
+                Context.Logger.LogDebug(
+                    "Validation produced {ValidationResultCount} result(s)",
+                    _validationResults.Count
+                );
                 var validationMessage = RunnerDiagnosticMessageFormatter.Format(
                     "Runner execution configuration is invalid.",
                     [
                         $"Execution type: {Type}",
                         $"Execution id: {Context.ExecutionId ?? "<none>"}",
-                        $"Case: {Context.CaseName ?? "<none>"}"
+                        $"Case: {Context.CaseName ?? "<none>"}",
                     ],
                     $"Validation issues ({_validationResults.Count})",
                     _validationResults.Select(result => result.ErrorMessage),
                     [
                         "Fix the listed configuration paths in the effective runner configuration and retry.",
-                        "Issue paths use QaaS configuration syntax such as Sessions:0:Publishers:0:Name."
-                    ]);
+                        "Issue paths use QaaS configuration syntax such as Sessions:0:Publishers:0:Name.",
+                    ]
+                );
                 Context.Logger.LogCritical("{ValidationMessage}", validationMessage);
                 throw new InvalidConfigurationsException(validationMessage);
             }
@@ -940,50 +1109,73 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
             var builtStorages = BuildStorages().ToList();
             var builtAssertions = BuildAssertions(scope).ToList();
             var builtReports = BuildReports().ToList();
-            var dataSourceLogic =
-                scope.Resolve<DataSourceLogic>(
-                    new TypedParameter(typeof(IList<DataSource>), builtDataSources));
-            var sessionLogic =
-                scope.Resolve<SessionLogic>(
-                    new TypedParameter(typeof(List<ISession>), builtSessions));
-            var storageLogic =
-                scope.Resolve<StorageLogic>(new TypedParameter(typeof(IList<IStorage>), builtStorages),
-                    new TypedParameter(typeof(ExecutionType), Type));
-            var assertionLogic =
-                scope.Resolve<AssertionLogic>(
-                    new TypedParameter(typeof(IList<Assertion>), builtAssertions));
-            var reportLogic =
-                scope.Resolve<ReportLogic>(new TypedParameter(typeof(IList<IReporter>), builtReports));
-            var templateLogic = scope.Resolve<TemplateLogic>(new TypedParameter(typeof(Context), Context));
+            var dataSourceLogic = scope.Resolve<DataSourceLogic>(
+                new TypedParameter(typeof(IList<DataSource>), builtDataSources)
+            );
+            var sessionLogic = scope.Resolve<SessionLogic>(
+                new TypedParameter(typeof(List<ISession>), builtSessions)
+            );
+            var storageLogic = scope.Resolve<StorageLogic>(
+                new TypedParameter(typeof(IList<IStorage>), builtStorages),
+                new TypedParameter(typeof(ExecutionType), Type)
+            );
+            var assertionLogic = scope.Resolve<AssertionLogic>(
+                new TypedParameter(typeof(IList<Assertion>), builtAssertions)
+            );
+            var reportLogic = scope.Resolve<ReportLogic>(
+                new TypedParameter(typeof(IList<IReporter>), builtReports)
+            );
+            var templateLogic = scope.Resolve<TemplateLogic>(
+                new TypedParameter(typeof(Context), Context)
+            );
             var reporterTypes = FormatReporterTypes(builtReports);
 
             Context.Logger.LogDebug(
                 "Resolved execution components. DataSources={DataSourceCount}, Sessions={SessionCount}, Storages={StorageCount}, Assertions={AssertionCount}, Reporters={ReporterCount}, ReporterTypes={ReporterTypes}",
-                builtDataSources.Count, builtSessions.Count, builtStorages.Count, builtAssertions.Count,
-                builtReports.Count, reporterTypes);
+                builtDataSources.Count,
+                builtSessions.Count,
+                builtStorages.Count,
+                builtAssertions.Count,
+                builtReports.Count,
+                reporterTypes
+            );
 
             Context.Logger.LogInformation(
-                "Finished building {Type} execution with executionId {ExecutionId} and case name {CaseName}", Type,
-                Context.ExecutionId, Context.CaseName);
+                "Finished building {Type} execution with executionId {ExecutionId} and case name {CaseName}",
+                Type,
+                Context.ExecutionId,
+                Context.CaseName
+            );
 
             // bind back context onto the executionBuilder object
             return new Execution(Type, Context, scope)
             {
-                AssertionLogic = assertionLogic, ReportLogic = reportLogic, SessionLogic = sessionLogic,
-                TemplateLogic = templateLogic, DataSourceLogic = dataSourceLogic, StorageLogic = storageLogic
+                AssertionLogic = assertionLogic,
+                ReportLogic = reportLogic,
+                SessionLogic = sessionLogic,
+                TemplateLogic = templateLogic,
+                DataSourceLogic = dataSourceLogic,
+                StorageLogic = storageLogic,
             };
         }
         catch
         {
-            Context.Logger.LogDebug("Execution build failed. Disposing Autofac scope for execution {ExecutionId}",
-                Context.ExecutionId);
+            Context.Logger.LogDebug(
+                "Execution build failed. Disposing Autofac scope for execution {ExecutionId}",
+                Context.ExecutionId
+            );
             scope.Dispose();
             _buildScope = null;
             throw;
         }
     }
 
-    private static T[]? UpdateByName<T>(T[]? items, string key, T replacement, Func<T, string?> keySelector)
+    private static T[]? UpdateByName<T>(
+        T[]? items,
+        string key,
+        T replacement,
+        Func<T, string?> keySelector
+    )
     {
         if (items == null)
         {
@@ -1038,8 +1230,14 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
 
     private void ValidateConfiguredSections()
     {
-        TryValidateConfiguredMembers(nameof(DataSources), nameof(Storages), nameof(Assertions), nameof(Links),
-            nameof(MetaData), nameof(Sessions));
+        TryValidateConfiguredMembers(
+            nameof(DataSources),
+            nameof(Storages),
+            nameof(Assertions),
+            nameof(Links),
+            nameof(MetaData),
+            nameof(Sessions)
+        );
 
         ValidateCollection(DataSources, nameof(DataSources));
         ValidateCollection(Storages, nameof(Storages));
@@ -1047,8 +1245,11 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         ValidateCollection(Links, nameof(Links));
         ValidateCollection(Sessions, nameof(Sessions));
 
-        _ = TryValidateConfiguredObjectRecursive(MetaData ?? new MetaDataConfig(), _validationResults,
-            nameof(MetaData));
+        _ = TryValidateConfiguredObjectRecursive(
+            MetaData ?? new MetaDataConfig(),
+            _validationResults,
+            nameof(MetaData)
+        );
     }
 
     private void ValidateCollection<T>(IEnumerable<T>? items, string parentPath)
@@ -1063,7 +1264,11 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         {
             if (item != null)
             {
-                _ = TryValidateConfiguredObjectRecursive(item, _validationResults, $"{parentPath}:{index}");
+                _ = TryValidateConfiguredObjectRecursive(
+                    item,
+                    _validationResults,
+                    $"{parentPath}:{index}"
+                );
             }
 
             index++;
@@ -1080,20 +1285,26 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
             // Reflection is therefore limited to the runner's configuration boundary instead of recursing through the
             // entire builder object graph the generic framework validator would otherwise inspect.
             var property = GetType().GetProperty(propertyName, ValidationBindingFlags);
-            if (property == null || property.GetIndexParameters().Length > 0 ||
-                !TryGetPropertyValue(this, property, out var propertyValue))
+            if (
+                property == null
+                || property.GetIndexParameters().Length > 0
+                || !TryGetPropertyValue(this, property, out var propertyValue)
+            )
             {
                 continue;
             }
 
             var validationContext = new ValidationContext(this, null, null)
             {
-                MemberName = property.Name
+                MemberName = property.Name,
             };
 
             foreach (var validationAttribute in property.GetCustomAttributes<ValidationAttribute>())
             {
-                var validationResult = validationAttribute.GetValidationResult(propertyValue, validationContext);
+                var validationResult = validationAttribute.GetValidationResult(
+                    propertyValue,
+                    validationContext
+                );
                 if (validationResult != ValidationResult.Success && validationResult != null)
                 {
                     _validationResults.Add(validationResult);
@@ -1102,8 +1313,11 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         }
     }
 
-    private static bool TryValidateConfiguredObjectRecursive(object? obj, List<ValidationResult> results,
-        string parentPath = "")
+    private static bool TryValidateConfiguredObjectRecursive(
+        object? obj,
+        List<ValidationResult> results,
+        string parentPath = ""
+    )
     {
         if (obj == null)
         {
@@ -1124,9 +1338,11 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
 
         var properties = obj.GetType()
             .GetProperties(ValidationBindingFlags)
-            .Where(property => property.GetIndexParameters().Length == 0 &&
-                               property.PropertyType != obj.GetType() &&
-                               ShouldInspectProperty(property));
+            .Where(property =>
+                property.GetIndexParameters().Length == 0
+                && property.PropertyType != obj.GetType()
+                && ShouldInspectProperty(property)
+            );
 
         foreach (var property in properties)
         {
@@ -1148,7 +1364,8 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
                             continue;
                         }
 
-                        var entryPath = $"{propertyPath}{ConfigurationConstants.PathSeparator}{key}";
+                        var entryPath =
+                            $"{propertyPath}{ConfigurationConstants.PathSeparator}{key}";
                         if (!TryValidateConfiguredObjectRecursive(entry, results, entryPath))
                         {
                             isValid = false;
@@ -1160,9 +1377,14 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
                     var index = 0;
                     foreach (var item in enumerableValue)
                     {
-                        if (item != null &&
-                            !TryValidateConfiguredObjectRecursive(item, results,
-                                $"{propertyPath}{ConfigurationConstants.PathSeparator}{index}"))
+                        if (
+                            item != null
+                            && !TryValidateConfiguredObjectRecursive(
+                                item,
+                                results,
+                                $"{propertyPath}{ConfigurationConstants.PathSeparator}{index}"
+                            )
+                        )
                         {
                             isValid = false;
                         }
@@ -1171,8 +1393,11 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
                     }
                 }
             }
-            else if (value != null && !IsTerminalType(value.GetType()) &&
-                     !TryValidateConfiguredObjectRecursive(value, results, propertyPath))
+            else if (
+                value != null
+                && !IsTerminalType(value.GetType())
+                && !TryValidateConfiguredObjectRecursive(value, results, propertyPath)
+            )
             {
                 isValid = false;
             }
@@ -1190,10 +1415,12 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         {
             var validationContext = new ValidationContext(obj, null, null)
             {
-                MemberName = string.Empty
+                MemberName = string.Empty,
             };
 
-            foreach (var validationAttribute in objectType.GetCustomAttributes<ValidationAttribute>())
+            foreach (
+                var validationAttribute in objectType.GetCustomAttributes<ValidationAttribute>()
+            )
             {
                 var result = validationAttribute.GetValidationResult(obj, validationContext);
                 if (result != ValidationResult.Success && result != null)
@@ -1204,13 +1431,20 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         }
         else
         {
-            _ = Validator.TryValidateObject(obj, new ValidationContext(obj), validationResults, true);
+            _ = Validator.TryValidateObject(
+                obj,
+                new ValidationContext(obj),
+                validationResults,
+                true
+            );
             var objectValidationContext = new ValidationContext(obj, null, null)
             {
-                MemberName = string.Empty
+                MemberName = string.Empty,
             };
 
-            foreach (var validationAttribute in objectType.GetCustomAttributes<ValidationAttribute>())
+            foreach (
+                var validationAttribute in objectType.GetCustomAttributes<ValidationAttribute>()
+            )
             {
                 var result = validationAttribute.GetValidationResult(obj, objectValidationContext);
                 if (result != ValidationResult.Success && result != null)
@@ -1219,24 +1453,35 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
                 }
             }
 
-            foreach (var property in objectType.GetProperties(ValidationBindingFlags)
-                         .Where(property => property.GetMethod?.IsPublic != true))
+            foreach (
+                var property in objectType
+                    .GetProperties(ValidationBindingFlags)
+                    .Where(property => property.GetMethod?.IsPublic != true)
+            )
             {
-                var validationAttributes = property.GetCustomAttributes<ValidationAttribute>().ToArray();
-                if (property.GetIndexParameters().Length > 0 || validationAttributes.Length == 0 ||
-                    !TryGetPropertyValue(obj, property, out var propertyValue))
+                var validationAttributes = property
+                    .GetCustomAttributes<ValidationAttribute>()
+                    .ToArray();
+                if (
+                    property.GetIndexParameters().Length > 0
+                    || validationAttributes.Length == 0
+                    || !TryGetPropertyValue(obj, property, out var propertyValue)
+                )
                 {
                     continue;
                 }
 
                 var validationContext = new ValidationContext(obj, null, null)
                 {
-                    MemberName = property.Name
+                    MemberName = property.Name,
                 };
 
                 foreach (var validationAttribute in validationAttributes)
                 {
-                    var result = validationAttribute.GetValidationResult(propertyValue, validationContext);
+                    var result = validationAttribute.GetValidationResult(
+                        propertyValue,
+                        validationContext
+                    );
                     if (result != ValidationResult.Success && result != null)
                     {
                         validationResults.Add(result);
@@ -1249,10 +1494,14 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         return !validationResults.Any();
     }
 
-    private static IEnumerable<ValidationResult> PrefixValidationResults(IEnumerable<ValidationResult> validationResults,
-        string parentPath)
+    private static IEnumerable<ValidationResult> PrefixValidationResults(
+        IEnumerable<ValidationResult> validationResults,
+        string parentPath
+    )
     {
-        var trimmedParentPath = parentPath.TrimStart(ConfigurationConstants.PathSeparator.ToCharArray());
+        var trimmedParentPath = parentPath.TrimStart(
+            ConfigurationConstants.PathSeparator.ToCharArray()
+        );
         var parentPrefix = trimmedParentPath.Length == 0 ? string.Empty : $"{trimmedParentPath} - ";
 
         return validationResults.Select(result =>
@@ -1263,18 +1512,26 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
     }
 
     private static IEnumerable<ValidationResult> DistinctValidationResults(
-        IEnumerable<ValidationResult> validationResults)
+        IEnumerable<ValidationResult> validationResults
+    )
     {
         return validationResults
             .GroupBy(result => new
             {
                 Message = result.ErrorMessage ?? string.Empty,
-                Members = string.Join("|", result.MemberNames.OrderBy(member => member, StringComparer.Ordinal))
+                Members = string.Join(
+                    "|",
+                    result.MemberNames.OrderBy(member => member, StringComparer.Ordinal)
+                ),
             })
             .Select(group => group.First());
     }
 
-    private static bool TryGetPropertyValue(object instance, PropertyInfo property, out object? value)
+    private static bool TryGetPropertyValue(
+        object instance,
+        PropertyInfo property,
+        out object? value
+    )
     {
         try
         {
@@ -1304,29 +1561,29 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
 
         return effectiveType.IsPrimitive
-               || effectiveType.IsEnum
-               || effectiveType == typeof(string)
-               || effectiveType == typeof(decimal)
-               || effectiveType == typeof(DateTime)
-               || effectiveType == typeof(DateTimeOffset)
-               || effectiveType == typeof(TimeSpan)
-               || effectiveType == typeof(Guid)
-               || effectiveType == typeof(Uri)
-               || effectiveType == typeof(Type)
-               || typeof(Delegate).IsAssignableFrom(effectiveType)
-               || typeof(MemberInfo).IsAssignableFrom(effectiveType)
-               || typeof(Assembly).IsAssignableFrom(effectiveType)
-               || effectiveType == typeof(IntPtr)
-               || effectiveType == typeof(UIntPtr)
-               || effectiveType.IsPointer
-               || effectiveType.IsByRef;
+            || effectiveType.IsEnum
+            || effectiveType == typeof(string)
+            || effectiveType == typeof(decimal)
+            || effectiveType == typeof(DateTime)
+            || effectiveType == typeof(DateTimeOffset)
+            || effectiveType == typeof(TimeSpan)
+            || effectiveType == typeof(Guid)
+            || effectiveType == typeof(Uri)
+            || effectiveType == typeof(Type)
+            || typeof(Delegate).IsAssignableFrom(effectiveType)
+            || typeof(MemberInfo).IsAssignableFrom(effectiveType)
+            || typeof(Assembly).IsAssignableFrom(effectiveType)
+            || effectiveType == typeof(IntPtr)
+            || effectiveType == typeof(UIntPtr)
+            || effectiveType.IsPointer
+            || effectiveType.IsByRef;
     }
 
     private static bool ShouldInspectProperty(PropertyInfo property)
     {
         return property.GetCustomAttributes<ValidationAttribute>().Any()
-               || property.GetCustomAttributes<DescriptionAttribute>().Any()
-               || property.GetCustomAttributes<DefaultValueAttribute>().Any();
+            || property.GetCustomAttributes<DescriptionAttribute>().Any()
+            || property.GetCustomAttributes<DefaultValueAttribute>().Any();
     }
 
     private static string FormatReporterTypes(IEnumerable<IReporter> reporters)
@@ -1338,5 +1595,14 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
             .ToArray();
 
         return reporterTypes.Length == 0 ? "None" : string.Join(", ", reporterTypes);
+    }
+
+    /// <summary>
+    /// Disposes the root Autofac container created by this builder.
+    /// </summary>
+    public void Dispose()
+    {
+        _container.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

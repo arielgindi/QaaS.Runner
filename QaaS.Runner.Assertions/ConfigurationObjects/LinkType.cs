@@ -18,5 +18,5 @@ public enum LinkType
     /// <summary>
     ///     A grafana that displays metrics about the tested system during the test
     /// </summary>
-    Grafana
+    Grafana,
 }

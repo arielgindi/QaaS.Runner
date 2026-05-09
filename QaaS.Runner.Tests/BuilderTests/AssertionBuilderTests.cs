@@ -7,7 +7,8 @@ namespace QaaS.Runner.Tests.BuilderTests;
 public class AssertionBuilderTests
 {
     public void TestBuild_CallFunctionWithDifferentConfiguration_ShouldReturnExpectedObject(
-        AssertionBuilder assertionBuilder, Assertion assertion, BaseReporter reporter)
-    {
-    }
+        AssertionBuilder assertionBuilder,
+        Assertion assertion,
+        BaseReporter reporter
+    ) { }
 }

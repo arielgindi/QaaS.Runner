@@ -7,17 +7,24 @@ internal static partial class RunnerYamlConfigurationExceptionFactory
 {
     public static bool ShouldWrap(Exception exception)
     {
-        if (exception is CouldNotFindConfigurationException or InvalidConfigurationsException or FileNotFoundException
-            or DirectoryNotFoundException)
+        if (
+            exception
+            is CouldNotFindConfigurationException
+                or InvalidConfigurationsException
+                or FileNotFoundException
+                or DirectoryNotFoundException
+        )
         {
             return true;
         }
 
         for (var current = exception; current != null; current = current.InnerException)
         {
-            if (LoadedFilePathRegex().IsMatch(current.Message) ||
-                ParserLocationRegex().IsMatch(current.Message) ||
-                YamlFormatRegex().IsMatch(current.Message))
+            if (
+                LoadedFilePathRegex().IsMatch(current.Message)
+                || ParserLocationRegex().IsMatch(current.Message)
+                || YamlFormatRegex().IsMatch(current.Message)
+            )
             {
                 return true;
             }
@@ -43,8 +50,10 @@ internal static partial class RunnerYamlConfigurationExceptionFactory
                     [$"Resolved local path: {resolvedPath}"],
                     null,
                     null,
-                    ["Provide a valid YAML file path and retry."]),
-                exception);
+                    ["Provide a valid YAML file path and retry."]
+                ),
+                exception
+            );
         }
 
         if (TryGetParserDiagnostics(exception, out var parserLocation, out var parserDetail))
@@ -55,14 +64,16 @@ internal static partial class RunnerYamlConfigurationExceptionFactory
                     [
                         $"Resolved local path: {resolvedPath}",
                         parserLocation,
-                        $"Parser detail: {parserDetail}"
+                        $"Parser detail: {parserDetail}",
                     ],
                     null,
                     null,
                     [
                         "Fix the YAML syntax at the reported file and location, then retry.",
-                        "Parser locations are 1-based line and column numbers when available."
-                    ]));
+                        "Parser locations are 1-based line and column numbers when available.",
+                    ]
+                )
+            );
         }
 
         return new InvalidConfigurationsException(
@@ -70,11 +81,13 @@ internal static partial class RunnerYamlConfigurationExceptionFactory
                 "YAML configuration file could not be loaded.",
                 [
                     $"Resolved local path: {resolvedPath}",
-                    $"Load failure detail: {GetMostRelevantMessage(exception)}"
+                    $"Load failure detail: {GetMostRelevantMessage(exception)}",
                 ],
                 null,
                 null,
-                ["Fix the file contents or accessibility issue and retry."]));
+                ["Fix the file contents or accessibility issue and retry."]
+            )
+        );
     }
 
     private static string ResolveLocalPath(string configuredPath)
@@ -86,8 +99,10 @@ internal static partial class RunnerYamlConfigurationExceptionFactory
     {
         for (var current = exception; current != null; current = current.InnerException)
         {
-            if (current is FileNotFoundException fileNotFoundException &&
-                !string.IsNullOrWhiteSpace(fileNotFoundException.FileName))
+            if (
+                current is FileNotFoundException fileNotFoundException
+                && !string.IsNullOrWhiteSpace(fileNotFoundException.FileName)
+            )
             {
                 return fileNotFoundException.FileName;
             }
@@ -105,7 +120,8 @@ internal static partial class RunnerYamlConfigurationExceptionFactory
     private static bool TryGetParserDiagnostics(
         Exception exception,
         out string? parserLocation,
-        out string parserDetail)
+        out string parserDetail
+    )
     {
         for (var current = exception; current != null; current = current.InnerException)
         {
@@ -145,13 +161,21 @@ internal static partial class RunnerYamlConfigurationExceptionFactory
         return exception.GetType().Name;
     }
 
-    [GeneratedRegex(@"Failed to load configuration from file '(?<path>[^']+)'\.", RegexOptions.Compiled)]
+    [GeneratedRegex(
+        @"Failed to load configuration from file '(?<path>[^']+)'\.",
+        RegexOptions.Compiled
+    )]
     private static partial Regex LoadedFilePathRegex();
 
-    [GeneratedRegex(@"\(Line:\s*(?<line>\d+),\s*Col:\s*(?<column>\d+),.*?\):\s*(?<detail>.+)$",
-        RegexOptions.Compiled)]
+    [GeneratedRegex(
+        @"\(Line:\s*(?<line>\d+),\s*Col:\s*(?<column>\d+),.*?\):\s*(?<detail>.+)$",
+        RegexOptions.Compiled
+    )]
     private static partial Regex ParserLocationRegex();
 
-    [GeneratedRegex(@"Could not parse the YAML file:\s*(?<detail>.+?)(?:\.\s*)?$", RegexOptions.Compiled)]
+    [GeneratedRegex(
+        @"Could not parse the YAML file:\s*(?<detail>.+?)(?:\.\s*)?$",
+        RegexOptions.Compiled
+    )]
     private static partial Regex YamlFormatRegex();
 }

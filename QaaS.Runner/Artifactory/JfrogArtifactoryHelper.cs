@@ -7,8 +7,10 @@ namespace QaaS.Runner.Artifactory;
 /// </summary>
 public class JfrogArtifactoryHelper : IJfrogArtifactoryHelper
 {
-    private const string ArtifactorySegment = "artifactory/", ApiSegment = "api/", StorageSegment = "storage/";
-    
+    private const string ArtifactorySegment = "artifactory/",
+        ApiSegment = "api/",
+        StorageSegment = "storage/";
+
     /// <summary>
     /// Parses a given jfrog artifactory folder url to its Storage Api version which returns meta data about the folder
     /// when using http get on
@@ -23,18 +25,25 @@ public class JfrogArtifactoryHelper : IJfrogArtifactoryHelper
         if (indexOfArtifactorySegment == -1)
         {
             throw new ArgumentException(
-                $"Given artifactory url does not contain the {ArtifactorySegment} segment");
+                $"Given artifactory url does not contain the {ArtifactorySegment} segment"
+            );
         }
         segments.Insert(indexOfArtifactorySegment + 1, ApiSegment);
         segments.Insert(indexOfArtifactorySegment + 2, StorageSegment);
-        
-        return new UriBuilder(uri.Scheme ,uri.Host ,uri.Port, string.Join("", segments)).Uri.ToString();
+
+        return new UriBuilder(
+            uri.Scheme,
+            uri.Host,
+            uri.Port,
+            string.Join("", segments)
+        ).Uri.ToString();
     }
 
-
     /// <inheritdoc />
-    public IEnumerable<string> GetUrlsToAllFilesInArtifactoryFolder(string artifactoryFolderUrl,
-        HttpClient httpClient)
+    public IEnumerable<string> GetUrlsToAllFilesInArtifactoryFolder(
+        string artifactoryFolderUrl,
+        HttpClient httpClient
+    )
     {
         return GetUrlsToAllFilesInArtifactoryFolderAsync(artifactoryFolderUrl, httpClient)
             .GetAwaiter()
@@ -42,18 +51,30 @@ public class JfrogArtifactoryHelper : IJfrogArtifactoryHelper
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<string>> GetUrlsToAllFilesInArtifactoryFolderAsync(string artifactoryFolderUrl,
-        HttpClient httpClient, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<string>> GetUrlsToAllFilesInArtifactoryFolderAsync(
+        string artifactoryFolderUrl,
+        HttpClient httpClient,
+        CancellationToken cancellationToken = default
+    )
     {
         var storageApiUrl = ParseArtifactoryFolderUrlToStorageApiUrl(artifactoryFolderUrl);
-        using var getResponse = await httpClient.GetAsync(storageApiUrl, cancellationToken).ConfigureAwait(false);
+        using var getResponse = await httpClient
+            .GetAsync(storageApiUrl, cancellationToken)
+            .ConfigureAwait(false);
         if (!getResponse.IsSuccessStatusCode)
-            throw new HttpRequestException($"Http get on {storageApiUrl} returned status {getResponse?.StatusCode}");
+            throw new HttpRequestException(
+                $"Http get on {storageApiUrl} returned status {getResponse?.StatusCode}"
+            );
 
-        var responsePayload = await getResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        var children = JsonSerializer.Deserialize<ArtifactoryApiStorageResponse>(
-            responsePayload,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })?.Children;
+        var responsePayload = await getResponse
+            .Content.ReadAsStringAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var children = JsonSerializer
+            .Deserialize<ArtifactoryApiStorageResponse>(
+                responsePayload,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            )
+            ?.Children;
 
         // If item has no children meaning its a file itself return it and break
         if (children is not { Count: > 0 })
@@ -66,13 +87,18 @@ public class JfrogArtifactoryHelper : IJfrogArtifactoryHelper
         // Go over all children in item and return their children's file paths
         foreach (var child in children)
         {
-            var childUri = child.Uri ?? throw new ArgumentException(
-                $"Could not find {nameof(ArtifactoryChild.Uri)} in a child of {artifactoryFolderUrl}");
+            var childUri =
+                child.Uri
+                ?? throw new ArgumentException(
+                    $"Could not find {nameof(ArtifactoryChild.Uri)} in a child of {artifactoryFolderUrl}"
+                );
 
             var childFiles = await GetUrlsToAllFilesInArtifactoryFolderAsync(
-                Path.Join(artifactoryFolderUrl, childUri).Replace('\\', '/'),
-                httpClient,
-                cancellationToken).ConfigureAwait(false);
+                    Path.Join(artifactoryFolderUrl, childUri).Replace('\\', '/'),
+                    httpClient,
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
             files.AddRange(childFiles);
         }
 

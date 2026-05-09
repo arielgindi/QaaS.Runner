@@ -21,18 +21,24 @@ public static class ContextMetadataExtensions
         var metadataPath = context.GetMetaDataPath();
         var metadataKey = metadataPath.Last();
 
-        if (context.InternalGlobalDict.TryGetValue(metadataKey, out var configuredMetaData) &&
-            configuredMetaData is MetaDataConfig metaDataConfig)
+        if (
+            context.InternalGlobalDict.TryGetValue(metadataKey, out var configuredMetaData)
+            && configuredMetaData is MetaDataConfig metaDataConfig
+        )
         {
             return metaDataConfig;
         }
 
-        if (context.InternalGlobalDict.TryGetValue(metadataKey, out configuredMetaData) &&
-            configuredMetaData is not null)
+        if (
+            context.InternalGlobalDict.TryGetValue(metadataKey, out configuredMetaData)
+            && configuredMetaData is not null
+        )
         {
             context.Logger.LogWarning(
                 "MetaData entry at path {MetaDataPath} had unexpected type {MetaDataType}; replacing it with an empty configuration.",
-                metadataPath, configuredMetaData.GetType().FullName);
+                metadataPath,
+                configuredMetaData.GetType().FullName
+            );
         }
         else
         {

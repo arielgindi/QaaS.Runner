@@ -24,7 +24,10 @@ public class TemplateLogicTests
 
         var result = templateLogic.Run(executionData);
 
-        mockWriter.Verify(textWriter => textWriter.WriteLine("Sessions:\n  - Name: RabbitRoundTrip\n"), Times.Once());
+        mockWriter.Verify(
+            textWriter => textWriter.WriteLine("Sessions:\n  - Name: RabbitRoundTrip\n"),
+            Times.Once()
+        );
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.SameAs(executionData));
     }
@@ -36,22 +39,33 @@ public class TemplateLogicTests
         {
             Logger = Globals.Logger,
             RootConfiguration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["MetaData:System"] = "QaaS",
-                    ["MetaData:Team"] = "Smoke"
-                })
+                .AddInMemoryCollection(
+                    new Dictionary<string, string?>
+                    {
+                        ["MetaData:System"] = "QaaS",
+                        ["MetaData:Team"] = "Smoke",
+                    }
+                )
                 .Build(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
         };
         var mockWriter = new Mock<TextWriter>();
         var templateLogic = new TemplateLogic(context, mockWriter.Object);
 
         templateLogic.Run(new ExecutionData());
 
-        mockWriter.Verify(textWriter => textWriter.WriteLine(It.Is<string>(value =>
-            value.Contains("MetaData:", StringComparison.Ordinal) &&
-            value.Contains("System: QaaS", StringComparison.Ordinal))), Times.Once());
+        mockWriter.Verify(
+            textWriter =>
+                textWriter.WriteLine(
+                    It.Is<string>(value =>
+                        value.Contains("MetaData:", StringComparison.Ordinal)
+                        && value.Contains("System: QaaS", StringComparison.Ordinal)
+                    )
+                ),
+            Times.Once()
+        );
     }
 
     [Test]

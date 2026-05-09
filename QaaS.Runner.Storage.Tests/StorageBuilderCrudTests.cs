@@ -12,8 +12,9 @@ public class StorageBuilderCrudTests
     [Test]
     public void StorageBuilder_ShouldSupportConfigurationCrud()
     {
-        var builder = new StorageBuilder()
-            .Configure(new FilesInFileSystemConfig { Path = "one/path" });
+        var builder = new StorageBuilder().Configure(
+            new FilesInFileSystemConfig { Path = "one/path" }
+        );
 
         Assert.That(builder.Configuration, Is.TypeOf<FilesInFileSystemConfig>());
 
@@ -28,8 +29,8 @@ public class StorageBuilderCrudTests
     [Test]
     public void StorageBuilder_UpdateConfiguration_WithConfiguration_MergesSameTypeAndPreservesExistingFields()
     {
-        var builder = new StorageBuilder()
-            .Configure(new S3Config
+        var builder = new StorageBuilder().Configure(
+            new S3Config
             {
                 StorageBucket = "bucket-a",
                 ServiceURL = "https://s3.local",
@@ -37,14 +38,13 @@ public class StorageBuilderCrudTests
                 SecretKey = "secret-key",
                 Prefix = "existing-prefix",
                 Delimiter = "/",
-                SkipEmptyObjects = true
-            });
+                SkipEmptyObjects = true,
+            }
+        );
 
-        builder.UpdateConfiguration(new S3Config
-        {
-            MaximumRetryCount = 5,
-            SkipEmptyObjects = false
-        });
+        builder.UpdateConfiguration(
+            new S3Config { MaximumRetryCount = 5, SkipEmptyObjects = false }
+        );
 
         var mergedConfiguration = (S3Config)builder.Configuration!;
         Assert.Multiple(() =>
@@ -67,18 +67,31 @@ public class StorageBuilderCrudTests
 
         var exception = Assert.Throws<TargetInvocationException>(() => InvokeBuild(builder));
         Assert.That(exception!.InnerException, Is.TypeOf<InvalidOperationException>());
-        Assert.That(exception.InnerException!.Message, Does.Contain("Multiple configurations provided"));
+        Assert.That(
+            exception.InnerException!.Message,
+            Does.Contain("Multiple configurations provided")
+        );
     }
 
     private static IStorage InvokeBuild(StorageBuilder builder)
     {
-        var buildMethod = typeof(StorageBuilder).GetMethod("Build", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var buildMethod = typeof(StorageBuilder).GetMethod(
+            "Build",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
         return (IStorage)buildMethod.Invoke(builder, [Globals.Context])!;
     }
 
-    private static void SetInternalProperty(StorageBuilder builder, string propertyName, object? value)
+    private static void SetInternalProperty(
+        StorageBuilder builder,
+        string propertyName,
+        object? value
+    )
     {
-        var property = typeof(StorageBuilder).GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
+        var property = typeof(StorageBuilder).GetProperty(
+            propertyName,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+        )!;
         property.SetValue(builder, value);
     }
 }

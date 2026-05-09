@@ -15,7 +15,12 @@ public class ExecutionBuilderCrudTests
     [Test]
     public void CreateAndReadSession_ShouldStoreConfiguredSession()
     {
-        var session = new SessionBuilder { Name = "session-a", Stage = 0, Probes = [] };
+        var session = new SessionBuilder
+        {
+            Name = "session-a",
+            Stage = 0,
+            Probes = [],
+        };
         var builder = new ExecutionBuilder().AddSession(session);
 
         var sessions = builder.Sessions ?? [];
@@ -24,7 +29,10 @@ public class ExecutionBuilderCrudTests
         {
             Assert.That(sessions, Has.Length.EqualTo(1));
             Assert.That(sessions[0], Is.SameAs(session));
-            Assert.That((builder.Sessions ?? []).FirstOrDefault(x => x.Name == "session-a"), Is.SameAs(session));
+            Assert.That(
+                (builder.Sessions ?? []).FirstOrDefault(x => x.Name == "session-a"),
+                Is.SameAs(session)
+            );
         });
     }
 
@@ -37,25 +45,29 @@ public class ExecutionBuilderCrudTests
             Assertions = null,
             Storages = null,
             DataSources = null,
-            Links = null
+            Links = null,
         };
-        var session = new SessionBuilder { Name = "session-a", Stage = 0, Probes = [] };
+        var session = new SessionBuilder
+        {
+            Name = "session-a",
+            Stage = 0,
+            Probes = [],
+        };
         var assertion = new AssertionBuilder
         {
             Name = "assertion-a",
             Assertion = "Equals",
             AssertionInstance = null!,
-            Reporter = null!
+            Reporter = null!,
         }.HookNamed("AssertionHook");
         var storage = new StorageBuilder().Configure(new S3Config());
         var dataSource = new DataSourceBuilder().Named("source-a").HookNamed("GeneratorHook");
-        var link = new LinkBuilder().Configure(new KibanaLinkConfig
-        {
-            Url = "https://kibana",
-            DataViewId = "view"
-        });
+        var link = new LinkBuilder().Configure(
+            new KibanaLinkConfig { Url = "https://kibana", DataViewId = "view" }
+        );
 
-        builder.AddSession(session)
+        builder
+            .AddSession(session)
             .AddAssertion(assertion)
             .AddStorage(storage)
             .AddDataSource(dataSource)
@@ -68,9 +80,15 @@ public class ExecutionBuilderCrudTests
             Assert.That(builder.Storages, Is.EqualTo(new[] { storage }));
             Assert.That(builder.DataSources, Is.EqualTo(new[] { dataSource }));
             Assert.That(builder.Links, Is.EqualTo(new[] { link }));
-            Assert.That((builder.Assertions ?? []).FirstOrDefault(x => x.Name == "assertion-a"), Is.SameAs(assertion));
+            Assert.That(
+                (builder.Assertions ?? []).FirstOrDefault(x => x.Name == "assertion-a"),
+                Is.SameAs(assertion)
+            );
             Assert.That((builder.Storages ?? []).ElementAtOrDefault(0), Is.SameAs(storage));
-            Assert.That((builder.DataSources ?? []).FirstOrDefault(x => x.Name == "source-a"), Is.SameAs(dataSource));
+            Assert.That(
+                (builder.DataSources ?? []).FirstOrDefault(x => x.Name == "source-a"),
+                Is.SameAs(dataSource)
+            );
             Assert.That((builder.Links ?? []).ElementAtOrDefault(0), Is.SameAs(link));
         });
     }
@@ -82,7 +100,7 @@ public class ExecutionBuilderCrudTests
         {
             Assertions = null,
             DataSources = null,
-            Links = null
+            Links = null,
         };
 
         Assert.Multiple(() =>
@@ -96,8 +114,18 @@ public class ExecutionBuilderCrudTests
     [Test]
     public void UpdateSession_ShouldReplaceMatchingSessionByName()
     {
-        var original = new SessionBuilder { Name = "session-a", Stage = 0, Probes = [] };
-        var updated = new SessionBuilder { Name = "session-a", Stage = 1, Probes = [] };
+        var original = new SessionBuilder
+        {
+            Name = "session-a",
+            Stage = 0,
+            Probes = [],
+        };
+        var updated = new SessionBuilder
+        {
+            Name = "session-a",
+            Stage = 1,
+            Probes = [],
+        };
         var builder = new ExecutionBuilder().AddSession(original);
 
         builder.UpdateSession("session-a", updated);
@@ -109,8 +137,22 @@ public class ExecutionBuilderCrudTests
     public void DeleteSession_ShouldRemoveMatchingSessionByName()
     {
         var builder = new ExecutionBuilder()
-            .AddSession(new SessionBuilder { Name = "session-a", Stage = 0, Probes = [] })
-            .AddSession(new SessionBuilder { Name = "session-b", Stage = 1, Probes = [] });
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "session-a",
+                    Stage = 0,
+                    Probes = [],
+                }
+            )
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "session-b",
+                    Stage = 1,
+                    Probes = [],
+                }
+            );
 
         builder.RemoveSession("session-a");
 
@@ -121,8 +163,18 @@ public class ExecutionBuilderCrudTests
     [Test]
     public void UpdateSession_WhenSessionNameNotFound_DoesNotChangeCollection()
     {
-        var original = new SessionBuilder { Name = "session-a", Stage = 0, Probes = [] };
-        var replacement = new SessionBuilder { Name = "session-b", Stage = 1, Probes = [] };
+        var original = new SessionBuilder
+        {
+            Name = "session-a",
+            Stage = 0,
+            Probes = [],
+        };
+        var replacement = new SessionBuilder
+        {
+            Name = "session-b",
+            Stage = 1,
+            Probes = [],
+        };
         var builder = new ExecutionBuilder().AddSession(original);
 
         builder.UpdateSession("does-not-exist", replacement);
@@ -134,9 +186,13 @@ public class ExecutionBuilderCrudTests
     [Test]
     public void UpdateStorageAt_WithInvalidIndex_ShouldThrowArgumentOutOfRangeException()
     {
-        var builder = new ExecutionBuilder().AddStorage(new StorageBuilder().Configure(new S3Config()));
+        var builder = new ExecutionBuilder().AddStorage(
+            new StorageBuilder().Configure(new S3Config())
+        );
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => builder.UpdateStorageAt(3, new StorageBuilder()));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            builder.UpdateStorageAt(3, new StorageBuilder())
+        );
         Assert.Throws<ArgumentOutOfRangeException>(() => builder.RemoveStorageAt(-1));
     }
 
@@ -148,37 +204,52 @@ public class ExecutionBuilderCrudTests
             Name = "assertion-a",
             Assertion = "Equals",
             AssertionInstance = null!,
-            Reporter = null!
+            Reporter = null!,
         }.HookNamed("HookA");
         var updatedAssertion = new AssertionBuilder
         {
             Name = "assertion-a",
             Assertion = "NotEquals",
             AssertionInstance = null!,
-            Reporter = null!
+            Reporter = null!,
         }.HookNamed("HookB");
 
         var builder = new ExecutionBuilder()
             .AddAssertion(initialAssertion)
             .AddDataSource(new DataSourceBuilder().Named("source-a").HookNamed("GeneratorA"))
-            .AddLink(new LinkBuilder().Configure(new KibanaLinkConfig { Url = "https://kibana", DataViewId = "view" }));
+            .AddLink(
+                new LinkBuilder().Configure(
+                    new KibanaLinkConfig { Url = "https://kibana", DataViewId = "view" }
+                )
+            );
 
         builder.UpdateAssertion("assertion-a", updatedAssertion);
         builder.RemoveDataSource("source-a");
-        builder.UpdateLinkAt(0, new LinkBuilder().Configure(new GrafanaLinkConfig
-        {
-            Url = "https://grafana",
-            DashboardId = "dash",
-            Variables = []
-        }));
+        builder.UpdateLinkAt(
+            0,
+            new LinkBuilder().Configure(
+                new GrafanaLinkConfig
+                {
+                    Url = "https://grafana",
+                    DashboardId = "dash",
+                    Variables = [],
+                }
+            )
+        );
 
         Assert.Multiple(() =>
         {
             Assert.That(builder.Assertions ?? [], Has.Length.EqualTo(1));
             Assert.That(builder.Assertions[0], Is.SameAs(updatedAssertion));
-            Assert.That((builder.Assertions ?? []).FirstOrDefault(x => x.Name == "assertion-a"), Is.SameAs(updatedAssertion));
+            Assert.That(
+                (builder.Assertions ?? []).FirstOrDefault(x => x.Name == "assertion-a"),
+                Is.SameAs(updatedAssertion)
+            );
             Assert.That(builder.DataSources, Has.Length.EqualTo(0));
-            Assert.That((builder.DataSources ?? []).FirstOrDefault(x => x.Name == "source-a"), Is.Null);
+            Assert.That(
+                (builder.DataSources ?? []).FirstOrDefault(x => x.Name == "source-a"),
+                Is.Null
+            );
             Assert.That(builder.Links ?? [], Has.Length.EqualTo(1));
             Assert.That((builder.Links ?? []).ElementAtOrDefault(0)?.Grafana, Is.Not.Null);
         });
@@ -191,7 +262,3 @@ public class ExecutionBuilderCrudTests
         });
     }
 }
-
-
-
-

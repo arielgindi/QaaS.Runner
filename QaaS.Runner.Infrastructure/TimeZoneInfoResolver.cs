@@ -16,7 +16,9 @@ public static class TimeZoneInfoResolver
         if (TryResolve(effectiveTimeZoneId, out var timeZoneInfo))
             return timeZoneInfo;
 
-        throw new TimeZoneNotFoundException($"Could not resolve time zone '{effectiveTimeZoneId}'.");
+        throw new TimeZoneNotFoundException(
+            $"Could not resolve time zone '{effectiveTimeZoneId}'."
+        );
     }
 
     private static bool TryResolve(string timeZoneId, out TimeZoneInfo timeZoneInfo)
@@ -24,12 +26,16 @@ public static class TimeZoneInfoResolver
         if (TryFindSystemTimeZone(timeZoneId, out timeZoneInfo))
             return true;
 
-        if (TimeZoneInfo.TryConvertIanaIdToWindowsId(timeZoneId, out var windowsTimeZoneId) &&
-            TryFindSystemTimeZone(windowsTimeZoneId, out timeZoneInfo))
+        if (
+            TimeZoneInfo.TryConvertIanaIdToWindowsId(timeZoneId, out var windowsTimeZoneId)
+            && TryFindSystemTimeZone(windowsTimeZoneId, out timeZoneInfo)
+        )
             return true;
 
-        if (TimeZoneInfo.TryConvertWindowsIdToIanaId(timeZoneId, out var ianaTimeZoneId) &&
-            TryFindSystemTimeZone(ianaTimeZoneId, out timeZoneInfo))
+        if (
+            TimeZoneInfo.TryConvertWindowsIdToIanaId(timeZoneId, out var ianaTimeZoneId)
+            && TryFindSystemTimeZone(ianaTimeZoneId, out timeZoneInfo)
+        )
             return true;
 
         timeZoneInfo = null!;

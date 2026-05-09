@@ -15,7 +15,8 @@ public sealed class ProbeMarkerConfig
 public static class ProbeRunRecorder
 {
     private static readonly ConcurrentQueue<(string ProbeName, string Marker)> Runs = new();
-    private static readonly ConcurrentQueue<(string SessionName, string ProbeName)> ScopedRuns = new();
+    private static readonly ConcurrentQueue<(string SessionName, string ProbeName)> ScopedRuns =
+        new();
 
     public static IReadOnlyCollection<(string ProbeName, string Marker)> GetRuns()
     {
@@ -24,13 +25,9 @@ public static class ProbeRunRecorder
 
     public static void Reset()
     {
-        while (Runs.TryDequeue(out _))
-        {
-        }
+        while (Runs.TryDequeue(out _)) { }
 
-        while (ScopedRuns.TryDequeue(out _))
-        {
-        }
+        while (ScopedRuns.TryDequeue(out _)) { }
     }
 
     public static void Record(string probeName, string marker)
@@ -51,7 +48,10 @@ public static class ProbeRunRecorder
 
 public class FirstTestProbe : BaseProbe<ProbeMarkerConfig>
 {
-    public override void Run(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+    public override void Run(
+        IImmutableList<SessionData> sessionDataList,
+        IImmutableList<DataSource> dataSourceList
+    )
     {
         ProbeRunRecorder.Record(nameof(FirstTestProbe), Configuration.Marker);
     }
@@ -59,7 +59,10 @@ public class FirstTestProbe : BaseProbe<ProbeMarkerConfig>
 
 public class SecondTestProbe : BaseProbe<ProbeMarkerConfig>
 {
-    public override void Run(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+    public override void Run(
+        IImmutableList<SessionData> sessionDataList,
+        IImmutableList<DataSource> dataSourceList
+    )
     {
         ProbeRunRecorder.Record(nameof(SecondTestProbe), Configuration.Marker);
     }
@@ -67,7 +70,10 @@ public class SecondTestProbe : BaseProbe<ProbeMarkerConfig>
 
 public class ScopeAwareTestProbe : BaseProbe<ProbeMarkerConfig>
 {
-    public override void Run(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+    public override void Run(
+        IImmutableList<SessionData> sessionDataList,
+        IImmutableList<DataSource> dataSourceList
+    )
     {
         var descriptor = ProbeExecutionScope.GetCurrent();
         ProbeRunRecorder.RecordScope(descriptor.SessionName, descriptor.ProbeName);

@@ -46,7 +46,9 @@ public class FileSystemExtensionsTests
     [Test]
     public void NormalizeRelativePath_WithTraversalSegments_ThrowsInvalidOperationException()
     {
-        Assert.Throws<InvalidOperationException>(() => FileSystemExtensions.NormalizeRelativePath("../secret.json"));
+        Assert.Throws<InvalidOperationException>(() =>
+            FileSystemExtensions.NormalizeRelativePath("../secret.json")
+        );
     }
 
     [Test]
@@ -54,7 +56,9 @@ public class FileSystemExtensionsTests
     {
         var rootedPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "rooted.json"));
 
-        Assert.Throws<InvalidOperationException>(() => FileSystemExtensions.NormalizeRelativePath(rootedPath));
+        Assert.Throws<InvalidOperationException>(() =>
+            FileSystemExtensions.NormalizeRelativePath(rootedPath)
+        );
     }
 
     [Test]
@@ -81,7 +85,8 @@ public class FileSystemExtensionsTests
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
 
         Assert.Throws<InvalidOperationException>(() =>
-            FileSystemExtensions.CombineUnderRoot(root, "..", "outside.json"));
+            FileSystemExtensions.CombineUnderRoot(root, "..", "outside.json")
+        );
     }
 
     [Test]

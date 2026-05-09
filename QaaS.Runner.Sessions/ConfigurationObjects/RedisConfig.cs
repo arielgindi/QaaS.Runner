@@ -65,7 +65,7 @@ public record RedisConfig
             ClientName = ClientName,
             AsyncTimeout = AsyncTimeoutMs,
             Ssl = Ssl,
-            SslHost = SslHost
+            SslHost = SslHost,
         };
     }
 }

@@ -36,7 +36,10 @@ public sealed class RabbitMqExchangeDefinition
 
 public sealed class EnsureRabbitMqExchanges : BaseProbe<EnsureRabbitMqExchangesConfig>
 {
-    public override void Run(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+    public override void Run(
+        IImmutableList<SessionData> sessionDataList,
+        IImmutableList<DataSource> dataSourceList
+    )
     {
         var factory = new ConnectionFactory
         {
@@ -46,20 +49,32 @@ public sealed class EnsureRabbitMqExchanges : BaseProbe<EnsureRabbitMqExchangesC
             Password = Configuration.Password,
             VirtualHost = Configuration.VirtualHost,
             ContinuationTimeout = TimeSpan.FromSeconds(Configuration.ContinuationTimeoutSeconds),
-            RequestedConnectionTimeout = TimeSpan.FromSeconds(Configuration.RequestedConnectionTimeoutSeconds),
-            HandshakeContinuationTimeout = TimeSpan.FromSeconds(Configuration.HandshakeContinuationTimeoutSeconds)
+            RequestedConnectionTimeout = TimeSpan.FromSeconds(
+                Configuration.RequestedConnectionTimeoutSeconds
+            ),
+            HandshakeContinuationTimeout = TimeSpan.FromSeconds(
+                Configuration.HandshakeContinuationTimeoutSeconds
+            ),
         };
 
         using var connection = factory.CreateConnectionAsync().GetAwaiter().GetResult();
         using var channel = connection.CreateChannelAsync().GetAwaiter().GetResult();
         foreach (var exchange in Configuration.Exchanges!)
         {
-            channel.ExchangeDeclareAsync(exchange.Name!, exchange.Type.ToLowerInvariant(), exchange.Durable,
-                    exchange.AutoDelete)
+            channel
+                .ExchangeDeclareAsync(
+                    exchange.Name!,
+                    exchange.Type.ToLowerInvariant(),
+                    exchange.Durable,
+                    exchange.AutoDelete
+                )
                 .GetAwaiter()
                 .GetResult();
-            Context.Logger.LogInformation("Ensured RabbitMQ exchange {ExchangeName} of type {ExchangeType}",
-                exchange.Name, exchange.Type);
+            Context.Logger.LogInformation(
+                "Ensured RabbitMQ exchange {ExchangeName} of type {ExchangeType}",
+                exchange.Name,
+                exchange.Type
+            );
         }
     }
 }

@@ -11,20 +11,43 @@ public sealed class ChunkConsumer : BaseConsumer
 {
     private readonly IChunkReader? _chunkReader;
 
-    public ChunkConsumer(string name, IChunkReader? chunkReader, TimeSpan timeoutMs, TimeSpan? initialTimeOutMs, int stage, Policy? policies,
-        DataFilter dataFilter, SerializationType? serializationType, Type? deserializerSpecificType,
-        ILogger logger) : base(name, timeoutMs, initialTimeOutMs, stage, policies, dataFilter, serializationType,
-        deserializerSpecificType, logger)
+    public ChunkConsumer(
+        string name,
+        IChunkReader? chunkReader,
+        TimeSpan timeoutMs,
+        TimeSpan? initialTimeOutMs,
+        int stage,
+        Policy? policies,
+        DataFilter dataFilter,
+        SerializationType? serializationType,
+        Type? deserializerSpecificType,
+        ILogger logger
+    )
+        : base(
+            name,
+            timeoutMs,
+            initialTimeOutMs,
+            stage,
+            policies,
+            dataFilter,
+            serializationType,
+            deserializerSpecificType,
+            logger
+        )
     {
         _chunkReader = chunkReader;
         Logger.LogInformation(
             "Initializing {Consumer} {ConsumerName} of type {ReaderType} and Deserializer type - {DeserializerType}",
-            GetType().Name, Name, _chunkReader?.GetType().Name, SerializationType);
+            GetType().Name,
+            Name,
+            _chunkReader?.GetType().Name,
+            SerializationType
+        );
 
         RunningCommunicationData = new RunningCommunicationData<object>
         {
             Name = Name,
-            SerializationType = GetCommunicationSerializationType()
+            SerializationType = GetCommunicationSerializationType(),
         };
     }
 
@@ -43,10 +66,11 @@ public sealed class ChunkConsumer : BaseConsumer
         foreach (var singleItem in chunk)
         {
             LogData(actData, singleItem);
-            if (Policies?.RunChain() != false) continue;
+            if (Policies?.RunChain() != false)
+                continue;
             break;
         }
-        
+
         TerminateConsumer();
     }
 

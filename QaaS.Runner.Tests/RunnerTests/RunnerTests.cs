@@ -1,7 +1,7 @@
+using System.IO;
 using Autofac;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
-using System.IO;
 
 namespace QaaS.Runner.Tests.RunnerTests;
 
@@ -11,10 +11,11 @@ public class RunnerTests
     private class MockRunner(
         ILifetimeScope scope,
         List<ExecutionBuilder> executionBuilders,
-        ILogger logger, Serilog.ILogger serilogLogger,
+        ILogger logger,
+        Serilog.ILogger serilogLogger,
         bool emptyResults = false,
-        bool serveResults = false)
-        : Runner(scope, executionBuilders, logger, serilogLogger, emptyResults, serveResults)
+        bool serveResults = false
+    ) : Runner(scope, executionBuilders, logger, serilogLogger, emptyResults, serveResults)
     {
         private readonly ILogger _logger = logger;
         public bool SetupCalled { get; private set; }
@@ -57,10 +58,13 @@ public class RunnerTests
     }
 
     [Test]
-    public void
-        TestBootstrapNewWithCustomRunner_InvokeRunMethodWithCustomRunnerMethodImplementations_CustomRunnerMethodsAreCalled()
+    public void TestBootstrapNewWithCustomRunner_InvokeRunMethodWithCustomRunnerMethodImplementations_CustomRunnerMethodsAreCalled()
     {
-        var runner = Bootstrap.New<MockRunner>(["run", "TestData/test.qaas.yaml", "--no-process-exit"]);
+        var runner = Bootstrap.New<MockRunner>([
+            "run",
+            "TestData/test.qaas.yaml",
+            "--no-process-exit",
+        ]);
         var mockRunner = runner as MockRunner;
 
         runner.Run();

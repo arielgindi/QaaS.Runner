@@ -18,11 +18,10 @@ public class PrometheusLinkBuilderTests
             metricB = "output";
 
         // Arrange
-        var builder = new PrometheusLink(linkName, new PrometheusLinkConfig
-        {
-            Url = url,
-            Expressions = new[] { metricA, metricB }
-        });
+        var builder = new PrometheusLink(
+            linkName,
+            new PrometheusLinkConfig { Url = url, Expressions = new[] { metricA, metricB } }
+        );
         var startTimeOne = new DateTime(2023, 11, 19, 1, 1, 1);
         var endTimeOne = new DateTime(2023, 11, 19, 6, 6, 6);
 
@@ -30,12 +29,13 @@ public class PrometheusLinkBuilderTests
         var endTimeTwo = new DateTime(2023, 11, 20, 6, 6, 6);
 
         // Act
-        var fullUrl = builder
-            .GetLink(new List<KeyValuePair<DateTime, DateTime>>
+        var fullUrl = builder.GetLink(
+            new List<KeyValuePair<DateTime, DateTime>>
             {
                 new(startTimeOne, endTimeOne),
-                new(startTimeTwo, endTimeTwo)
-            });
+                new(startTimeTwo, endTimeTwo),
+            }
+        );
 
         // Assert
         StringAssert.Contains(url, fullUrl.Value);

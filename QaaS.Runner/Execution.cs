@@ -38,29 +38,28 @@ public class Execution : BaseExecution
                     execution => execution.DataSourceLogic,
                     execution => execution.SessionLogic,
                     execution => execution.AssertionLogic,
-                    execution => execution.ReportLogic
+                    execution => execution.ReportLogic,
                 ],
-                execution => execution.ResolveAssertionExitCode()),
+                execution => execution.ResolveAssertionExitCode()
+            ),
             [ExecutionType.Act] = new(
                 [
                     execution => execution.DataSourceLogic,
                     execution => execution.SessionLogic,
-                    execution => execution.StorageLogic
+                    execution => execution.StorageLogic,
                 ],
-                _ => 0),
+                _ => 0
+            ),
             [ExecutionType.Assert] = new(
                 [
                     execution => execution.DataSourceLogic,
                     execution => execution.StorageLogic,
                     execution => execution.AssertionLogic,
-                    execution => execution.ReportLogic
+                    execution => execution.ReportLogic,
                 ],
-                execution => execution.ResolveAssertionExitCode()),
-            [ExecutionType.Template] = new(
-                [
-                    execution => execution.TemplateLogic
-                ],
-                _ => 0)
+                execution => execution.ResolveAssertionExitCode()
+            ),
+            [ExecutionType.Template] = new([execution => execution.TemplateLogic], _ => 0),
         };
 
     private readonly ILifetimeScope? _ownedScope;
@@ -70,9 +69,8 @@ public class Execution : BaseExecution
     /// </summary>
     /// <param name="type">Execution type</param>
     /// <param name="context">Context</param>
-    public Execution(ExecutionType type, Context context) : this(type, context, null)
-    {
-    }
+    public Execution(ExecutionType type, Context context)
+        : this(type, context, null) { }
 
     /// <summary>
     /// Execution information and context
@@ -98,8 +96,11 @@ public class Execution : BaseExecution
     public override int Start()
     {
         Context.Logger.LogInformation(
-            "Running {ExecutionType} execution with executionId {ExecutionId} and case name {CaseName}", Type,
-            Context.ExecutionId, Context.CaseName);
+            "Running {ExecutionType} execution with executionId {ExecutionId} and case name {CaseName}",
+            Type,
+            Context.ExecutionId,
+            Context.CaseName
+        );
         return ResolvePlan(Type).Execute(this);
     }
 
@@ -112,14 +113,18 @@ public class Execution : BaseExecution
     {
         return ExecutionPlans.TryGetValue(executionType, out var executionPlan)
             ? executionPlan
-            : throw new ArgumentOutOfRangeException(nameof(executionType), executionType,
-                "Unsupported execution type.");
+            : throw new ArgumentOutOfRangeException(
+                nameof(executionType),
+                executionType,
+                "Unsupported execution type."
+            );
     }
 
     private int ResolveAssertionExitCode()
     {
         return Context.ExecutionData.AssertionResults.All(result =>
-            ((AssertionResult)result).AssertionStatus == AssertionStatus.Passed)
+            ((AssertionResult)result).AssertionStatus == AssertionStatus.Passed
+        )
             ? 0
             : 1;
     }
@@ -136,7 +141,8 @@ public class Execution : BaseExecution
     /// </param>
     private sealed class ExecutionPlan(
         IReadOnlyList<Func<Execution, QaaS.Framework.Executions.Logics.ILogic>> logicSelectors,
-        Func<Execution, int> exitCodeResolver)
+        Func<Execution, int> exitCodeResolver
+    )
     {
         public int Execute(Execution execution)
         {

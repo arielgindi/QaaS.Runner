@@ -30,11 +30,7 @@ public class ContextMetadataExtensionsTests
     public void GetMetaDataOrDefault_WhenMetadataAlreadyExists_ReturnsConfiguredInstance()
     {
         var context = CreateContext();
-        var configuredMetadata = new MetaDataConfig
-        {
-            Team = "Smoke",
-            System = "QaaS"
-        };
+        var configuredMetadata = new MetaDataConfig { Team = "Smoke", System = "QaaS" };
         context.InsertValueIntoGlobalDictionary(context.GetMetaDataPath(), configuredMetadata);
 
         var metadata = context.GetMetaDataOrDefault();
@@ -67,11 +63,20 @@ public class ContextMetadataExtensionsTests
         Assert.Multiple(() =>
         {
             Assert.That(secondMetadata, Is.SameAs(firstMetadata));
-            Assert.That(logger.Entries.Count(entry =>
-                    entry.LogLevel == LogLevel.Debug &&
-                    entry.Message.Contains("MetaData was not configured", StringComparison.Ordinal)),
-                Is.EqualTo(1));
-            Assert.That(logger.Entries.Count(entry => entry.LogLevel == LogLevel.Warning), Is.EqualTo(0));
+            Assert.That(
+                logger.Entries.Count(entry =>
+                    entry.LogLevel == LogLevel.Debug
+                    && entry.Message.Contains(
+                        "MetaData was not configured",
+                        StringComparison.Ordinal
+                    )
+                ),
+                Is.EqualTo(1)
+            );
+            Assert.That(
+                logger.Entries.Count(entry => entry.LogLevel == LogLevel.Warning),
+                Is.EqualTo(0)
+            );
         });
     }
 
@@ -81,8 +86,10 @@ public class ContextMetadataExtensionsTests
         {
             Logger = logger ?? Globals.Logger,
             RootConfiguration = new ConfigurationBuilder().Build(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>()),
-            InternalGlobalDict = new Dictionary<string, object?>()
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
+            InternalGlobalDict = new Dictionary<string, object?>(),
         };
     }
 
@@ -90,7 +97,8 @@ public class ContextMetadataExtensionsTests
     {
         public List<LogEntry> Entries { get; } = [];
 
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull
+        public IDisposable BeginScope<TState>(TState state)
+            where TState : notnull
         {
             return NoOpScope.Instance;
         }
@@ -100,8 +108,13 @@ public class ContextMetadataExtensionsTests
             return true;
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-            Func<TState, Exception?, string> formatter)
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter
+        )
         {
             Entries.Add(new LogEntry(logLevel, formatter(state, exception)));
         }
@@ -110,9 +123,7 @@ public class ContextMetadataExtensionsTests
         {
             public static readonly NoOpScope Instance = new();
 
-            public void Dispose()
-            {
-            }
+            public void Dispose() { }
         }
     }
 

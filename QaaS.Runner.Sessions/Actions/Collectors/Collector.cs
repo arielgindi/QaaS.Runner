@@ -18,17 +18,27 @@ public class Collector : Action
     private DateTime _sessionEndTime;
     private DateTime _sessionStartTime;
 
-
-    public Collector(string name, IFetcher fetcher, DataFilter dataFilter, int collectionStartTimeOffset,
+    public Collector(
+        string name,
+        IFetcher fetcher,
+        DataFilter dataFilter,
+        int collectionStartTimeOffset,
         int collectionEndTimeOffset,
-        uint endTimeReachedCheckIntervalMs, ILogger logger) : base(name, logger)
+        uint endTimeReachedCheckIntervalMs,
+        ILogger logger
+    )
+        : base(name, logger)
     {
         _fetcher = fetcher;
         _dataFilter = dataFilter;
         _collectionStartTimeOffset = collectionStartTimeOffset;
         _collectionEndTimeOffset = collectionEndTimeOffset;
         _endTimeReachedCheckIntervalMs = endTimeReachedCheckIntervalMs;
-        Logger.LogDebug("Initializing Collector {Name} with fetcher of type {FetcherType}", Name, fetcher.GetType());
+        Logger.LogDebug(
+            "Initializing Collector {Name} with fetcher of type {FetcherType}",
+            Name,
+            fetcher.GetType()
+        );
     }
 
     public SerializationType? GetCommunicationSerializationType()
@@ -53,31 +63,45 @@ public class Collector : Action
         var data = new InternalCommunicationData<object>
         {
             Output = new List<DetailedData<object>?>(),
-            OutputSerializationType = GetCommunicationSerializationType()
+            OutputSerializationType = GetCommunicationSerializationType(),
         };
-        var collectionStartTimeUtc = _sessionStartTime + TimeSpan.FromMilliseconds(_collectionStartTimeOffset);
-        var collectionEndTimeUtc = _sessionEndTime + TimeSpan.FromMilliseconds(_collectionEndTimeOffset);
-        Logger.LogInformation("Collector {CollectorName} of type {CollectorType} will collect from" +
-                              " {CollectionStartTimeUtc} UTC to {CollectionEndTimeUtc} UTC",
-            Name, GetType().Name, collectionStartTimeUtc, collectionEndTimeUtc);
+        var collectionStartTimeUtc =
+            _sessionStartTime + TimeSpan.FromMilliseconds(_collectionStartTimeOffset);
+        var collectionEndTimeUtc =
+            _sessionEndTime + TimeSpan.FromMilliseconds(_collectionEndTimeOffset);
+        Logger.LogInformation(
+            "Collector {CollectorName} of type {CollectorType} will collect from"
+                + " {CollectionStartTimeUtc} UTC to {CollectionEndTimeUtc} UTC",
+            Name,
+            GetType().Name,
+            collectionStartTimeUtc,
+            collectionEndTimeUtc
+        );
         if (collectionStartTimeUtc > collectionEndTimeUtc)
             throw new ArgumentException(
-                $"The collection start time ({collectionStartTimeUtc}) is bigger than the collection end time ({collectionEndTimeUtc})," +
-                $" check your collection range configurations.");
+                $"The collection start time ({collectionStartTimeUtc}) is bigger than the collection end time ({collectionEndTimeUtc}),"
+                    + $" check your collection range configurations."
+            );
 
         var currentUtcTime = GetCurrentUtcTime();
         while (currentUtcTime < collectionEndTimeUtc)
         {
-            Logger.LogDebug("Current UTC time is {CurrentUtcTime}, waiting for it to be bigger than" +
-                            " collection end time UTC {CollectionEndTimeUtc}, sleeping for" +
-                            " {EndTimeReachedCheckIntervalMs} milliseconds before checking again",
-                currentUtcTime, collectionEndTimeUtc, _endTimeReachedCheckIntervalMs);
+            Logger.LogDebug(
+                "Current UTC time is {CurrentUtcTime}, waiting for it to be bigger than"
+                    + " collection end time UTC {CollectionEndTimeUtc}, sleeping for"
+                    + " {EndTimeReachedCheckIntervalMs} milliseconds before checking again",
+                currentUtcTime,
+                collectionEndTimeUtc,
+                _endTimeReachedCheckIntervalMs
+            );
             Thread.Sleep(TimeSpan.FromMilliseconds(_endTimeReachedCheckIntervalMs));
             currentUtcTime = GetCurrentUtcTime();
         }
 
-        data.Output = _fetcher.Collect(collectionStartTimeUtc, collectionEndTimeUtc)
-            .Select(outputData => outputData.FilterData(_dataFilter)).ToList()!;
+        data.Output = _fetcher
+            .Collect(collectionStartTimeUtc, collectionEndTimeUtc)
+            .Select(outputData => outputData.FilterData(_dataFilter))
+            .ToList()!;
         return data;
     }
 }

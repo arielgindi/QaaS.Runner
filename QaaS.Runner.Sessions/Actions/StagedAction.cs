@@ -12,7 +12,8 @@ public abstract class StagedAction : Action
 
     public int Stage { get; internal set; }
 
-    public StagedAction(string name, int stage, Policy? policies, ILogger logger) : base(name, logger)
+    public StagedAction(string name, int stage, Policy? policies, ILogger logger)
+        : base(name, logger)
     {
         Name = name;
         Stage = stage;
@@ -25,7 +26,10 @@ public abstract class StagedAction : Action
     /// </summary>
     /// <param name="context"></param>
     /// <param name="sessionName"> The running session name. It is used to save the rcd under the session in the context. </param>
-    internal abstract void ExportRunningCommunicationData(InternalContext context, string sessionName);
+    internal abstract void ExportRunningCommunicationData(
+        InternalContext context,
+        string sessionName
+    );
 
     /// <summary>
     /// Logs given data to a rcd and CommunicationData object.
@@ -34,6 +38,9 @@ public abstract class StagedAction : Action
     /// <param name="actData"> Is used as the return value of a communicaiton object that holds all the data sent, consumed, etc... </param>
     /// <param name="itemBeforeSerialization"> The raw item that was pub/subbed before it was serialized </param>
     /// <param name="saveAt">Save at input, output or none of the data store lists </param>
-    protected internal abstract void LogData(InternalCommunicationData<object> actData,
-        DetailedData<object> itemBeforeSerialization, InputOutputState? saveAt = null);
+    protected internal abstract void LogData(
+        InternalCommunicationData<object> actData,
+        DetailedData<object> itemBeforeSerialization,
+        InputOutputState? saveAt = null
+    );
 }

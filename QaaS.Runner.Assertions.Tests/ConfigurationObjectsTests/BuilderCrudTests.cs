@@ -13,24 +13,22 @@ public class BuilderCrudTests
     [Test]
     public void AssertionBuilder_ShouldSupportSessionDataSourceLinkAndConfigurationCrud()
     {
-        var builder = new AssertionBuilder
-        {
-            AssertionInstance = null!,
-            Reporter = null!
-        };
+        var builder = new AssertionBuilder { AssertionInstance = null!, Reporter = null! };
 
-        builder.AddSessionName("session-a")
+        builder
+            .AddSessionName("session-a")
             .AddSessionPattern("^session-.*$")
             .AddDataSourceName("source-a")
             .AddDataSourcePattern("^source-.*$")
-            .AddLink(new LinkBuilder().Named("link-a").Configure(new KibanaLinkConfig
-            {
-                Url = "https://kibana",
-                DataViewId = "view"
-            }))
+            .AddLink(
+                new LinkBuilder()
+                    .Named("link-a")
+                    .Configure(new KibanaLinkConfig { Url = "https://kibana", DataViewId = "view" })
+            )
             .Configure(new { key = "value" });
 
-        builder.RemoveSessionName("session-a")
+        builder
+            .RemoveSessionName("session-a")
             .AddSessionName("session-updated")
             .RemoveSessionPattern("^session-.*$")
             .AddSessionPattern("^updated-.*$")
@@ -39,23 +37,32 @@ public class BuilderCrudTests
             .RemoveDataSourcePattern("^source-.*$")
             .AddDataSourcePattern("^updated-source-.*$")
             .RemoveLink("link-a")
-            .AddLink(new LinkBuilder().Named("link-updated").Configure(new PrometheusLinkConfig
-            {
-                Url = "https://prometheus",
-                Expressions = ["up"]
-            }))
+            .AddLink(
+                new LinkBuilder()
+                    .Named("link-updated")
+                    .Configure(
+                        new PrometheusLinkConfig
+                        {
+                            Url = "https://prometheus",
+                            Expressions = ["up"],
+                        }
+                    )
+            )
             .UpdateConfiguration(new { changed = "yes" })
             .UpdateConfiguration(new { nested = new { enabled = true } });
 
-        builder.AddSessionName("session-indexed")
+        builder
+            .AddSessionName("session-indexed")
             .AddSessionPattern("^indexed-session-.*$")
             .AddDataSourceName("source-indexed")
             .AddDataSourcePattern("^indexed-source-.*$")
-            .AddLink(new LinkBuilder().Named("link-indexed").Configure(new GrafanaLinkConfig
-            {
-                Url = "https://grafana",
-                DashboardId = "dash"
-            }))
+            .AddLink(
+                new LinkBuilder()
+                    .Named("link-indexed")
+                    .Configure(
+                        new GrafanaLinkConfig { Url = "https://grafana", DashboardId = "dash" }
+                    )
+            )
             .RemoveSessionNameAt(1)
             .RemoveSessionPatternAt(1)
             .RemoveDataSourceNameAt(1)
@@ -72,7 +79,8 @@ public class BuilderCrudTests
         Assert.That(builder.Configuration["changed"], Is.EqualTo("yes"));
         Assert.That(builder.Configuration["nested:enabled"], Is.EqualTo("True"));
 
-        builder.RemoveSessionName("session-updated")
+        builder
+            .RemoveSessionName("session-updated")
             .RemoveSessionPattern("^updated-.*$")
             .RemoveDataSourceName("source-updated")
             .RemoveDataSourcePattern("^updated-source-.*$")
@@ -90,45 +98,38 @@ public class BuilderCrudTests
     [Test]
     public void LinkBuilder_ShouldSupportConfigurationCrud()
     {
-        var builder = new LinkBuilder()
-            .Configure(new KibanaLinkConfig { Url = "https://kibana", DataViewId = "view" });
+        var builder = new LinkBuilder().Configure(
+            new KibanaLinkConfig { Url = "https://kibana", DataViewId = "view" }
+        );
 
-        builder.UpdateConfiguration(new GrafanaLinkConfig
-        {
-            Url = "https://grafana",
-            DashboardId = "dash"
-        });
-        builder.UpdateConfiguration(new KibanaLinkConfig
-        {
-            Url = "https://kibana-updated",
-            DataViewId = "view-2"
-        });
+        builder.UpdateConfiguration(
+            new GrafanaLinkConfig { Url = "https://grafana", DashboardId = "dash" }
+        );
+        builder.UpdateConfiguration(
+            new KibanaLinkConfig { Url = "https://kibana-updated", DataViewId = "view-2" }
+        );
 
         Assert.That(builder.Configuration, Is.TypeOf<KibanaLinkConfig>());
 
-        builder.Configure(new PrometheusLinkConfig
-        {
-            Url = "https://prometheus",
-            Expressions = ["up"]
-        });
+        builder.Configure(
+            new PrometheusLinkConfig { Url = "https://prometheus", Expressions = ["up"] }
+        );
         Assert.That(builder.Configuration, Is.TypeOf<PrometheusLinkConfig>());
     }
 
     [Test]
     public void LinkBuilder_UpdateConfiguration_WithConfiguration_MergesSameTypeAndPreservesExistingFields()
     {
-        var builder = new LinkBuilder()
-            .Configure(new KibanaLinkConfig
+        var builder = new LinkBuilder().Configure(
+            new KibanaLinkConfig
             {
                 Url = "https://kibana",
                 DataViewId = "view",
-                TimestampField = "custom-timestamp"
-            });
+                TimestampField = "custom-timestamp",
+            }
+        );
 
-        builder.UpdateConfiguration(new KibanaLinkConfig
-        {
-            KqlQuery = "service.name : api"
-        });
+        builder.UpdateConfiguration(new KibanaLinkConfig { KqlQuery = "service.name : api" });
 
         var mergedConfiguration = (KibanaLinkConfig)builder.Configuration!;
         Assert.Multiple(() =>
@@ -140,6 +141,3 @@ public class BuilderCrudTests
         });
     }
 }
-
-
-

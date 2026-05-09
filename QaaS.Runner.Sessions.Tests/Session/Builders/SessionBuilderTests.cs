@@ -208,43 +208,56 @@ public class SessionBuilderTests
             new ConsumerBuilder()
                 .Named("TestConsumer")
                 .AddPolicy(new PolicyBuilder().Configure(new CountPolicyConfig()))
-                .Configure(new SocketReaderConfig
-                {
-                    Host = "https:test",
-                    Port = 8080,
-                    ProtocolType = ProtocolType.IP
-                }));
-        
+                .Configure(
+                    new SocketReaderConfig
+                    {
+                        Host = "https:test",
+                        Port = 8080,
+                        ProtocolType = ProtocolType.IP,
+                    }
+                )
+        );
+
         builder.AddPublisher(
             new PublisherBuilder()
                 .Named("TestPublisher")
                 .AddPolicy(new PolicyBuilder().Configure(new CountPolicyConfig()))
-                .Configure(new RabbitMqSenderConfig { Host = "https://test.com" }));
-        
-        builder.AddTransaction(new TransactionBuilder()
-            .Named("TestTransaction")
-            .Configure(new HttpTransactorConfig
-            {
-                Method = HttpMethods.Delete,
-                BaseAddress = "https://test.com"
-            }));
-        
-        var probes = new List<KeyValuePair<string, IProbe>>
-        {
-            new ("TestProbe", _mockProbe.Object)
-        };
-        
-        builder.AddProbe(new ProbeBuilder()
-            .Named("TestProbe")
-            .HookNamed("TestHook"));
-        
-        builder.AddCollector(new CollectorBuilder()
-            .Named("TestCollector")
-            .Configure(new PrometheusFetcherConfig { Url = "https://promql:8080", Expression = "sum ()" }));
-        
-        builder.AddMockerCommand(new MockerCommandBuilder()
-            .Named("TestMockerCommand")
-            .Configure(new MockerCommandConfig()));
+                .Configure(new RabbitMqSenderConfig { Host = "https://test.com" })
+        );
+
+        builder.AddTransaction(
+            new TransactionBuilder()
+                .Named("TestTransaction")
+                .Configure(
+                    new HttpTransactorConfig
+                    {
+                        Method = HttpMethods.Delete,
+                        BaseAddress = "https://test.com",
+                    }
+                )
+        );
+
+        var probes = new List<KeyValuePair<string, IProbe>> { new("TestProbe", _mockProbe.Object) };
+
+        builder.AddProbe(new ProbeBuilder().Named("TestProbe").HookNamed("TestHook"));
+
+        builder.AddCollector(
+            new CollectorBuilder()
+                .Named("TestCollector")
+                .Configure(
+                    new PrometheusFetcherConfig
+                    {
+                        Url = "https://promql:8080",
+                        Expression = "sum ()",
+                    }
+                )
+        );
+
+        builder.AddMockerCommand(
+            new MockerCommandBuilder()
+                .Named("TestMockerCommand")
+                .Configure(new MockerCommandConfig())
+        );
 
         // Act
         var session = builder.Build(_context, probes);
@@ -259,9 +272,7 @@ public class SessionBuilderTests
     public void Build_Should_Handle_Null_Collections()
     {
         // Arrange
-        var builder = new SessionBuilder()
-            .Named("TestSession")
-            .AtStage(1);
+        var builder = new SessionBuilder().Named("TestSession").AtStage(1);
 
         var probeHooks = new List<KeyValuePair<string, IProbe>>();
 
@@ -277,9 +288,7 @@ public class SessionBuilderTests
     public void Build_Should_Handle_Empty_Collections()
     {
         // Arrange
-        var builder = new SessionBuilder()
-            .Named("TestSession")
-            .AtStage(1);
+        var builder = new SessionBuilder().Named("TestSession").AtStage(1);
 
         var probeHooks = new List<KeyValuePair<string, IProbe>>();
 
@@ -293,23 +302,50 @@ public class SessionBuilderTests
     [Test]
     public void Build_When_Action_Collections_Are_Null_Treats_Them_As_Empty_Collections()
     {
-        var builder = new SessionBuilder()
-            .Named("TestSession")
-            .AtStage(1);
+        var builder = new SessionBuilder().Named("TestSession").AtStage(1);
 
-        foreach (var propertyName in new[] { "Consumers", "Publishers", "Transactions", "Probes", "Collectors", "MockerCommands" })
+        foreach (
+            var propertyName in new[]
+            {
+                "Consumers",
+                "Publishers",
+                "Transactions",
+                "Probes",
+                "Collectors",
+                "MockerCommands",
+            }
+        )
         {
-            typeof(SessionBuilder).GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+            typeof(SessionBuilder)
+                .GetProperty(
+                    propertyName,
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                )!
                 .SetValue(builder, null);
         }
 
         var session = builder.Build(_context, []);
 
         Assert.That(session, Is.Not.Null);
-        foreach (var propertyName in new[] { "Consumers", "Publishers", "Transactions", "Probes", "Collectors", "MockerCommands" })
+        foreach (
+            var propertyName in new[]
+            {
+                "Consumers",
+                "Publishers",
+                "Transactions",
+                "Probes",
+                "Collectors",
+                "MockerCommands",
+            }
+        )
         {
-            var propertyValue = typeof(SessionBuilder).GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-                .GetValue(builder) as Array;
+            var propertyValue =
+                typeof(SessionBuilder)
+                    .GetProperty(
+                        propertyName,
+                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                    )!
+                    .GetValue(builder) as Array;
             Assert.That(propertyValue, Is.Not.Null, propertyName);
             Assert.That(propertyValue, Is.Empty, propertyName);
         }
@@ -322,19 +358,31 @@ public class SessionBuilderTests
             .Named("TestSession")
             .AtStage(1)
             .AddStage(new StageConfig(stageNumber: 2, timeoutBefore: 123, timeoutAfter: 456))
-            .AddPublisher(new PublisherBuilder()
-                .Named("publisher-stage-2")
-                .AtStage(2)
-                .Configure(new RabbitMqSenderConfig { Host = "https://test.com" }));
+            .AddPublisher(
+                new PublisherBuilder()
+                    .Named("publisher-stage-2")
+                    .AtStage(2)
+                    .Configure(new RabbitMqSenderConfig { Host = "https://test.com" })
+            );
 
         var session = builder.Build(_context, []);
-        var stagesField = typeof(global::QaaS.Runner.Sessions.Session.Session)
-            .GetField("_stages", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var stages = (Dictionary<int, global::QaaS.Runner.Sessions.Session.Stage>)stagesField.GetValue(session)!;
+        var stagesField = typeof(global::QaaS.Runner.Sessions.Session.Session).GetField(
+            "_stages",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
+        var stages =
+            (Dictionary<int, global::QaaS.Runner.Sessions.Session.Stage>)
+                stagesField.GetValue(session)!;
         var stageTwo = stages[2];
 
-        var sleepBeforeField = typeof(global::QaaS.Runner.Sessions.Session.Stage).GetProperty("SleepBeforeMilliseconds", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
-        var sleepAfterField = typeof(global::QaaS.Runner.Sessions.Session.Stage).GetProperty("SleepAfterMilliseconds", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
+        var sleepBeforeField = typeof(global::QaaS.Runner.Sessions.Session.Stage).GetProperty(
+            "SleepBeforeMilliseconds",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+        )!;
+        var sleepAfterField = typeof(global::QaaS.Runner.Sessions.Session.Stage).GetProperty(
+            "SleepAfterMilliseconds",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+        )!;
 
         Assert.That(sleepBeforeField.GetValue(stageTwo), Is.EqualTo(123));
         Assert.That(sleepAfterField.GetValue(stageTwo), Is.EqualTo(456));
@@ -347,45 +395,52 @@ public class SessionBuilderTests
         string? capturedConsumerTimeZone = null;
         string? capturedPublisherTimeZone = null;
         var chunkReader = new Mock<IChunkReader>();
-        chunkReader.Setup(reader => reader.ReadChunk(It.IsAny<TimeSpan>()))
+        chunkReader
+            .Setup(reader => reader.ReadChunk(It.IsAny<TimeSpan>()))
             .Returns(Array.Empty<DetailedData<object>>());
         var sender = new Mock<ISender>();
-        sender.Setup(mock => mock.Send(It.IsAny<Data<object>>()))
+        sender
+            .Setup(mock => mock.Send(It.IsAny<Data<object>>()))
             .Returns(new DetailedData<object>());
 
-        _context.SetSessionActionOverrides(new SessionActionOverrides
-        {
-            Consumer = request =>
+        _context.SetSessionActionOverrides(
+            new SessionActionOverrides
             {
-                capturedConsumerTimeZone = request.TimeZoneId;
-                return (null, chunkReader.Object);
-            },
-            Publisher = request =>
-            {
-                capturedPublisherTimeZone = request.TimeZoneId;
-                return (sender.Object, null);
+                Consumer = request =>
+                {
+                    capturedConsumerTimeZone = request.TimeZoneId;
+                    return (null, chunkReader.Object);
+                },
+                Publisher = request =>
+                {
+                    capturedPublisherTimeZone = request.TimeZoneId;
+                    return (sender.Object, null);
+                },
             }
-        });
+        );
 
         var builder = new SessionBuilder()
             .Named("TestSession")
             .AtStage(1)
             .WithTimeZone(timeZoneId)
-            .AddConsumer(new ConsumerBuilder()
-                .Named("sql-consumer")
-                .WithTimeout(100)
-                .Configure(new MsSqlReaderConfig
-                {
-                    ConnectionString = "Server=localhost",
-                    TableName = "events",
-                    InsertionTimeField = "created_at"
-                }))
-            .AddPublisher(new PublisherBuilder()
-                .Named("sql-publisher")
-                .Configure(new RabbitMqSenderConfig
-                {
-                    Host = "https://test.com"
-                }));
+            .AddConsumer(
+                new ConsumerBuilder()
+                    .Named("sql-consumer")
+                    .WithTimeout(100)
+                    .Configure(
+                        new MsSqlReaderConfig
+                        {
+                            ConnectionString = "Server=localhost",
+                            TableName = "events",
+                            InsertionTimeField = "created_at",
+                        }
+                    )
+            )
+            .AddPublisher(
+                new PublisherBuilder()
+                    .Named("sql-publisher")
+                    .Configure(new RabbitMqSenderConfig { Host = "https://test.com" })
+            );
 
         _ = builder.Build(_context, []);
 
@@ -396,4 +451,3 @@ public class SessionBuilderTests
         });
     }
 }
-

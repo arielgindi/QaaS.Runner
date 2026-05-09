@@ -20,9 +20,11 @@ public class TemplateLogic(Context context, TextWriter? writer = null) : ILogic
     /// <returns>The same <paramref name="executionData" /> instance.</returns>
     public ExecutionData Run(ExecutionData executionData)
     {
-        var template = context.GetRenderedConfigurationTemplate() ??
-                       context.RootConfiguration.BuildConfigurationAsYaml(
-                           Infrastructure.Constants.ConfigurationSectionNames);
+        var template =
+            context.GetRenderedConfigurationTemplate()
+            ?? context.RootConfiguration.BuildConfigurationAsYaml(
+                Infrastructure.Constants.ConfigurationSectionNames
+            );
 
         _writer ??= Console.Out;
         _writer?.WriteLine(template);

@@ -10,33 +10,50 @@ public class FileSystemStorage : BaseStorage
     private readonly FilesInFileSystemConfig _configuration;
     private readonly IFileSystem _fileSystem;
 
-    public FileSystemStorage(FilesInFileSystemConfig configuration, IFileSystem fileSystem,
-        Formatting jsonStorageFormat) : base(jsonStorageFormat)
+    public FileSystemStorage(
+        FilesInFileSystemConfig configuration,
+        IFileSystem fileSystem,
+        Formatting jsonStorageFormat
+    )
+        : base(jsonStorageFormat)
     {
         _fileSystem = fileSystem;
         _configuration = configuration;
     }
 
     protected override void StoreSerialized(
-        IList<KeyValuePair<string, byte[]>> sessionFileNameAndSerializedSessionDataItemsToStorePair, string? caseName)
+        IList<KeyValuePair<string, byte[]>> sessionFileNameAndSerializedSessionDataItemsToStorePair,
+        string? caseName
+    )
     {
         var directoryFullPath = GetDirectoryFullPath(caseName);
         _context.Logger.LogInformation(
             "Storing {SessionCount} session data item(s) in directory {DirectoryPath}",
-            sessionFileNameAndSerializedSessionDataItemsToStorePair.Count, directoryFullPath);
+            sessionFileNameAndSerializedSessionDataItemsToStorePair.Count,
+            directoryFullPath
+        );
 
-        foreach (var fileNameSerializedSessionDataPair in sessionFileNameAndSerializedSessionDataItemsToStorePair)
+        foreach (
+            var fileNameSerializedSessionDataPair in sessionFileNameAndSerializedSessionDataItemsToStorePair
+        )
         {
-            var sessionDataFilePath =
-                Infrastructure.FileSystemExtensions.CombineUnderRoot(directoryFullPath,
-                    fileNameSerializedSessionDataPair.Key);
-            var sessionDataDirectoryPath = Path.GetDirectoryName(sessionDataFilePath) ?? directoryFullPath;
-            // Check if the directory needed to write the session data to exists, if not create it!
-            if (!_fileSystem.Directory.Exists(sessionDataDirectoryPath))
-                _fileSystem.Directory.CreateDirectory(sessionDataDirectoryPath);
+            var sessionDataFilePath = Infrastructure.FileSystemExtensions.CombineUnderRoot(
+                directoryFullPath,
+                fileNameSerializedSessionDataPair.Key
+            );
+            var sessionDataDirectoryPath =
+                Path.GetDirectoryName(sessionDataFilePath) ?? directoryFullPath;
+            // CreateDirectory is idempotent — no TOCTOU race from a pre-existence check.
+            _fileSystem.Directory.CreateDirectory(sessionDataDirectoryPath);
 
-            _context.Logger.LogDebug("Writing session data file {SessionDataFilePath}", sessionDataFilePath);
-            _fileSystem.File.WriteAllBytes(sessionDataFilePath, fileNameSerializedSessionDataPair.Value);
+            _context.Logger.LogDebug(
+                "Writing session data file {SessionDataFilePath}",
+                sessionDataFilePath
+            );
+            _fileSystem.File.WriteAllBytes(
+                sessionDataFilePath,
+                fileNameSerializedSessionDataPair.Value
+            );
         }
     }
 
@@ -45,23 +62,36 @@ public class FileSystemStorage : BaseStorage
         var directoryFullPath = GetDirectoryFullPath(caseName);
         if (!_fileSystem.Directory.Exists(directoryFullPath))
         {
-            _context.Logger.LogWarning("Storage directory {DirectoryPath} was not found during retrieval. Returning no session data.",
-                directoryFullPath);
+            _context.Logger.LogWarning(
+                "Storage directory {DirectoryPath} was not found during retrieval. Returning no session data.",
+                directoryFullPath
+            );
             return [];
         }
 
-        var files = _fileSystem.Directory.GetFiles(directoryFullPath,
-            _configuration.SearchPattern, SearchOption.AllDirectories);
-        _context.Logger.LogInformation("Found {FileCount} file(s) to retrieve from {DirectoryPath}",
-            files.Length, directoryFullPath);
-        return files.Select(file => _fileSystem.File.ReadAllBytes(file));
+        var files = _fileSystem.Directory.GetFiles(
+            directoryFullPath,
+            _configuration.SearchPattern,
+            SearchOption.AllDirectories
+        );
+        _context.Logger.LogInformation(
+            "Found {FileCount} file(s) to retrieve from {DirectoryPath}",
+            files.Length,
+            directoryFullPath
+        );
+        return files.Select(file => _fileSystem.File.ReadAllBytes(file)).ToList();
     }
 
     private string GetDirectoryFullPath(string? caseName)
     {
-        var configuredDirectory = CaseStorageHandler.HandleCaseWithFileSystem(_configuration, caseName);
-        return Path.GetFullPath(Path.IsPathRooted(configuredDirectory)
-            ? configuredDirectory
-            : Path.Combine(Environment.CurrentDirectory, configuredDirectory));
+        var configuredDirectory = CaseStorageHandler.HandleCaseWithFileSystem(
+            _configuration,
+            caseName
+        );
+        return Path.GetFullPath(
+            Path.IsPathRooted(configuredDirectory)
+                ? configuredDirectory
+                : Path.Combine(Environment.CurrentDirectory, configuredDirectory)
+        );
     }
 }

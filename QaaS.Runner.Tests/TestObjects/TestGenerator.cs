@@ -6,9 +6,12 @@ using QaaS.Framework.SDK.Session.SessionDataObjects;
 
 namespace QaaS.Runner.Tests.TestObjects;
 
-public class TestGenerator: BaseGenerator<object>
+public class TestGenerator : BaseGenerator<object>
 {
-    public override IEnumerable<Data<object>> Generate(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+    public override IEnumerable<Data<object>> Generate(
+        IImmutableList<SessionData> sessionDataList,
+        IImmutableList<DataSource> dataSourceList
+    )
     {
         return [new Data<object>()];
     }

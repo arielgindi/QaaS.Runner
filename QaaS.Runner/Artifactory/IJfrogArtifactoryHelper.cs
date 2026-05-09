@@ -13,8 +13,11 @@ public interface IJfrogArtifactoryHelper
     /// <param name="httpClient"> The http client to perform get requests on the artifactory with </param>
     /// <param name="cancellationToken"> Cancellation token controlling the recursive fetch. </param>
     /// <returns> The urls to all child files under the given artifactoryFolderUrl. </returns>
-    public Task<IReadOnlyList<string>> GetUrlsToAllFilesInArtifactoryFolderAsync(string artifactoryFolderUrl,
-        HttpClient httpClient, CancellationToken cancellationToken = default);
+    public Task<IReadOnlyList<string>> GetUrlsToAllFilesInArtifactoryFolderAsync(
+        string artifactoryFolderUrl,
+        HttpClient httpClient,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     ///     Gets the paths to all files under the given artifactory folder recursively,
@@ -23,6 +26,8 @@ public interface IJfrogArtifactoryHelper
     /// <param name="artifactoryFolderUrl"> The url to the jfrog artifactory folder </param>
     /// <param name="httpClient"> The http client to perform get requests on the artifactory with </param>
     /// <returns> An enumerable of the urls to all child files under the given artifactoryFolderUrl </returns>
-    public IEnumerable<string> GetUrlsToAllFilesInArtifactoryFolder(string artifactoryFolderUrl,
-        HttpClient httpClient);
+    public IEnumerable<string> GetUrlsToAllFilesInArtifactoryFolder(
+        string artifactoryFolderUrl,
+        HttpClient httpClient
+    );
 }

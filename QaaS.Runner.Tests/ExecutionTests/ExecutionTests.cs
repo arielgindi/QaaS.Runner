@@ -25,7 +25,11 @@ public class ExecutionTests
     public void Start_WithRunTypeAndPassedAssertions_ReturnsZero()
     {
         var context = CreateContext();
-        var execution = CreateExecution(ExecutionType.Run, context, [CreateAssertion("a1", AssertionStatus.Passed)]);
+        var execution = CreateExecution(
+            ExecutionType.Run,
+            context,
+            [CreateAssertion("a1", AssertionStatus.Passed)]
+        );
 
         var result = execution.Start();
 
@@ -36,8 +40,14 @@ public class ExecutionTests
     public void Start_WithRunTypeAndFailedAssertion_ReturnsOne()
     {
         var context = CreateContext();
-        var execution = CreateExecution(ExecutionType.Run, context,
-            [CreateAssertion("a1", AssertionStatus.Passed), CreateAssertion("a2", AssertionStatus.Failed)]);
+        var execution = CreateExecution(
+            ExecutionType.Run,
+            context,
+            [
+                CreateAssertion("a1", AssertionStatus.Passed),
+                CreateAssertion("a2", AssertionStatus.Failed),
+            ]
+        );
 
         var result = execution.Start();
 
@@ -49,11 +59,18 @@ public class ExecutionTests
     {
         var context = CreateContext();
         var storage = new Mock<IStorage>();
-        storage.Setup(s => s.Retrieve(It.IsAny<string>()))
-            .Returns(new List<SessionData> { new() { Name = "retrieved-session" } }.ToImmutableList());
+        storage
+            .Setup(s => s.Retrieve(It.IsAny<string>()))
+            .Returns(
+                new List<SessionData> { new() { Name = "retrieved-session" } }.ToImmutableList()
+            );
 
-        var execution = CreateExecution(ExecutionType.Assert, context,
-            [CreateAssertion("a1", AssertionStatus.Failed)], [storage.Object]);
+        var execution = CreateExecution(
+            ExecutionType.Assert,
+            context,
+            [CreateAssertion("a1", AssertionStatus.Failed)],
+            [storage.Object]
+        );
 
         var result = execution.Start();
 
@@ -66,7 +83,8 @@ public class ExecutionTests
     {
         var context = CreateContext();
         var session = new Mock<ISession>();
-        session.Setup(s => s.Run(It.IsAny<ExecutionData>()))
+        session
+            .Setup(s => s.Run(It.IsAny<ExecutionData>()))
             .Returns(new SessionData { Name = "unexpected-session" });
 
         var execution = new Execution(ExecutionType.Assert, context)
@@ -76,7 +94,7 @@ public class ExecutionTests
             AssertionLogic = new AssertionLogic([], context),
             ReportLogic = new ReportLogic([], context),
             StorageLogic = new StorageLogic([], context, ExecutionType.Assert),
-            TemplateLogic = new TemplateLogic(context, TextWriter.Null)
+            TemplateLogic = new TemplateLogic(context, TextWriter.Null),
         };
 
         var result = execution.Start();
@@ -98,7 +116,10 @@ public class ExecutionTests
         var result = execution.Start();
 
         Assert.That(result, Is.EqualTo(0));
-        storage.Verify(s => s.Store(It.IsAny<ImmutableList<SessionData?>>(), context.CaseName), Times.Once);
+        storage.Verify(
+            s => s.Store(It.IsAny<ImmutableList<SessionData?>>(), context.CaseName),
+            Times.Once
+        );
     }
 
     [Test]
@@ -112,7 +133,10 @@ public class ExecutionTests
 
         Assert.That(result, Is.EqualTo(0));
         storage.Verify(s => s.Retrieve(It.IsAny<string>()), Times.Never);
-        storage.Verify(s => s.Store(It.IsAny<ImmutableList<SessionData?>>(), It.IsAny<string>()), Times.Never);
+        storage.Verify(
+            s => s.Store(It.IsAny<ImmutableList<SessionData?>>(), It.IsAny<string>()),
+            Times.Never
+        );
     }
 
     [Test]
@@ -147,8 +171,13 @@ public class ExecutionTests
         scope.Verify(disposable => disposable.Dispose(), Times.Once);
     }
 
-    private static Execution CreateExecution(ExecutionType executionType, InternalContext context,
-        IList<Assertion>? assertions = null, IList<IStorage>? storages = null, ILifetimeScope? ownedScope = null)
+    private static Execution CreateExecution(
+        ExecutionType executionType,
+        InternalContext context,
+        IList<Assertion>? assertions = null,
+        IList<IStorage>? storages = null,
+        ILifetimeScope? ownedScope = null
+    )
     {
         return new Execution(executionType, context, ownedScope)
         {
@@ -157,7 +186,7 @@ public class ExecutionTests
             AssertionLogic = new AssertionLogic(assertions ?? [], context),
             ReportLogic = new ReportLogic([], context),
             StorageLogic = new StorageLogic(storages ?? [], context, executionType),
-            TemplateLogic = new TemplateLogic(context, TextWriter.Null)
+            TemplateLogic = new TemplateLogic(context, TextWriter.Null),
         };
     }
 
@@ -166,18 +195,22 @@ public class ExecutionTests
         var assertion = new Mock<Assertion>();
         assertion.Object.Name = name;
         assertion.Object.AssertionName = name;
-        assertion.Setup(a => a.Execute(It.IsAny<IImmutableList<SessionData?>>(), It.IsAny<IImmutableList<DataSource>?>()))
-            .Returns(new AssertionResult
-            {
-                Assertion = assertion.Object,
-                AssertionStatus = status,
-                TestDurationMs = 0,
-                Flaky = new Flaky
+        assertion
+            .Setup(a =>
+                a.Execute(
+                    It.IsAny<IImmutableList<SessionData?>>(),
+                    It.IsAny<IImmutableList<DataSource>?>()
+                )
+            )
+            .Returns(
+                new AssertionResult
                 {
-                    IsFlaky = false,
-                    FlakinessReasons = []
+                    Assertion = assertion.Object,
+                    AssertionStatus = status,
+                    TestDurationMs = 0,
+                    Flaky = new Flaky { IsFlaky = false, FlakinessReasons = [] },
                 }
-            });
+            );
         return assertion.Object;
     }
 
@@ -189,13 +222,14 @@ public class ExecutionTests
             CaseName = "case-name",
             ExecutionId = "execution-id",
             RootConfiguration = new ConfigurationBuilder().Build(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
         };
-        context.InsertValueIntoGlobalDictionary(context.GetMetaDataPath(), new MetaDataConfig
-        {
-            Team = "Smoke",
-            System = "QaaS"
-        });
+        context.InsertValueIntoGlobalDictionary(
+            context.GetMetaDataPath(),
+            new MetaDataConfig { Team = "Smoke", System = "QaaS" }
+        );
         return context;
     }
 }

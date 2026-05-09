@@ -47,8 +47,9 @@ internal static class ProbeExecutionScope
         }
 
         throw new InvalidOperationException(
-            "Probe execution scope is not available. Runner should wrap probe configuration loading and execution " +
-            "inside ProbeExecutionScope.Enter so global-dictionary probe paths stay unique per session and probe.");
+            "Probe execution scope is not available. Runner should wrap probe configuration loading and execution "
+                + "inside ProbeExecutionScope.Enter so global-dictionary probe paths stay unique per session and probe."
+        );
     }
 
     private sealed class ActivityScope(Activity activity) : IDisposable

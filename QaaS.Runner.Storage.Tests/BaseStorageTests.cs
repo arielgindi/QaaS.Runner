@@ -11,14 +11,20 @@ namespace QaaS.Runner.Storage.Tests;
 [TestFixture]
 public class BaseStorageTests
 {
-    private sealed class InspectableStorage(Formatting formatting, IEnumerable<byte[]>? retrieved = null)
-        : BaseStorage(formatting)
+    private sealed class InspectableStorage(
+        Formatting formatting,
+        IEnumerable<byte[]>? retrieved = null
+    ) : BaseStorage(formatting)
     {
         public IList<KeyValuePair<string, byte[]>> StoredItems { get; private set; } = [];
         public string? CaseName { get; private set; }
 
         protected override void StoreSerialized(
-            IList<KeyValuePair<string, byte[]>> sessionFileNameAndSerializedSessionDataItemsToStorePair, string? caseName)
+            IList<
+                KeyValuePair<string, byte[]>
+            > sessionFileNameAndSerializedSessionDataItemsToStorePair,
+            string? caseName
+        )
         {
             StoredItems = sessionFileNameAndSerializedSessionDataItemsToStorePair;
             CaseName = caseName;
@@ -63,19 +69,24 @@ public class BaseStorageTests
         var secondSession = new SessionData { Name = "session-b" };
         var options = new JsonSerializerOptions
         {
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
 
-        var storage = new InspectableStorage(Formatting.None,
-        [
-            SessionDataSerialization.SerializeSessionData(firstSession, options),
-            SessionDataSerialization.SerializeSessionData(secondSession, options)
-        ]);
+        var storage = new InspectableStorage(
+            Formatting.None,
+            [
+                SessionDataSerialization.SerializeSessionData(firstSession, options),
+                SessionDataSerialization.SerializeSessionData(secondSession, options),
+            ]
+        );
 
         var result = storage.Retrieve("case-c");
 
         Assert.That(result, Has.Count.EqualTo(2));
-        Assert.That(result.Select(session => session.Name), Is.EquivalentTo(["session-a", "session-b"]));
+        Assert.That(
+            result.Select(session => session.Name),
+            Is.EquivalentTo(["session-a", "session-b"])
+        );
         Assert.That(storage.CaseName, Is.EqualTo("case-c"));
     }
 
@@ -95,7 +106,7 @@ public class BaseStorageTests
         var sessions = new List<SessionData?>
         {
             new() { Name = "session/a" },
-            new() { Name = "session\\a" }
+            new() { Name = "session\\a" },
         }.ToImmutableList();
 
         Assert.Throws<InvalidOperationException>(() => storage.Store(sessions, "case-e"));
@@ -106,15 +117,23 @@ public class BaseStorageTests
     {
         var options = new JsonSerializerOptions
         {
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
-        var storage = new InspectableStorage(Formatting.None,
-        [
-            SessionDataSerialization.SerializeSessionData(new SessionData { Name = "session-no-context" }, options)
-        ]);
+        var storage = new InspectableStorage(
+            Formatting.None,
+            [
+                SessionDataSerialization.SerializeSessionData(
+                    new SessionData { Name = "session-no-context" },
+                    options
+                ),
+            ]
+        );
 
         var result = storage.Retrieve("case-f");
 
-        Assert.That(result.Select(session => session.Name), Is.EqualTo(new[] { "session-no-context" }));
+        Assert.That(
+            result.Select(session => session.Name),
+            Is.EqualTo(new[] { "session-no-context" })
+        );
     }
 }

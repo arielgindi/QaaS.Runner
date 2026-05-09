@@ -17,7 +17,8 @@ namespace QaaS.Runner.Loaders;
 /// runner per command, and then flattens all child execution builders into one outer runner.
 /// </summary>
 /// <typeparam name="TRunner">The type of runner to instantiate, which must inherit from <see cref="Runner" /></typeparam>
-public class ExecuteLoader<TRunner> : BaseLoader<ExecuteOptions, TRunner> where TRunner : Runner
+public class ExecuteLoader<TRunner> : BaseLoader<ExecuteOptions, TRunner>
+    where TRunner : Runner
 {
     private readonly ILifetimeScope _runScope;
 
@@ -26,7 +27,8 @@ public class ExecuteLoader<TRunner> : BaseLoader<ExecuteOptions, TRunner> where 
     /// </summary>
     /// <param name="options">The execution options containing configuration and command settings</param>
     /// <param name="executionId">An optional ID to identify the execution session</param>
-    public ExecuteLoader(ExecuteOptions options, string? executionId = null) : base(options, executionId)
+    public ExecuteLoader(ExecuteOptions options, string? executionId = null)
+        : base(options, executionId)
     {
         _runScope = Bootstrap.CreateRunnerScope();
     }
@@ -45,30 +47,39 @@ public class ExecuteLoader<TRunner> : BaseLoader<ExecuteOptions, TRunner> where 
     {
         // Find if none existing command ids were given to run
         var executableCommandIds = allCommandsClustered.Select(command => command.Id!).ToList();
-        var notFoundCommandsIdsToRun = Options.CommandIdsToRun.Except(executableCommandIds).ToList();
+        var notFoundCommandsIdsToRun = Options
+            .CommandIdsToRun.Except(executableCommandIds)
+            .ToList();
         if (notFoundCommandsIdsToRun.Any())
         {
-            Logger.LogDebug("Existing command ids received: {ExistingCommandIds}",
-                string.Join(", ",
-                    executableCommandIds.Intersect(Options.CommandIdsToRun)));
-            throw new InvalidOperationException(RunnerDiagnosticMessageFormatter.Format(
-                "The command-ids-to-run filter contains command ids that do not exist in the execute configuration.",
-                [
-                    $"Requested command ids not found: {RunnerDiagnosticMessageFormatter.SummarizeValues(notFoundCommandsIdsToRun)}",
-                    $"Available command ids: {RunnerDiagnosticMessageFormatter.SummarizeValues(executableCommandIds)}",
-                    $"Execute configuration file: {Options.ConfigurationFile}"
-                ],
-                null,
-                null,
-                [
-                    "Update the command-ids-to-run values or the execute configuration file and retry."
-                ]));
+            Logger.LogDebug(
+                "Existing command ids received: {ExistingCommandIds}",
+                string.Join(", ", executableCommandIds.Intersect(Options.CommandIdsToRun))
+            );
+            throw new InvalidOperationException(
+                RunnerDiagnosticMessageFormatter.Format(
+                    "The command-ids-to-run filter contains command ids that do not exist in the execute configuration.",
+                    [
+                        $"Requested command ids not found: {RunnerDiagnosticMessageFormatter.SummarizeValues(notFoundCommandsIdsToRun)}",
+                        $"Available command ids: {RunnerDiagnosticMessageFormatter.SummarizeValues(executableCommandIds)}",
+                        $"Execute configuration file: {Options.ConfigurationFile}",
+                    ],
+                    null,
+                    null,
+                    [
+                        "Update the command-ids-to-run values or the execute configuration file and retry.",
+                    ]
+                )
+            );
         }
 
         // Find if no command ids were given to run which means to run all command ids
-        if (!Options.CommandIdsToRun.Any()) return allCommandsClustered;
+        if (!Options.CommandIdsToRun.Any())
+            return allCommandsClustered;
 
-        return allCommandsClustered.Where(command => Options.CommandIdsToRun.Contains(command.Id!)).ToList();
+        return allCommandsClustered
+            .Where(command => Options.CommandIdsToRun.Contains(command.Id!))
+            .ToList();
     }
 
     /// <summary>
@@ -91,11 +102,13 @@ public class ExecuteLoader<TRunner> : BaseLoader<ExecuteOptions, TRunner> where 
                 .EnrichedBuild(addEnvironmentVariables: true)
                 .LoadAndValidateConfiguration<ExecuteConfigurations>();
         }
-        catch (Exception exception) when (RunnerYamlConfigurationExceptionFactory.ShouldWrap(exception))
+        catch (Exception exception)
+            when (RunnerYamlConfigurationExceptionFactory.ShouldWrap(exception))
         {
             throw RunnerYamlConfigurationExceptionFactory.CreateLocalFileLoadException(
                 executeConfigurationPath,
-                exception);
+                exception
+            );
         }
 
         // Filter commands based on command-ids-to-run
@@ -104,24 +117,30 @@ public class ExecuteLoader<TRunner> : BaseLoader<ExecuteOptions, TRunner> where 
         // Bootstrap a runner for each command
         var runs = commandsToRun.Select(command =>
         {
-            var stringCommand = CommandLineParser.SplitCommandLineIntoArguments(command.Command!, true).ToArray();
+            var stringCommand = CommandLineParser
+                .SplitCommandLineIntoArguments(command.Command!, true)
+                .ToArray();
             if (stringCommand[0] == "execute")
-                throw new ArgumentException(RunnerDiagnosticMessageFormatter.Format(
-                    "Execute configurations cannot contain nested execute commands.",
-                    [
-                        $"Command id: {command.Id ?? "<none>"}",
-                        $"Command text: {command.Command ?? "<none>"}",
-                        $"Execute configuration file: {Options.ConfigurationFile}"
-                    ],
-                    null,
-                    null,
-                    [
-                        "Use run, act, assert, or template inside Commands instead of nesting execute."
-                    ]));
+                throw new ArgumentException(
+                    RunnerDiagnosticMessageFormatter.Format(
+                        "Execute configurations cannot contain nested execute commands.",
+                        [
+                            $"Command id: {command.Id ?? "<none>"}",
+                            $"Command text: {command.Command ?? "<none>"}",
+                            $"Execute configuration file: {Options.ConfigurationFile}",
+                        ],
+                        null,
+                        null,
+                        [
+                            "Use run, act, assert, or template inside Commands instead of nesting execute.",
+                        ]
+                    )
+                );
             return Bootstrap.GetRunner<TRunner>(stringCommand, command.Id);
         });
 
-        var allExecutions = runs.Select(run => run.ExecutionBuilders).SelectMany(runExecutions => runExecutions)
+        var allExecutions = runs.Select(run => run.ExecutionBuilders)
+            .SelectMany(runExecutions => runExecutions)
             .ToList();
 
         var runner = Bootstrap.CreateRunner<TRunner>(
@@ -130,8 +149,11 @@ public class ExecuteLoader<TRunner> : BaseLoader<ExecuteOptions, TRunner> where 
             Logger,
             SerilogLogger,
             Options.EmptyAllureDirectory,
-            Options.AutoServeTestResults);
-        runner.WithServeResultsFolder(Options.AutoServeTestResults ? Options.GetServeResultsFolderOrDefault() : null);
+            Options.AutoServeTestResults
+        );
+        runner.WithServeResultsFolder(
+            Options.AutoServeTestResults ? Options.GetServeResultsFolderOrDefault() : null
+        );
         runner.ExitProcessOnCompletion = !Options.NoProcessExit;
         return runner;
     }
@@ -141,29 +163,36 @@ public class ExecuteLoader<TRunner> : BaseLoader<ExecuteOptions, TRunner> where 
         if (PathUtils.IsPathHttpUrl(Options.ConfigurationFile))
             return Options.ConfigurationFile!;
 
-        var resolvedConfigurationFilePath = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory,
-            Options.ConfigurationFile!));
+        var resolvedConfigurationFilePath = Path.GetFullPath(
+            Path.Combine(Environment.CurrentDirectory, Options.ConfigurationFile!)
+        );
 
         try
         {
-            using var _ = File.Open(resolvedConfigurationFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var _ = File.Open(
+                resolvedConfigurationFilePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read
+            );
             return Options.ConfigurationFile!;
         }
-        catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
+        catch (Exception exception)
+            when (exception is FileNotFoundException or DirectoryNotFoundException)
         {
             throw new CouldNotFindConfigurationException(
                 RunnerDiagnosticMessageFormatter.Format(
                     "Execute configuration file was not found.",
                     [
                         $"Configured path: {Options.ConfigurationFile}",
-                        $"Resolved local path: {resolvedConfigurationFilePath}"
+                        $"Resolved local path: {resolvedConfigurationFilePath}",
                     ],
                     null,
                     null,
-                    [
-                        "Provide a valid execute YAML file and retry."
-                    ]),
-                exception);
+                    ["Provide a valid execute YAML file and retry."]
+                ),
+                exception
+            );
         }
     }
 }

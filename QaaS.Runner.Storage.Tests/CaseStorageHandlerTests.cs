@@ -13,7 +13,10 @@ public class CaseStorageHandlerTests
     [TestCase("prefix", "\\case", "prefix_case/")]
     [TestCase("", "case", "case/")]
     public void TestHandleCaseWithS3_CallFunction_ShouldReturnExpectedResult(
-        string prefix, string? caseName, string expectedResult)
+        string prefix,
+        string? caseName,
+        string expectedResult
+    )
     {
         // Arrange
         var config = new S3Config { Prefix = prefix };
@@ -30,7 +33,10 @@ public class CaseStorageHandlerTests
     [TestCase("dir", "case", "dir/case")]
     [TestCase("", "case", "case")]
     public void TestHandleCaseWithFileSystem_CallFunction_ShouldReturnExpectedResult(
-        string path, string? caseName, string expectedResult)
+        string path,
+        string? caseName,
+        string expectedResult
+    )
     {
         // Arrange
         var config = new FilesInFileSystemConfig { Path = path };
@@ -39,7 +45,6 @@ public class CaseStorageHandlerTests
         var result = CaseStorageHandler.HandleCaseWithFileSystem(config, caseName);
 
         // Assert
-        Assert.AreEqual(expectedResult.Replace('/', Path.DirectorySeparatorChar),
-            result);
+        Assert.AreEqual(expectedResult.Replace('/', Path.DirectorySeparatorChar), result);
     }
 }

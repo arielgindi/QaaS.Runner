@@ -24,11 +24,15 @@ public abstract class BaseStorage : IStorage
     public void Store(ImmutableList<SessionData?>? sessionDataList, string? caseName)
     {
         var logger = _context?.Logger;
-        var sessionsToStore = (sessionDataList ?? []).Where(sessionData => sessionData is not null)
+        var sessionsToStore = (sessionDataList ?? [])
+            .Where(sessionData => sessionData is not null)
             .Select(sessionData => sessionData!)
             .ToList();
-        logger?.LogDebug("Preparing {SessionCount} session item(s) for storage in case {CaseName}",
-            sessionsToStore.Count, caseName);
+        logger?.LogDebug(
+            "Preparing {SessionCount} session item(s) for storage in case {CaseName}",
+            sessionsToStore.Count,
+            caseName
+        );
         var invalidNames = sessionsToStore
             .Where(sessionData => string.IsNullOrWhiteSpace(sessionData.Name))
             .Select(sessionData => sessionData.Name)
@@ -37,13 +41,18 @@ public abstract class BaseStorage : IStorage
         if (invalidNames.Count != 0)
             throw new InvalidOperationException("Session data names must be set before storing.");
 
-        var serializedSessionDataList = sessionsToStore.Select(sessionData => new KeyValuePair<string, byte[]>(
+        var serializedSessionDataList = sessionsToStore
+            .Select(sessionData => new KeyValuePair<string, byte[]>(
                 BuildStorageFileName(sessionData.Name!),
-                SessionDataSerialization.SerializeSessionData(sessionData, new JsonSerializerOptions
-                {
-                    WriteIndented = jsonStorageFormat == Formatting.Indented,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                })))
+                SessionDataSerialization.SerializeSessionData(
+                    sessionData,
+                    new JsonSerializerOptions
+                    {
+                        WriteIndented = jsonStorageFormat == Formatting.Indented,
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                    }
+                )
+            ))
             .ToList();
 
         var duplicateFileNames = serializedSessionDataList
@@ -57,12 +66,16 @@ public abstract class BaseStorage : IStorage
             // Different session names can normalize to the same file name, so fail before writing
             // instead of silently overwriting one session's persisted data with another.
             throw new InvalidOperationException(
-                "Multiple session data entries resolve to the same storage file name: " +
-                string.Join(", ", duplicateFileNames));
+                "Multiple session data entries resolve to the same storage file name: "
+                    + string.Join(", ", duplicateFileNames)
+            );
         }
 
-        logger?.LogDebug("Serialized {SessionCount} session item(s) for storage using format {Formatting}",
-            serializedSessionDataList.Count, jsonStorageFormat);
+        logger?.LogDebug(
+            "Serialized {SessionCount} session item(s) for storage using format {Formatting}",
+            serializedSessionDataList.Count,
+            jsonStorageFormat
+        );
         StoreSerialized(serializedSessionDataList, caseName);
     }
 
@@ -71,16 +84,27 @@ public abstract class BaseStorage : IStorage
         var logger = _context?.Logger;
         var retrievedSessions = RetrieveSerialized(caseName)
             .Select(serializedSessionData =>
-                SessionDataSerialization.DeserializeSessionData(serializedSessionData,
-                    new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull }))
+                SessionDataSerialization.DeserializeSessionData(
+                    serializedSessionData,
+                    new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                    }
+                )
+            )
             .ToImmutableList();
-        logger?.LogDebug("Deserialized {SessionCount} session item(s) retrieved from storage for case {CaseName}",
-            retrievedSessions.Count, caseName);
+        logger?.LogDebug(
+            "Deserialized {SessionCount} session item(s) retrieved from storage for case {CaseName}",
+            retrievedSessions.Count,
+            caseName
+        );
         return retrievedSessions;
     }
 
     protected abstract void StoreSerialized(
-        IList<KeyValuePair<string, byte[]>> sessionFileNameAndSerializedSessionDataItemsToStorePair, string? caseName);
+        IList<KeyValuePair<string, byte[]>> sessionFileNameAndSerializedSessionDataItemsToStorePair,
+        string? caseName
+    );
 
     protected abstract IEnumerable<byte[]> RetrieveSerialized(string? caseName);
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
-using Qaas.Mocker.CommunicationObjects.ConfigurationObjects.Command;
 using QaaS.Framework.Serialization;
+using Qaas.Mocker.CommunicationObjects.ConfigurationObjects.Command;
 using QaaS.Runner.Sessions.ConfigurationObjects;
 
 namespace QaaS.Runner.Sessions.Actions.MockerCommands;
@@ -13,8 +13,18 @@ public class ChangeActionStubMockerCommand(
     string serverName,
     int requestDurationMs,
     int requestRetries,
-    ILogger logger) :
-    MockerCommand(name, stage, commandConfig, redisConfig, serverName, requestDurationMs, requestRetries, logger)
+    ILogger logger
+)
+    : MockerCommand(
+        name,
+        stage,
+        commandConfig,
+        redisConfig,
+        serverName,
+        requestDurationMs,
+        requestRetries,
+        logger
+    )
 {
     /// <inheritdoc />
     protected override bool HandlesData => false;
@@ -34,4 +44,3 @@ public class ChangeActionStubMockerCommand(
         return null;
     }
 }
-

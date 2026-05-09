@@ -41,7 +41,7 @@ public class SessionTests
     private static List<Data<object>> _transactionSentData = null!;
 
     private string _messageToRead = "return message";
-    
+
     private Sessions.Session.Session CreateSession(
         InternalContext context,
         string sessionName,
@@ -49,19 +49,20 @@ public class SessionTests
         string dataReadersReturn,
         int publisherChunkSize,
         List<string> names,
-        List<string> patterns)
+        List<string> patterns
+    )
     {
         var stage1 = new Stage(context, [], sessionName, 0, 0, 0);
         stage1.AddCommunication(
-            CreationalFunctions.CreateConsumer(
-                ref _reader!,
-                _messageToRead,
-                consumeMsgAmount));
+            CreationalFunctions.CreateConsumer(ref _reader!, _messageToRead, consumeMsgAmount)
+        );
         stage1.AddCommunication(
             CreationalFunctions.CreateChunkConsumer(
                 ref _chunkReader!,
                 _messageToRead,
-                consumeMsgAmount));
+                consumeMsgAmount
+            )
+        );
 
         var stage2 = new Stage(context, [], sessionName, 1, 0, 0);
         stage2.AddCommunication(
@@ -70,14 +71,17 @@ public class SessionTests
                 ref _sentData,
                 patterns.ToArray(),
                 names.ToArray(),
-                1));
+                1
+            )
+        );
         stage2.AddCommunication(
             CreationalFunctions.CreateChunkPublisherWithIterations(
                 ref _chunkSender!,
                 patterns.ToArray(),
                 names.ToArray(),
-                publisherChunkSize));
-
+                publisherChunkSize
+            )
+        );
 
         var stage3 = new Stage(context, [], sessionName, 2, 0, 0);
         stage3.AddCommunication(
@@ -87,28 +91,41 @@ public class SessionTests
                 ref _transactionSentData,
                 patterns.ToArray(),
                 names.ToArray(),
-                consumeMsgAmount));
-        
+                consumeMsgAmount
+            )
+        );
+
         return new Sessions.Session.Session(
             sessionName,
             0,
             true,
             0,
             0,
-            new Dictionary<int, Stage> { { 0, stage1 }, { 1, stage2 }, { 2, stage3 } },
+            new Dictionary<int, Stage>
+            {
+                { 0, stage1 },
+                { 1, stage2 },
+                { 2, stage3 },
+            },
             [], // add collector
             context,
-            []);
+            []
+        );
     }
 
-    [Test,
-     TestCaseSource(typeof(TestResourceDataSources),
-         nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters))]
+    [
+        Test,
+        TestCaseSource(
+            typeof(TestResourceDataSources),
+            nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters)
+        )
+    ]
     public void Run_WithAllActions_ShouldCallReadersCorrectAmountOfTimes(
         List<string> datasourceNames,
         List<string> dataSourcePatterns,
         List<DataSource> dataSources,
-        List<Data<object>> expectedData)
+        List<Data<object>> expectedData
+    )
     {
         // Arrange
         const int consumeMsgAmount = ConsumeMessageCount;
@@ -120,9 +137,12 @@ public class SessionTests
         var session = CreateSession(
             context,
             sessionName,
-            consumeMsgAmount, dataReadersReturn,
+            consumeMsgAmount,
+            dataReadersReturn,
             pubChunkSize,
-            datasourceNames, dataSourcePatterns);
+            datasourceNames,
+            dataSourcePatterns
+        );
 
         // Act
         session.Run(context.ExecutionData);
@@ -132,14 +152,19 @@ public class SessionTests
         _chunkReader!.Verify(r => r.ReadChunk(It.IsAny<TimeSpan>()), Times.Once);
     }
 
-    [Test,
-     TestCaseSource(typeof(TestResourceDataSources),
-         nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters))]
+    [
+        Test,
+        TestCaseSource(
+            typeof(TestResourceDataSources),
+            nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters)
+        )
+    ]
     public void Run_WithAllActions_ShouldCallSendersCorrectAmountOfTimes(
         List<string> datasourceNames,
         List<string> dataSourcePatterns,
         List<DataSource> dataSources,
-        List<Data<object>> expectedData)
+        List<Data<object>> expectedData
+    )
     {
         // Arrange
         const int consumeMsgAmount = ConsumeMessageCount;
@@ -151,9 +176,12 @@ public class SessionTests
         var session = CreateSession(
             context,
             sessionName,
-            consumeMsgAmount, dataReadersReturn,
+            consumeMsgAmount,
+            dataReadersReturn,
             pubChunkSize,
-            datasourceNames, dataSourcePatterns);
+            datasourceNames,
+            dataSourcePatterns
+        );
 
         // Act
         session.Run(context.ExecutionData);
@@ -166,17 +194,25 @@ public class SessionTests
         int numberOfChunks = expectedData.Count / pubChunkSize;
         if (expectedData.Count % pubChunkSize != 0)
             numberOfChunks++;
-        _chunkSender!.Verify(cs => cs.SendChunk(It.IsAny<IEnumerable<Data<object>>>()), Times.Exactly(numberOfChunks));
+        _chunkSender!.Verify(
+            cs => cs.SendChunk(It.IsAny<IEnumerable<Data<object>>>()),
+            Times.Exactly(numberOfChunks)
+        );
     }
-    
-    [Test,
-     TestCaseSource(typeof(TestResourceDataSources),
-         nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters))]
+
+    [
+        Test,
+        TestCaseSource(
+            typeof(TestResourceDataSources),
+            nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters)
+        )
+    ]
     public void Run_WithAllActions_ShouldCallTransactorsCorrectAmountOfTimes(
         List<string> datasourceNames,
         List<string> dataSourcePatterns,
         List<DataSource> dataSources,
-        List<Data<object>> expectedSentData)
+        List<Data<object>> expectedSentData
+    )
     {
         // Arrange
         const int consumeMsgAmount = ConsumeMessageCount;
@@ -188,26 +224,37 @@ public class SessionTests
         var session = CreateSession(
             context,
             sessionName,
-            consumeMsgAmount, dataReadersReturn,
+            consumeMsgAmount,
+            dataReadersReturn,
             pubChunkSize,
-            datasourceNames, dataSourcePatterns);
+            datasourceNames,
+            dataSourcePatterns
+        );
 
         // Act
         session.Run(context.ExecutionData);
 
         // Assert
         // the transaction reader returns the string you configured it to return for each data it gets
-        _transactor!.Verify(t => t.Transact(It.IsAny<Data<object>>()), Times.Exactly(consumeMsgAmount));
+        _transactor!.Verify(
+            t => t.Transact(It.IsAny<Data<object>>()),
+            Times.Exactly(consumeMsgAmount)
+        );
     }
-    
-    [Test,
-     TestCaseSource(typeof(TestResourceDataSources),
-         nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters))]
+
+    [
+        Test,
+        TestCaseSource(
+            typeof(TestResourceDataSources),
+            nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters)
+        )
+    ]
     public void Run_WithAllActions_ShouldLogAllCommunicationDataTOTheSessionDataObject(
         List<string> datasourceNames,
         List<string> dataSourcePatterns,
         List<DataSource> dataSources,
-        List<Data<object>> expectedSentData)
+        List<Data<object>> expectedSentData
+    )
     {
         // Arrange
         const int consumeMsgAmount = ConsumeMessageCount;
@@ -220,27 +267,25 @@ public class SessionTests
         var session = CreateSession(
             context,
             sessionName,
-            consumeMsgAmount, dataReadersReturn,
+            consumeMsgAmount,
+            dataReadersReturn,
             pubChunkSize,
-            datasourceNames, dataSourcePatterns);
+            datasourceNames,
+            dataSourcePatterns
+        );
 
         // Act
         var sessionData = session.Run(context.ExecutionData);
 
         // Assert
-        var inputCount = sessionData!.Inputs!
-            .Select(cd => cd.Data)
-            .SelectMany(d => d).Count(); 
-        
-        Assert.That(inputCount, Is.EqualTo(
-            sentMsgAmount * 2 + consumeMsgAmount)); // number of messages sent + chunk sent + transaction sent 
+        var inputCount = sessionData!.Inputs!.Select(cd => cd.Data).SelectMany(d => d).Count();
 
-        var outputCount = sessionData.Outputs!
-            .Select(cd => cd.Data)
-            .SelectMany(d => d).Count();
-        
-        Assert.That(outputCount, Is.EqualTo(
-            consumeMsgAmount * 2 + 2)); } // number of messages read + chunk read + transaction read 
+        Assert.That(inputCount, Is.EqualTo(sentMsgAmount * 2 + consumeMsgAmount)); // number of messages sent + chunk sent + transaction sent
+
+        var outputCount = sessionData.Outputs!.Select(cd => cd.Data).SelectMany(d => d).Count();
+
+        Assert.That(outputCount, Is.EqualTo(consumeMsgAmount * 2 + 2));
+    } // number of messages read + chunk read + transaction read
 
     [Test]
     public void Run_WhenSaveDataIsFalse_ReturnsNullAndRemovesRunningSessionEntry()
@@ -257,12 +302,16 @@ public class SessionTests
             new Dictionary<int, Stage> { { 0, stage } },
             [],
             context,
-            []);
+            []
+        );
 
         var sessionData = session.Run(context.ExecutionData);
 
         Assert.That(sessionData, Is.Null);
-        Assert.That(context.InternalRunningSessions.RunningSessionsDict.ContainsKey(sessionName), Is.False);
+        Assert.That(
+            context.InternalRunningSessions.RunningSessionsDict.ContainsKey(sessionName),
+            Is.False
+        );
     }
 
     [Test]
@@ -276,21 +325,39 @@ public class SessionTests
         var stage2StartedBeforeStage1Completed = false;
 
         var stage1 = new Stage(context, [], sessionName, 0, 0, 0);
-        stage1.AddCommunication(new RecordingAction("stage-1", 0, Globals.Logger, () =>
-        {
-            stage1Started.Set();
-            allowStage1ToFinish.Wait(TimeSpan.FromSeconds(5));
-            Interlocked.Exchange(ref stage1Completed, 1);
-        }));
+        stage1.AddCommunication(
+            new RecordingAction(
+                "stage-1",
+                0,
+                Globals.Logger,
+                () =>
+                {
+                    stage1Started.Set();
+                    allowStage1ToFinish.Wait(TimeSpan.FromSeconds(5));
+                    Interlocked.Exchange(ref stage1Completed, 1);
+                }
+            )
+        );
 
         var stage2 = new Stage(context, [], sessionName, 1, 0, 0);
-        stage2.AddCommunication(new RecordingAction("stage-2", 1, Globals.Logger, () =>
-        {
-            Assert.That(stage1Started.Wait(TimeSpan.FromSeconds(5)), Is.True,
-                "Stage 1 action never started before stage 2 was evaluated.");
-            stage2StartedBeforeStage1Completed = Interlocked.CompareExchange(ref stage1Completed, 0, 0) == 0;
-            allowStage1ToFinish.Set();
-        }));
+        stage2.AddCommunication(
+            new RecordingAction(
+                "stage-2",
+                1,
+                Globals.Logger,
+                () =>
+                {
+                    Assert.That(
+                        stage1Started.Wait(TimeSpan.FromSeconds(5)),
+                        Is.True,
+                        "Stage 1 action never started before stage 2 was evaluated."
+                    );
+                    stage2StartedBeforeStage1Completed =
+                        Interlocked.CompareExchange(ref stage1Completed, 0, 0) == 0;
+                    allowStage1ToFinish.Set();
+                }
+            )
+        );
 
         var session = new Sessions.Session.Session(
             sessionName,
@@ -301,7 +368,8 @@ public class SessionTests
             new Dictionary<int, Stage> { { 0, stage1 }, { 1, stage2 } },
             [],
             context,
-            []);
+            []
+        );
 
         session.Run(context.ExecutionData);
 
@@ -320,15 +388,16 @@ public class SessionTests
                 new Dictionary<string, RunningSessionData<object, object>>
                 {
                     {
-                        sessionName, new RunningSessionData<object, object>
-                        {
-                            Inputs = [],
-                            Outputs = []
-                        }
-                    }
-                }),
-            ExecutionData = new QaaS.Framework.SDK.ExecutionObjects.ExecutionData { DataSources = [] },
-            Logger = logger
+                        sessionName,
+                        new RunningSessionData<object, object> { Inputs = [], Outputs = [] }
+                    },
+                }
+            ),
+            ExecutionData = new QaaS.Framework.SDK.ExecutionObjects.ExecutionData
+            {
+                DataSources = [],
+            },
+            Logger = logger,
         };
         context.InsertValueIntoGlobalDictionary(context.GetMetaDataPath(), new MetaDataConfig());
 
@@ -342,7 +411,8 @@ public class SessionTests
             new Dictionary<int, Stage> { { 0, stage } },
             [],
             context,
-            []);
+            []
+        );
 
         session.Run(context.ExecutionData);
 
@@ -350,8 +420,12 @@ public class SessionTests
         Assert.That(logger.Messages, Has.Some.EqualTo($"Session {sessionName} Inputs=0"));
         Assert.That(logger.Messages, Has.Some.EqualTo($"Session {sessionName} Outputs=0"));
         Assert.That(logger.Messages, Has.Some.EqualTo($"Session {sessionName} Failures=0"));
-        Assert.That(logger.Messages.Any(message =>
-            message.Contains("completed. Inputs=", StringComparison.Ordinal)), Is.False);
+        Assert.That(
+            logger.Messages.Any(message =>
+                message.Contains("completed. Inputs=", StringComparison.Ordinal)
+            ),
+            Is.False
+        );
     }
 
     [Test]
@@ -362,7 +436,9 @@ public class SessionTests
         var disposed = false;
 
         var stage = new Stage(context, [], sessionName, 0, 0, 0);
-        stage.AddCommunication(new DisposableAction("disposable-action", 0, Globals.Logger, () => disposed = true));
+        stage.AddCommunication(
+            new DisposableAction("disposable-action", 0, Globals.Logger, () => disposed = true)
+        );
 
         var session = new Sessions.Session.Session(
             sessionName,
@@ -373,7 +449,8 @@ public class SessionTests
             new Dictionary<int, Stage> { { 0, stage } },
             [],
             context,
-            []);
+            []
+        );
 
         session.Run(context.ExecutionData);
 
@@ -388,8 +465,15 @@ public class SessionTests
         var disposeCount = 0;
 
         var stage = new Stage(context, [], sessionName, 0, 0, 0);
-        stage.AddCommunication(new ThrowingExportAction("throw-on-init", 0, Globals.Logger,
-            new InvalidOperationException("init failed"), () => disposeCount++));
+        stage.AddCommunication(
+            new ThrowingExportAction(
+                "throw-on-init",
+                0,
+                Globals.Logger,
+                new InvalidOperationException("init failed"),
+                () => disposeCount++
+            )
+        );
 
         var session = new Sessions.Session.Session(
             sessionName,
@@ -400,12 +484,18 @@ public class SessionTests
             new Dictionary<int, Stage> { { 0, stage } },
             [],
             context,
-            []);
+            []
+        );
 
-        var exception = Assert.Throws<InvalidOperationException>(() => session.Run(context.ExecutionData));
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            session.Run(context.ExecutionData)
+        );
 
         Assert.That(exception!.Message, Is.EqualTo("init failed"));
-        Assert.That(context.InternalRunningSessions.RunningSessionsDict.ContainsKey(sessionName), Is.False);
+        Assert.That(
+            context.InternalRunningSessions.RunningSessionsDict.ContainsKey(sessionName),
+            Is.False
+        );
         Assert.That(disposeCount, Is.EqualTo(1));
     }
 
@@ -414,8 +504,11 @@ public class SessionTests
     {
         const string sessionName = "collector-setup-session";
         var logger = new ThrowOnMessageLogger(message =>
-            message.Contains("Running 1 collector task(s) after session collector-setup-session",
-                StringComparison.Ordinal));
+            message.Contains(
+                "Running 1 collector task(s) after session collector-setup-session",
+                StringComparison.Ordinal
+            )
+        );
         var context = new InternalContext
         {
             Logger = logger,
@@ -423,21 +516,24 @@ public class SessionTests
                 new Dictionary<string, RunningSessionData<object, object>>
                 {
                     {
-                        sessionName, new RunningSessionData<object, object>
-                        {
-                            Inputs = [],
-                            Outputs = []
-                        }
-                    }
-                }),
-            ExecutionData = new QaaS.Framework.SDK.ExecutionObjects.ExecutionData { DataSources = [] }
+                        sessionName,
+                        new RunningSessionData<object, object> { Inputs = [], Outputs = [] }
+                    },
+                }
+            ),
+            ExecutionData = new QaaS.Framework.SDK.ExecutionObjects.ExecutionData
+            {
+                DataSources = [],
+            },
         };
         context.InsertValueIntoGlobalDictionary(context.GetMetaDataPath(), new MetaDataConfig());
         var actionDisposeCount = 0;
         var collectorDisposeCount = 0;
 
         var stage = new Stage(context, [], sessionName, 0, 0, 0);
-        stage.AddCommunication(new DisposableAction("disposable-action", 0, logger, () => actionDisposeCount++));
+        stage.AddCommunication(
+            new DisposableAction("disposable-action", 0, logger, () => actionDisposeCount++)
+        );
 
         var collector = new DisposableCollector("collector", logger, () => collectorDisposeCount++);
         var session = new Sessions.Session.Session(
@@ -449,12 +545,18 @@ public class SessionTests
             new Dictionary<int, Stage> { { 0, stage } },
             [collector],
             context,
-            []);
+            []
+        );
 
-        var exception = Assert.Throws<InvalidOperationException>(() => session.Run(context.ExecutionData));
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            session.Run(context.ExecutionData)
+        );
 
         Assert.That(exception!.Message, Is.EqualTo("collector setup failed"));
-        Assert.That(context.InternalRunningSessions.RunningSessionsDict.ContainsKey(sessionName), Is.False);
+        Assert.That(
+            context.InternalRunningSessions.RunningSessionsDict.ContainsKey(sessionName),
+            Is.False
+        );
         Assert.That(actionDisposeCount, Is.EqualTo(1));
         Assert.That(collectorDisposeCount, Is.EqualTo(1));
     }
@@ -467,7 +569,9 @@ public class SessionTests
         var actionFailures = new ConcurrentBag<ActionFailure>();
         var stage = new Stage(context, actionFailures, sessionName, 0, 0, 0);
         stage.AddCommunication(new SuccessfulStageAction("success"));
-        stage.AddCommunication(new ExceptionalStageAction("failure", new InvalidOperationException("boom")));
+        stage.AddCommunication(
+            new ExceptionalStageAction("failure", new InvalidOperationException("boom"))
+        );
 
         var session = new Sessions.Session.Session(
             sessionName,
@@ -478,7 +582,8 @@ public class SessionTests
             new Dictionary<int, Stage> { { 0, stage } },
             [],
             context,
-            actionFailures);
+            actionFailures
+        );
 
         var sessionData = session.Run(context.ExecutionData);
 
@@ -506,7 +611,8 @@ public class SessionTests
             new Dictionary<int, Stage> { { 0, stage } },
             [],
             context,
-            []);
+            []
+        );
 
         var sessionData = session.Run(context.ExecutionData);
         var materializedSessionData = sessionData!;
@@ -514,7 +620,10 @@ public class SessionTests
         Assert.That(materializedSessionData, Is.Not.Null);
         Assert.That(materializedSessionData.Inputs, Has.Count.EqualTo(1));
         Assert.That(materializedSessionData.Outputs, Has.Count.EqualTo(1));
-        Assert.That(materializedSessionData.Inputs![0], Is.InstanceOf<InternalCommunicationData<object>>());
+        Assert.That(
+            materializedSessionData.Inputs![0],
+            Is.InstanceOf<InternalCommunicationData<object>>()
+        );
         Assert.That(materializedSessionData.Inputs[0].Name, Is.EqualTo("io-action"));
         Assert.That(materializedSessionData.Inputs[0].Data, Is.SameAs(action.ActData.Input));
         Assert.That(materializedSessionData.Outputs![0], Is.Not.SameAs(action.ActData));
@@ -530,20 +639,13 @@ public class SessionTests
         {
             Logger = logger,
             InternalGlobalDict = new Dictionary<string, object?>(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
         };
         context.InsertValueIntoGlobalDictionary(context.GetMetaDataPath(), new MetaDataConfig());
 
-        var session = new Sessions.Session.Session(
-            sessionName,
-            0,
-            true,
-            0,
-            0,
-            [],
-            [],
-            context,
-            []);
+        var session = new Sessions.Session.Session(sessionName, 0, true, 0, 0, [], [], context, []);
 
         var sessionData = new SessionData
         {
@@ -552,7 +654,7 @@ public class SessionTests
             Outputs = null,
             SessionFailures = [],
             UtcStartTime = DateTime.UtcNow,
-            UtcEndTime = DateTime.UtcNow.AddSeconds(1)
+            UtcEndTime = DateTime.UtcNow.AddSeconds(1),
         };
 
         typeof(global::QaaS.Runner.Sessions.Session.Session)
@@ -579,7 +681,8 @@ public class SessionTests
             null,
             context,
             [],
-            runUntil: 7);
+            runUntil: 7
+        );
 
         var sessionData = session.Run(context.ExecutionData);
 
@@ -592,7 +695,10 @@ public class SessionTests
             Assert.That(sessionData!.Inputs, Is.Empty);
             Assert.That(sessionData.Outputs, Is.Empty);
             Assert.That(sessionData.SessionFailures, Is.Empty);
-            Assert.That(context.InternalRunningSessions.RunningSessionsDict.ContainsKey(sessionName), Is.False);
+            Assert.That(
+                context.InternalRunningSessions.RunningSessionsDict.ContainsKey(sessionName),
+                Is.False
+            );
         });
     }
 
@@ -605,8 +711,13 @@ public class SessionTests
         {
             Logger = logger,
             InternalGlobalDict = new Dictionary<string, object?>(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>()),
-            ExecutionData = new QaaS.Framework.SDK.ExecutionObjects.ExecutionData { DataSources = [] }
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
+            ExecutionData = new QaaS.Framework.SDK.ExecutionObjects.ExecutionData
+            {
+                DataSources = [],
+            },
         };
         context.InsertValueIntoGlobalDictionary(context.GetMetaDataPath(), new MetaDataConfig());
 
@@ -625,27 +736,38 @@ public class SessionTests
             true,
             0,
             0,
-            new Dictionary<int, Stage> { { 0, stage0 }, { 1, stage1 }, { 3, stage3 } },
+            new Dictionary<int, Stage>
+            {
+                { 0, stage0 },
+                { 1, stage1 },
+                { 3, stage3 },
+            },
             [],
             context,
-            []);
+            []
+        );
 
         session.Run(context.ExecutionData);
 
-        var informationMessages = logger.Entries
-            .Where(entry => entry.LogLevel == LogLevel.Information)
+        var informationMessages = logger
+            .Entries.Where(entry => entry.LogLevel == LogLevel.Information)
             .Select(entry => entry.Message)
             .ToArray();
 
-        Assert.That(informationMessages,
-            Contains.Item($"Starting session {sessionName} on stage 0 with 1 action(s)"));
+        Assert.That(
+            informationMessages,
+            Contains.Item($"Starting session {sessionName} on stage 0 with 1 action(s)")
+        );
         Assert.That(informationMessages, Contains.Item($"Finished session {sessionName} stage 1"));
-        Assert.That(informationMessages,
+        Assert.That(
+            informationMessages,
             Has.None.Matches<string>(message =>
-                message == $"Starting session {sessionName} stage 1 with 1 action(s)" ||
-                message == $"Starting session {sessionName} stage 3 with 1 action(s)" ||
-                message == $"Finished session {sessionName} stage 0" ||
-                message == $"Finished session {sessionName} stage 3"));
+                message == $"Starting session {sessionName} stage 1 with 1 action(s)"
+                || message == $"Starting session {sessionName} stage 3 with 1 action(s)"
+                || message == $"Finished session {sessionName} stage 0"
+                || message == $"Finished session {sessionName} stage 3"
+            )
+        );
     }
 
     [Test]
@@ -657,20 +779,13 @@ public class SessionTests
         {
             Logger = logger,
             InternalGlobalDict = new Dictionary<string, object?>(),
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>())
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
         };
         context.InsertValueIntoGlobalDictionary(context.GetMetaDataPath(), new MetaDataConfig());
 
-        var session = new Sessions.Session.Session(
-            sessionName,
-            0,
-            true,
-            0,
-            0,
-            [],
-            [],
-            context,
-            []);
+        var session = new Sessions.Session.Session(sessionName, 0, true, 0, 0, [], [], context, []);
 
         var sessionData = new SessionData
         {
@@ -679,7 +794,7 @@ public class SessionTests
             Outputs = [],
             SessionFailures = null!,
             UtcStartTime = DateTime.UtcNow,
-            UtcEndTime = DateTime.UtcNow.AddSeconds(1)
+            UtcEndTime = DateTime.UtcNow.AddSeconds(1),
         };
 
         typeof(global::QaaS.Runner.Sessions.Session.Session)
@@ -689,12 +804,17 @@ public class SessionTests
         Assert.That(logger.Messages, Has.Some.EqualTo($"Session {sessionName} Failures=0"));
     }
 
-    private sealed class RecordingAction(string name, int stage, Microsoft.Extensions.Logging.ILogger logger, System.Action callback)
-        : StagedAction(name, stage, null, logger)
+    private sealed class RecordingAction(
+        string name,
+        int stage,
+        Microsoft.Extensions.Logging.ILogger logger,
+        System.Action callback
+    ) : StagedAction(name, stage, null, logger)
     {
-        internal override void ExportRunningCommunicationData(InternalContext context, string sessionName)
-        {
-        }
+        internal override void ExportRunningCommunicationData(
+            InternalContext context,
+            string sessionName
+        ) { }
 
         internal override InternalCommunicationData<object> Act()
         {
@@ -702,28 +822,35 @@ public class SessionTests
             return new InternalCommunicationData<object>();
         }
 
-        protected internal override void LogData(InternalCommunicationData<object> actData,
-            DetailedData<object> itemBeforeSerialization, InputOutputState? saveAt = null)
-        {
-        }
+        protected internal override void LogData(
+            InternalCommunicationData<object> actData,
+            DetailedData<object> itemBeforeSerialization,
+            InputOutputState? saveAt = null
+        ) { }
     }
 
-    private sealed class DisposableAction(string name, int stage, Microsoft.Extensions.Logging.ILogger logger, System.Action onDispose)
-        : StagedAction(name, stage, null, logger)
+    private sealed class DisposableAction(
+        string name,
+        int stage,
+        Microsoft.Extensions.Logging.ILogger logger,
+        System.Action onDispose
+    ) : StagedAction(name, stage, null, logger)
     {
-        internal override void ExportRunningCommunicationData(InternalContext context, string sessionName)
-        {
-        }
+        internal override void ExportRunningCommunicationData(
+            InternalContext context,
+            string sessionName
+        ) { }
 
         internal override InternalCommunicationData<object> Act()
         {
             return new InternalCommunicationData<object>();
         }
 
-        protected internal override void LogData(InternalCommunicationData<object> actData,
-            DetailedData<object> itemBeforeSerialization, InputOutputState? saveAt = null)
-        {
-        }
+        protected internal override void LogData(
+            InternalCommunicationData<object> actData,
+            DetailedData<object> itemBeforeSerialization,
+            InputOutputState? saveAt = null
+        ) { }
 
         public override void Dispose()
         {
@@ -736,10 +863,13 @@ public class SessionTests
         int stage,
         Microsoft.Extensions.Logging.ILogger logger,
         Exception exceptionToThrow,
-        System.Action onDispose)
-        : StagedAction(name, stage, null, logger)
+        System.Action onDispose
+    ) : StagedAction(name, stage, null, logger)
     {
-        internal override void ExportRunningCommunicationData(InternalContext context, string sessionName)
+        internal override void ExportRunningCommunicationData(
+            InternalContext context,
+            string sessionName
+        )
         {
             throw exceptionToThrow;
         }
@@ -749,10 +879,11 @@ public class SessionTests
             return new InternalCommunicationData<object>();
         }
 
-        protected internal override void LogData(InternalCommunicationData<object> actData,
-            DetailedData<object> itemBeforeSerialization, InputOutputState? saveAt = null)
-        {
-        }
+        protected internal override void LogData(
+            InternalCommunicationData<object> actData,
+            DetailedData<object> itemBeforeSerialization,
+            InputOutputState? saveAt = null
+        ) { }
 
         public override void Dispose()
         {
@@ -760,78 +891,88 @@ public class SessionTests
         }
     }
 
-    private sealed class SuccessfulStageAction(string name) : StagedAction(name, 0, null, Globals.Logger)
+    private sealed class SuccessfulStageAction(string name)
+        : StagedAction(name, 0, null, Globals.Logger)
     {
-        internal override void ExportRunningCommunicationData(InternalContext context, string sessionName)
-        {
-        }
+        internal override void ExportRunningCommunicationData(
+            InternalContext context,
+            string sessionName
+        ) { }
 
         internal override InternalCommunicationData<object> Act()
         {
             return new InternalCommunicationData<object>
             {
-                Output = [new DetailedData<object> { Body = "ok" }]
+                Output = [new DetailedData<object> { Body = "ok" }],
             };
         }
 
-        protected internal override void LogData(InternalCommunicationData<object> actData,
-            DetailedData<object> itemBeforeSerialization, InputOutputState? saveAt = null)
-        {
-        }
+        protected internal override void LogData(
+            InternalCommunicationData<object> actData,
+            DetailedData<object> itemBeforeSerialization,
+            InputOutputState? saveAt = null
+        ) { }
     }
 
-    private sealed class InputAndOutputStageAction(string name) : StagedAction(name, 0, null, Globals.Logger)
+    private sealed class InputAndOutputStageAction(string name)
+        : StagedAction(name, 0, null, Globals.Logger)
     {
-        public InternalCommunicationData<object> ActData { get; } = new()
-        {
-            Input =
-            [
-                new DetailedData<object> { Body = "input" }
-            ],
-            InputSerializationType = QaaS.Framework.Serialization.SerializationType.Json,
-            Output =
-            [
-                new DetailedData<object> { Body = "output" }
-            ],
-            OutputSerializationType = QaaS.Framework.Serialization.SerializationType.Json
-        };
+        public InternalCommunicationData<object> ActData { get; } =
+            new()
+            {
+                Input = [new DetailedData<object> { Body = "input" }],
+                InputSerializationType = QaaS.Framework.Serialization.SerializationType.Json,
+                Output = [new DetailedData<object> { Body = "output" }],
+                OutputSerializationType = QaaS.Framework.Serialization.SerializationType.Json,
+            };
 
-        internal override void ExportRunningCommunicationData(InternalContext context, string sessionName)
-        {
-        }
+        internal override void ExportRunningCommunicationData(
+            InternalContext context,
+            string sessionName
+        ) { }
 
         internal override InternalCommunicationData<object> Act()
         {
             return ActData;
         }
 
-        protected internal override void LogData(InternalCommunicationData<object> actData,
-            DetailedData<object> itemBeforeSerialization, InputOutputState? saveAt = null)
-        {
-        }
+        protected internal override void LogData(
+            InternalCommunicationData<object> actData,
+            DetailedData<object> itemBeforeSerialization,
+            InputOutputState? saveAt = null
+        ) { }
     }
 
     private sealed class ExceptionalStageAction(string name, Exception exceptionToThrow)
         : StagedAction(name, 0, null, Globals.Logger)
     {
-        internal override void ExportRunningCommunicationData(InternalContext context, string sessionName)
-        {
-        }
+        internal override void ExportRunningCommunicationData(
+            InternalContext context,
+            string sessionName
+        ) { }
 
         internal override InternalCommunicationData<object> Act()
         {
             throw exceptionToThrow;
         }
 
-        protected internal override void LogData(InternalCommunicationData<object> actData,
-            DetailedData<object> itemBeforeSerialization, InputOutputState? saveAt = null)
-        {
-        }
+        protected internal override void LogData(
+            InternalCommunicationData<object> actData,
+            DetailedData<object> itemBeforeSerialization,
+            InputOutputState? saveAt = null
+        ) { }
     }
 
     private sealed class DisposableCollector(string name, ILogger logger, System.Action onDispose)
-        : QaaS.Runner.Sessions.Actions.Collectors.Collector(name, Mock.Of<IFetcher>(), new DataFilter(), 0, 0, 1,
-            logger)
+        : QaaS.Runner.Sessions.Actions.Collectors.Collector(
+            name,
+            Mock.Of<IFetcher>(),
+            new DataFilter(),
+            0,
+            0,
+            1,
+            logger
+        )
     {
         internal override InternalCommunicationData<object> Act()
         {
@@ -849,7 +990,8 @@ public class SessionTests
         public List<LogEntry> Entries { get; } = [];
         public List<string> Messages => Entries.Select(entry => entry.Message).ToList();
 
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull
+        public IDisposable BeginScope<TState>(TState state)
+            where TState : notnull
         {
             return NoOpScope.Instance;
         }
@@ -859,8 +1001,13 @@ public class SessionTests
             return true;
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-            Func<TState, Exception?, string> formatter)
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter
+        )
         {
             Entries.Add(new LogEntry(logLevel, formatter(state, exception)));
         }
@@ -869,9 +1016,7 @@ public class SessionTests
         {
             public static readonly NoOpScope Instance = new();
 
-            public void Dispose()
-            {
-            }
+            public void Dispose() { }
         }
     }
 
@@ -879,7 +1024,8 @@ public class SessionTests
 
     private sealed class ThrowOnMessageLogger(Func<string, bool> shouldThrow) : ILogger
     {
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull
+        public IDisposable BeginScope<TState>(TState state)
+            where TState : notnull
         {
             return NoOpScope.Instance;
         }
@@ -889,8 +1035,13 @@ public class SessionTests
             return true;
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-            Func<TState, Exception?, string> formatter)
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter
+        )
         {
             var message = formatter(state, exception);
             if (shouldThrow(message))
@@ -901,9 +1052,7 @@ public class SessionTests
         {
             public static readonly NoOpScope Instance = new();
 
-            public void Dispose()
-            {
-            }
+            public void Dispose() { }
         }
     }
 }

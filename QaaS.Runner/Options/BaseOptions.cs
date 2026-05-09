@@ -14,30 +14,46 @@ public abstract record BaseOptions : LoggerOptions
 {
     [Required]
     [ValidPath]
-    [Value(0, Default = Constants.DefaultQaasConfigurationFileName,
-        HelpText = "Path to a qaas yaml configuration file to use with the command.")]
+    [Value(
+        0,
+        Default = Constants.DefaultQaasConfigurationFileName,
+        HelpText = "Path to a qaas yaml configuration file to use with the command."
+    )]
     public string? ConfigurationFile { get; init; }
 
     [AllPathsInEnumerableValid]
-    [Option('w', "with-files", Default = null,
-        HelpText =
-            "List of files to overwrite the qaas configuration with, The first file overwrites the qaas configuration file and then the one after it overwrite the result and so on...")]
+    [Option(
+        'w',
+        "with-files",
+        Default = null,
+        HelpText = "List of files to overwrite the qaas configuration with, The first file overwrites the qaas configuration file and then the one after it overwrite the result and so on..."
+    )]
     public IList<string> OverwriteFiles { get; init; } = Array.Empty<string>();
 
     [AllPathsInEnumerableValid]
-    [Option('f', "with-folders", Default = null,
-        HelpText =
-            "List of folders whose yaml files overwrite the qaas configuration in alphabetical order, after overwrite files and in the order the folders are given.")]
+    [Option(
+        'f',
+        "with-folders",
+        Default = null,
+        HelpText = "List of folders whose yaml files overwrite the qaas configuration in alphabetical order, after overwrite files and in the order the folders are given."
+    )]
     public IList<string> OverwriteFolders { get; init; } = Array.Empty<string>();
 
-    [Option('r', "overwrite-arguments", Default = null,
+    [Option(
+        'r',
+        "overwrite-arguments",
+        Default = null,
         HelpText = @"
 List of arguments to overwrite the qaas configuration with, The first argument overwrites the qaas configuration and then the one after it overwrites the result and so on...
 For example: `Path:To:Variable:To:Overwrite=NewVariableValue`
-")]
+"
+    )]
     public IList<string> OverwriteArguments { get; init; } = Array.Empty<string>();
 
-    [Option('p', "push-references", Default = null,
+    [Option(
+        'p',
+        "push-references",
+        Default = null,
         HelpText = @"
 References to push onto the qaas configuration.
 References are configurations that are pushed in the completed test case's root level list configurations instead of a certain keyword to replace,
@@ -79,57 +95,79 @@ Or
 `-p KeyWordToReplace1 Reference1.yaml KeyWordToReplace2 Reference2.yaml`
 
 !!! Note that the `KeyWordToReplace` must not end with the suffix `.yml` or `.yaml`.
-")]
+"
+    )]
     public IList<string> PushReferences { get; init; } = Array.Empty<string>();
 
     [ValidPath]
-    [Option('c', "cases", Default = null,
-        HelpText = "Name of the folder containing all the different .yaml case files that cases are ran with, " +
-                   "If no folder is given will run the .qaas.yaml file as is without cases.")]
+    [Option(
+        'c',
+        "cases",
+        Default = null,
+        HelpText = "Name of the folder containing all the different .yaml case files that cases are ran with, "
+            + "If no folder is given will run the .qaas.yaml file as is without cases."
+    )]
     public string? CasesRootDirectory { get; init; }
 
-    [Option('n', "cases-names", Default = null,
-        HelpText = "Names of the test-cases to run.")]
+    [Option('n', "cases-names", Default = null, HelpText = "Names of the test-cases to run.")]
     public IList<string> CasesNamesToRun { get; init; } = Array.Empty<string>();
 
-    [Option("cases-names-ignore", Default = null,
-        HelpText = "Names of the test-cases to ignore.")]
+    [Option("cases-names-ignore", Default = null, HelpText = "Names of the test-cases to ignore.")]
     public IList<string> CasesNamesToIgnore { get; init; } = Array.Empty<string>();
 
-    [Option("cases-name-patterns-ignore", Default = null,
-        HelpText = "Regex patterns of test-case names to ignore.")]
+    [Option(
+        "cases-name-patterns-ignore",
+        Default = null,
+        HelpText = "Regex patterns of test-case names to ignore."
+    )]
     public IList<string> CasesNamePatternsToIgnore { get; init; } = Array.Empty<string>();
 
-    [Option('i', "session-names", Default = null,
-        HelpText = "Names of the sessions to run.")]
+    [Option('i', "session-names", Default = null, HelpText = "Names of the sessions to run.")]
     public IList<string> SessionNamesToRun { get; init; } = Array.Empty<string>();
 
-    [Option("session-categories", Default = null,
-        HelpText = "Used to filter the session categories to run.")]
+    [Option(
+        "session-categories",
+        Default = null,
+        HelpText = "Used to filter the session categories to run."
+    )]
     public IList<string> SessionCategoriesToRun { get; init; } = Array.Empty<string>();
 
-    [Option('a', "assertion-names", Default = null,
-        HelpText = "Names of the assertions to run. Only sessions given to those assertions will run.")]
+    [Option(
+        'a',
+        "assertion-names",
+        Default = null,
+        HelpText = "Names of the assertions to run. Only sessions given to those assertions will run."
+    )]
     public IList<string> AssertionNamesToRun { get; init; } = Array.Empty<string>();
 
-    [Option("assertion-categories", Default = null,
-        HelpText =
-            "Used to filter the assertion categories to run. The sessions that are associated with assertions will run too.")]
+    [Option(
+        "assertion-categories",
+        Default = null,
+        HelpText = "Used to filter the assertion categories to run. The sessions that are associated with assertions will run too."
+    )]
     public IList<string> AssertionCategoriesToRun { get; init; } = Array.Empty<string>();
 
-    [Option("resolve-cases-last", Default = false,
-        HelpText = "When this flag is used cases will be resolved after all other types of configuration" +
-                   " resolutions, instead of its default behaviour which is after overwrite files and before references.")]
+    [Option(
+        "resolve-cases-last",
+        Default = false,
+        HelpText = "When this flag is used cases will be resolved after all other types of configuration"
+            + " resolutions, instead of its default behaviour which is after overwrite files and before references."
+    )]
     public bool ResolveCasesLast { get; init; } = false;
 
-    [Option("no-env", Default = false,
-        HelpText = "When this flag is used environment variables will not override loaded configurations.")]
+    [Option(
+        "no-env",
+        Default = false,
+        HelpText = "When this flag is used environment variables will not override loaded configurations."
+    )]
     public bool DontResolveWithEnvironmentVariables { get; init; } = false;
 
-    [Option("no-process-exit", Default = false,
-        HelpText =
-            "When this flag is used the runner will not terminate the current process after it completes. " +
-            "Useful when embedding QaaS.Runner and orchestrating multiple runners in a single host process.")]
+    [Option(
+        "no-process-exit",
+        Default = false,
+        HelpText = "When this flag is used the runner will not terminate the current process after it completes. "
+            + "Useful when embedding QaaS.Runner and orchestrating multiple runners in a single host process."
+    )]
     public bool NoProcessExit { get; init; } = false;
 
     /// <summary>
@@ -144,10 +182,13 @@ Or
     {
         var currentReferenceFiles = new List<string>();
         var currentReferenceReplaceKeyword = PushReferences.FirstOrDefault();
-        if (currentReferenceReplaceKeyword == null) yield break;
+        if (currentReferenceReplaceKeyword == null)
+            yield break;
         if (IsStringPathToYamlFile(currentReferenceReplaceKeyword))
-            throw new ArgumentException("The first argument in push-references must be a keyword" +
-                                        " and not a path to a yaml file.");
+            throw new ArgumentException(
+                "The first argument in push-references must be a keyword"
+                    + " and not a path to a yaml file."
+            );
         foreach (var item in PushReferences.Skip(1))
             if (IsStringPathToYamlFile(item))
             {
@@ -156,30 +197,34 @@ Or
             else
             {
                 if (currentReferenceFiles.Count <= 0)
-                    throw new ArgumentException($"No yaml files were given for the current reference" +
-                                                $" replace keyword `{currentReferenceReplaceKeyword}`.");
+                    throw new ArgumentException(
+                        $"No yaml files were given for the current reference"
+                            + $" replace keyword `{currentReferenceReplaceKeyword}`."
+                    );
                 yield return new ReferenceConfig
                 {
                     ReferenceReplaceKeyword = currentReferenceReplaceKeyword,
-                    ReferenceFilesPaths = currentReferenceFiles
+                    ReferenceFilesPaths = currentReferenceFiles,
                 };
                 currentReferenceReplaceKeyword = item;
                 currentReferenceFiles = new List<string>();
             }
 
         if (currentReferenceFiles.Count <= 0)
-            throw new ArgumentException($"No yaml files were given for the current reference" +
-                                        $" replace keyword `{currentReferenceReplaceKeyword}`.");
+            throw new ArgumentException(
+                $"No yaml files were given for the current reference"
+                    + $" replace keyword `{currentReferenceReplaceKeyword}`."
+            );
         yield return new ReferenceConfig
         {
             ReferenceReplaceKeyword = currentReferenceReplaceKeyword,
-            ReferenceFilesPaths = currentReferenceFiles
+            ReferenceFilesPaths = currentReferenceFiles,
         };
     }
 
     private static bool IsStringPathToYamlFile(string str)
     {
         return str.EndsWith(".yml", StringComparison.OrdinalIgnoreCase)
-               || str.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase);
+            || str.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase);
     }
 }

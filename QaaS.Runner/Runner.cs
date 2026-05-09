@@ -56,9 +56,14 @@ public class Runner : IRunner, IDisposable
     /// <param name="serilogLogger">The Serilog logger used by framework integrations.</param>
     /// <param name="emptyResults">Whether the Allure results directory should be cleaned before execution.</param>
     /// <param name="serveResults">Whether Allure results should be opened after execution completes.</param>
-    public Runner(ILifetimeScope scope, List<ExecutionBuilder> executionBuilders, ILogger logger,
+    public Runner(
+        ILifetimeScope scope,
+        List<ExecutionBuilder> executionBuilders,
+        ILogger logger,
         Serilog.ILogger serilogLogger,
-        bool emptyResults = false, bool serveResults = false)
+        bool emptyResults = false,
+        bool serveResults = false
+    )
     {
         ExecutionBuilders = executionBuilders;
         Logger = logger;
@@ -140,7 +145,10 @@ public class Runner : IRunner, IDisposable
 
         if (ServeResults)
         {
-            Logger.LogInformation("Serving test results after execution from {ServeResultsFolder}", ServeResultsFolder);
+            Logger.LogInformation(
+                "Serving test results after execution from {ServeResultsFolder}",
+                ServeResultsFolder
+            );
             ServeResultsInAllure();
         }
         else
@@ -199,7 +207,9 @@ public class Runner : IRunner, IDisposable
         // This is mutable per-run state rather than a container-managed dependency, so pushing it through
         // Autofac would add indirection without improving lifetime management.
         ExecutionBuilders.ForEach(builder => builder.WithGlobalDict(globalDict));
-        ExecutionBuilders.ForEach(builder => builder.WithVariablesLoadedIntoGlobalDict(LoadVariablesIntoGlobalDict));
+        ExecutionBuilders.ForEach(builder =>
+            builder.WithVariablesLoadedIntoGlobalDict(LoadVariablesIntoGlobalDict)
+        );
 
         // The logger is also assigned directly because execution builders are plain mutable configuration objects,
         // not services resolved from the Autofac scope.
@@ -218,7 +228,10 @@ public class Runner : IRunner, IDisposable
     {
         Logger.LogInformation("Running {ExecutionCount} executions", executions.Count);
         var exitCode = executions.Select(execution => execution.Start()).Sum();
-        Logger.LogInformation("Finished running executions. Aggregated exit code: {ExitCode}", exitCode);
+        Logger.LogInformation(
+            "Finished running executions. Aggregated exit code: {ExitCode}",
+            exitCode
+        );
         return exitCode;
     }
 
@@ -232,6 +245,13 @@ public class Runner : IRunner, IDisposable
         Logger.LogDebug("Disposing {ExecutionCount} execution instances", executionList.Count);
         foreach (var execution in executionList)
             execution.Dispose();
+
+        Logger.LogDebug(
+            "Disposing {BuilderCount} execution builder instances",
+            ExecutionBuilders.Count
+        );
+        foreach (var builder in ExecutionBuilders)
+            builder.Dispose();
     }
 
     /// <summary>
@@ -296,12 +316,18 @@ public class Runner : IRunner, IDisposable
     {
         if (ExitProcessOnCompletion)
         {
-            Logger.LogDebug("Completing runner by terminating the current process with exit code {ExitCode}", exitCode);
+            Logger.LogDebug(
+                "Completing runner by terminating the current process with exit code {ExitCode}",
+                exitCode
+            );
             ExitProcess(exitCode);
             return;
         }
 
-        Logger.LogDebug("Completing runner by setting the process exit code to {ExitCode}", exitCode);
+        Logger.LogDebug(
+            "Completing runner by setting the process exit code to {ExitCode}",
+            exitCode
+        );
         SetProcessExitCode(exitCode);
     }
 
@@ -312,7 +338,12 @@ public class Runner : IRunner, IDisposable
     {
         Logger.LogInformation(
             "Starting runner with {ExecutionCount} execution builders. EmptyResults={EmptyResults}, ServeResults={ServeResults}, ServeResultsFolder={ServeResultsFolder}, ExitProcessOnCompletion={ExitProcessOnCompletion}",
-            ExecutionBuilders.Count, EmptyResults, ServeResults, ServeResultsFolder, ExitProcessOnCompletion);
+            ExecutionBuilders.Count,
+            EmptyResults,
+            ServeResults,
+            ServeResultsFolder,
+            ExitProcessOnCompletion
+        );
     }
 
     /// <summary>
@@ -324,7 +355,8 @@ public class Runner : IRunner, IDisposable
         LastExitCode = BootstrapHandledExitCode!.Value;
         Logger.LogDebug(
             "Skipping runner lifecycle because bootstrap already handled the command-line request. ExitCode={ExitCode}",
-            BootstrapHandledExitCode.Value);
+            BootstrapHandledExitCode.Value
+        );
         DisposeBootstrapOnlyResources();
         return BootstrapHandledExitCode.Value;
     }
@@ -340,17 +372,27 @@ public class Runner : IRunner, IDisposable
         try
         {
             var lifecycleOutcome = ExecuteLifecycle(lifecycleState);
-            Logger.LogInformation("Runner lifecycle finished successfully. ExitCode={ExitCode}",
-                lifecycleOutcome.GetRequiredExitCode());
+            Logger.LogInformation(
+                "Runner lifecycle finished successfully. ExitCode={ExitCode}",
+                lifecycleOutcome.GetRequiredExitCode()
+            );
             return lifecycleOutcome;
         }
         catch (RunnerLifecyclePhaseException exception)
         {
             if (ShouldReturnFailureExitCode(exception.Failure.SourceException))
-                return RunnerLifecycleOutcome.FailedWithExitCode(lifecycleState.Executions, exception.Phase,
-                    exception.Failure, 1);
+                return RunnerLifecycleOutcome.FailedWithExitCode(
+                    lifecycleState.Executions,
+                    exception.Phase,
+                    exception.Failure,
+                    1
+                );
 
-            return RunnerLifecycleOutcome.Failed(lifecycleState.Executions, exception.Phase, exception.Failure);
+            return RunnerLifecycleOutcome.Failed(
+                lifecycleState.Executions,
+                exception.Phase,
+                exception.Failure
+            );
         }
     }
 
@@ -362,10 +404,15 @@ public class Runner : IRunner, IDisposable
     private RunnerLifecycleOutcome ExecuteLifecycle(RunnerLifecycleState lifecycleState)
     {
         ExecuteLifecyclePhase(RunnerLifecyclePhase.Setup, Setup);
-        lifecycleState.Executions = ExecuteLifecyclePhase(RunnerLifecyclePhase.BuildExecutions, BuildExecutions);
+        lifecycleState.Executions = ExecuteLifecyclePhase(
+            RunnerLifecyclePhase.BuildExecutions,
+            BuildExecutions
+        );
 
-        var exitCode = ExecuteLifecyclePhase(RunnerLifecyclePhase.StartExecutions,
-            () => StartExecutions(lifecycleState.Executions!));
+        var exitCode = ExecuteLifecyclePhase(
+            RunnerLifecyclePhase.StartExecutions,
+            () => StartExecutions(lifecycleState.Executions!)
+        );
         LastExitCode = exitCode;
 
         return RunnerLifecycleOutcome.Succeeded(lifecycleState.Executions!, exitCode);
@@ -393,12 +440,21 @@ public class Runner : IRunner, IDisposable
         {
             if (ShouldReturnFailureExitCode(exception))
             {
-                Logger.LogDebug("Runner phase ended with configuration failure: {Phase}", phaseName);
-                throw new RunnerLifecyclePhaseException(phase, ExceptionDispatchInfo.Capture(exception));
+                Logger.LogDebug(
+                    "Runner phase ended with configuration failure: {Phase}",
+                    phaseName
+                );
+                throw new RunnerLifecyclePhaseException(
+                    phase,
+                    ExceptionDispatchInfo.Capture(exception)
+                );
             }
 
             Logger.LogError(exception, "Runner phase failed: {Phase}", phaseName);
-            throw new RunnerLifecyclePhaseException(phase, ExceptionDispatchInfo.Capture(exception));
+            throw new RunnerLifecyclePhaseException(
+                phase,
+                ExceptionDispatchInfo.Capture(exception)
+            );
         }
     }
 
@@ -409,11 +465,14 @@ public class Runner : IRunner, IDisposable
     /// <param name="phaseAction">The work performed by the phase.</param>
     private void ExecuteLifecyclePhase(RunnerLifecyclePhase phase, Action phaseAction)
     {
-        ExecuteLifecyclePhase<object?>(phase, () =>
-        {
-            phaseAction();
-            return null;
-        });
+        ExecuteLifecyclePhase<object?>(
+            phase,
+            () =>
+            {
+                phaseAction();
+                return null;
+            }
+        );
     }
 
     /// <summary>
@@ -448,7 +507,10 @@ public class Runner : IRunner, IDisposable
         RunCleanupStep("teardown", Teardown, cleanupFailures);
         RunCleanupStep("dispose runner", Dispose, cleanupFailures);
 
-        Logger.LogDebug("Runner cleanup completed. FailureCount={FailureCount}", cleanupFailures.Count);
+        Logger.LogDebug(
+            "Runner cleanup completed. FailureCount={FailureCount}",
+            cleanupFailures.Count
+        );
         return cleanupFailures;
     }
 
@@ -458,7 +520,11 @@ public class Runner : IRunner, IDisposable
     /// <param name="stepName">The descriptive cleanup step name used in logs.</param>
     /// <param name="cleanupStep">The cleanup action to execute.</param>
     /// <param name="failures">The collection that accumulates cleanup failures.</param>
-    private void RunCleanupStep(string stepName, Action cleanupStep, ICollection<Exception> failures)
+    private void RunCleanupStep(
+        string stepName,
+        Action cleanupStep,
+        ICollection<Exception> failures
+    )
     {
         Logger.LogDebug("Cleanup step started: {StepName}", stepName);
 
@@ -480,8 +546,10 @@ public class Runner : IRunner, IDisposable
     /// <param name="lifecycleOutcome">The lifecycle outcome produced by the main run path.</param>
     /// <param name="cleanupFailures">The cleanup failures captured during completion.</param>
     /// <returns>The exception that best represents the completion failure state.</returns>
-    private static Exception BuildCompletionException(RunnerLifecycleOutcome lifecycleOutcome,
-        IReadOnlyCollection<Exception> cleanupFailures)
+    private static Exception BuildCompletionException(
+        RunnerLifecycleOutcome lifecycleOutcome,
+        IReadOnlyCollection<Exception> cleanupFailures
+    )
     {
         var failures = new List<Exception>();
         if (lifecycleOutcome.ShouldRethrowFailure)
@@ -518,7 +586,11 @@ public class Runner : IRunner, IDisposable
             RunnerLifecyclePhase.Setup => "setup",
             RunnerLifecyclePhase.BuildExecutions => "build executions",
             RunnerLifecyclePhase.StartExecutions => "start executions",
-            _ => throw new ArgumentOutOfRangeException(nameof(phase), phase, "Unknown runner lifecycle phase.")
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(phase),
+                phase,
+                "Unknown runner lifecycle phase."
+            ),
         };
     }
 
@@ -540,7 +612,7 @@ public class Runner : IRunner, IDisposable
         /// <summary>
         /// The execution start phase.
         /// </summary>
-        StartExecutions
+        StartExecutions,
     }
 
     /// <summary>
@@ -559,8 +631,12 @@ public class Runner : IRunner, IDisposable
     /// </summary>
     private sealed class RunnerLifecycleOutcome
     {
-        private RunnerLifecycleOutcome(List<Execution>? executions, int? exitCode, RunnerLifecyclePhase? failedPhase,
-            ExceptionDispatchInfo? failure)
+        private RunnerLifecycleOutcome(
+            List<Execution>? executions,
+            int? exitCode,
+            RunnerLifecyclePhase? failedPhase,
+            ExceptionDispatchInfo? failure
+        )
         {
             Executions = executions;
             ExitCode = exitCode;
@@ -616,8 +692,11 @@ public class Runner : IRunner, IDisposable
         /// <param name="failedPhase">The phase that failed.</param>
         /// <param name="failure">The captured lifecycle failure.</param>
         /// <returns>The failed lifecycle outcome.</returns>
-        public static RunnerLifecycleOutcome Failed(List<Execution>? executions, RunnerLifecyclePhase failedPhase,
-            ExceptionDispatchInfo failure)
+        public static RunnerLifecycleOutcome Failed(
+            List<Execution>? executions,
+            RunnerLifecyclePhase failedPhase,
+            ExceptionDispatchInfo failure
+        )
         {
             return new RunnerLifecycleOutcome(executions, null, failedPhase, failure);
         }
@@ -630,8 +709,12 @@ public class Runner : IRunner, IDisposable
         /// <param name="failure">The captured lifecycle failure.</param>
         /// <param name="exitCode">The resolved failure exit code that should be returned to the caller.</param>
         /// <returns>The failed lifecycle outcome with a resolved exit code.</returns>
-        public static RunnerLifecycleOutcome FailedWithExitCode(List<Execution>? executions,
-            RunnerLifecyclePhase failedPhase, ExceptionDispatchInfo failure, int exitCode)
+        public static RunnerLifecycleOutcome FailedWithExitCode(
+            List<Execution>? executions,
+            RunnerLifecyclePhase failedPhase,
+            ExceptionDispatchInfo failure,
+            int exitCode
+        )
         {
             return new RunnerLifecycleOutcome(executions, exitCode, failedPhase, failure);
         }
@@ -642,8 +725,10 @@ public class Runner : IRunner, IDisposable
         /// <returns>The successful lifecycle exit code.</returns>
         public int GetRequiredExitCode()
         {
-            return ExitCode ?? throw new InvalidOperationException(
-                "The runner lifecycle did not complete successfully, so no exit code is available.");
+            return ExitCode
+                ?? throw new InvalidOperationException(
+                    "The runner lifecycle did not complete successfully, so no exit code is available."
+                );
         }
 
         /// <summary>
@@ -652,8 +737,10 @@ public class Runner : IRunner, IDisposable
         /// <returns>The original lifecycle exception.</returns>
         public Exception GetFailureException()
         {
-            return Failure?.SourceException ?? throw new InvalidOperationException(
-                "The runner lifecycle completed successfully, so no failure exception is available.");
+            return Failure?.SourceException
+                ?? throw new InvalidOperationException(
+                    "The runner lifecycle completed successfully, so no failure exception is available."
+                );
         }
 
         /// <summary>
@@ -663,7 +750,8 @@ public class Runner : IRunner, IDisposable
         {
             if (Failure == null)
                 throw new InvalidOperationException(
-                    "The runner lifecycle completed successfully, so there is no failure to rethrow.");
+                    "The runner lifecycle completed successfully, so there is no failure to rethrow."
+                );
 
             Failure.Throw();
         }
@@ -679,7 +767,10 @@ public class Runner : IRunner, IDisposable
         /// </summary>
         /// <param name="phase">The lifecycle phase that failed.</param>
         /// <param name="failure">The captured exception from the failed phase.</param>
-        public RunnerLifecyclePhaseException(RunnerLifecyclePhase phase, ExceptionDispatchInfo failure)
+        public RunnerLifecyclePhaseException(
+            RunnerLifecyclePhase phase,
+            ExceptionDispatchInfo failure
+        )
             : base($"Runner lifecycle phase '{phase}' failed.", failure.SourceException)
         {
             Phase = phase;

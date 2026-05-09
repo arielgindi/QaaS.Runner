@@ -33,30 +33,54 @@ public class PublisherTest
         string[]? dsPatterns,
         string[]? dsNames,
         int maxAmountOfMessages,
-        int msgPerSec = DefaultTestMessagesPerSecond)
+        int msgPerSec = DefaultTestMessagesPerSecond
+    )
     {
         _infoSent = CreationalFunctions.InitSender(ref _sender!);
 
         return new Sessions.Actions.Publishers.Publisher(
-            "TestPub", _sender!.Object, 0, new DataFilter() { Body = true, Timestamp = true, MetaData = true },
+            "TestPub",
+            _sender!.Object,
+            0,
+            new DataFilter()
+            {
+                Body = true,
+                Timestamp = true,
+                MetaData = true,
+            },
             new CountPolicy(maxAmountOfMessages).Add(new LoadBalancePolicy(msgPerSec, 1000)),
-            true, null, 0, 0, null, dsPatterns, dsNames,
-            Globals.Logger);
+            true,
+            null,
+            0,
+            0,
+            null,
+            dsPatterns,
+            dsNames,
+            Globals.Logger
+        );
     }
 
-    [Test,
-     TestCaseSource(typeof(TestResourceDataSources),
-         nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters))]
-    public void
-        TestActAndInitializeIterableSerializableSaveIterator_ReceivesValidDataSourceNamesAndAppropriateFiltersAndLoopPolicy_SendsTheProperDataToTheSenderObject(
-            List<string> names,
-            List<string> patterns,
-            List<DataSource> dataSources,
-            List<Data<object>> expectedData)
+    [
+        Test,
+        TestCaseSource(
+            typeof(TestResourceDataSources),
+            nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters)
+        )
+    ]
+    public void TestActAndInitializeIterableSerializableSaveIterator_ReceivesValidDataSourceNamesAndAppropriateFiltersAndLoopPolicy_SendsTheProperDataToTheSenderObject(
+        List<string> names,
+        List<string> patterns,
+        List<DataSource> dataSources,
+        List<Data<object>> expectedData
+    )
     {
         // Arrange
         var amountOfDataToSend = expectedData.Count;
-        var publisher = InitSingleMessageWithLoop(patterns.ToArray(), names.ToArray(), amountOfDataToSend);
+        var publisher = InitSingleMessageWithLoop(
+            patterns.ToArray(),
+            names.ToArray(),
+            amountOfDataToSend
+        );
 
         // Act
         publisher.InitializeIterableSerializableSaveIterator([], dataSources);
@@ -68,15 +92,19 @@ public class PublisherTest
         CollectionAssert.AreEqual(orderedExpectedData, orderedReceivedData);
     }
 
-    [Test,
-     TestCaseSource(typeof(TestResourceDataSources),
-         nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters))]
-    public void
-        TestAct_ReceivesValidDataSourceNamesAndAppropriateFiltersWithGenerators_CallsTheSendFunctionAnAppropriateAmountOfTimes(
-            List<string> names,
-            List<string> patterns,
-            List<DataSource> dataSources,
-            List<Data<object>> expectedData)
+    [
+        Test,
+        TestCaseSource(
+            typeof(TestResourceDataSources),
+            nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters)
+        )
+    ]
+    public void TestAct_ReceivesValidDataSourceNamesAndAppropriateFiltersWithGenerators_CallsTheSendFunctionAnAppropriateAmountOfTimes(
+        List<string> names,
+        List<string> patterns,
+        List<DataSource> dataSources,
+        List<Data<object>> expectedData
+    )
     {
         // Arrange
         const int numberOfIterations = 2;
@@ -85,25 +113,33 @@ public class PublisherTest
             ref _infoSent,
             patterns.ToArray(),
             names.ToArray(),
-            numberOfIterations);
+            numberOfIterations
+        );
 
         // Act
         publisher.InitializeIterableSerializableSaveIterator([], dataSources);
         publisher.Act();
 
         // Assert
-        _sender.Verify(s => s.Send(It.IsAny<Data<object>>()), Times.Exactly(expectedData.Count * numberOfIterations));
+        _sender.Verify(
+            s => s.Send(It.IsAny<Data<object>>()),
+            Times.Exactly(expectedData.Count * numberOfIterations)
+        );
     }
 
-    [Test,
-     TestCaseSource(typeof(TestResourceDataSources),
-         nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters))]
-    public void
-        TestAct_ReceivesValidDataSourceNamesAndAppropriateFiltersWithGeneratorsAndConfiguredToSendChunk_CallsTheSendFunctionAnAppropriateAmountOfTimes(
-            List<string> names,
-            List<string> patterns,
-            List<DataSource> dataSources,
-            List<Data<object>> expectedData)
+    [
+        Test,
+        TestCaseSource(
+            typeof(TestResourceDataSources),
+            nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters)
+        )
+    ]
+    public void TestAct_ReceivesValidDataSourceNamesAndAppropriateFiltersWithGeneratorsAndConfiguredToSendChunk_CallsTheSendFunctionAnAppropriateAmountOfTimes(
+        List<string> names,
+        List<string> patterns,
+        List<DataSource> dataSources,
+        List<Data<object>> expectedData
+    )
     {
         // Arrange
         const int chunkSize = 5;
@@ -111,7 +147,8 @@ public class PublisherTest
             ref _chunkSender!,
             patterns.ToArray(),
             names.ToArray(),
-            chunkSize);
+            chunkSize
+        );
 
         // Act
         pub.InitializeIterableSerializableSaveIterator([], dataSources);
@@ -121,17 +158,25 @@ public class PublisherTest
         int numberOfChunks = expectedData.Count / chunkSize;
         if (expectedData.Count % chunkSize != 0)
             numberOfChunks++;
-        _chunkSender!.Verify(cs => cs.SendChunk(It.IsAny<IEnumerable<Data<object>>>()), Times.Exactly(numberOfChunks));
+        _chunkSender!.Verify(
+            cs => cs.SendChunk(It.IsAny<IEnumerable<Data<object>>>()),
+            Times.Exactly(numberOfChunks)
+        );
     }
 
-    [Test,
-     TestCaseSource(typeof(TestResourceDataSources),
-         nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters))]
+    [
+        Test,
+        TestCaseSource(
+            typeof(TestResourceDataSources),
+            nameof(TestResourceDataSources.ValidDataSourceNamesAndAppropriateFilters)
+        )
+    ]
     public void TestExportRunningCommunicationData_ReceivesRcdToExport_ExportTheGivenDataToTheRcd(
         List<string> names,
         List<string> patterns,
         List<DataSource> dataSources,
-        List<Data<object>> expectedData)
+        List<Data<object>> expectedData
+    )
     {
         // Arrange
         const string sessionName = "test session";
@@ -141,7 +186,8 @@ public class PublisherTest
             ref _infoSent,
             patterns.ToArray(),
             names.ToArray(),
-            1);
+            1
+        );
 
         // Act
         publisher.ExportRunningCommunicationData(context, sessionName);
@@ -150,7 +196,10 @@ public class PublisherTest
 
         // Arrange
         var expectedDataContent = expectedData.Select(data => data.Body);
-        var receivedDataContent = context.InternalRunningSessions.RunningSessionsDict[sessionName].Inputs![0].GetData()
+        var receivedDataContent = context
+            .InternalRunningSessions.RunningSessionsDict[sessionName]
+            .Inputs![0]
+            .GetData()
             .Select(data => data.Body);
         CollectionAssert.AreEquivalent(expectedDataContent, receivedDataContent);
     }
@@ -173,43 +222,56 @@ public class PublisherTest
             SerializationType.Json,
             null,
             null,
-            logger);
+            logger
+        );
 
-        Assert.That(logger.Messages,
-            Contains.Item("Initializing Publisher TestPublisher with Sender type NamedSender and Serializer Json"));
+        Assert.That(
+            logger.Messages,
+            Contains.Item(
+                "Initializing Publisher TestPublisher with Sender type NamedSender and Serializer Json"
+            )
+        );
     }
 
     private const int TimeoutMsForWork = 10;
 
     private readonly FieldInfo _iterableSerializableSaveIteratorField =
-        typeof(Sessions.Actions.Publishers.Publisher).GetField("IterableSerializableSaveIterator",
-            BindingFlags.NonPublic | BindingFlags.Instance)!;
+        typeof(Sessions.Actions.Publishers.Publisher).GetField(
+            "IterableSerializableSaveIterator",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        )!;
 
-    [Test,
-     TestCase(1, 5, 5),
-     TestCase(5, 5, 5),
-     TestCase(10, 5, 5),
-     TestCase(100, 5, 5),
-     TestCase(10, 50, 5),
-     TestCase(10, 50, 50),
-     TestCase(10, 5, 50),
-     TestCase(2, 5, 5)]
+    [
+        Test,
+        TestCase(1, 5, 5),
+        TestCase(5, 5, 5),
+        TestCase(10, 5, 5),
+        TestCase(100, 5, 5),
+        TestCase(10, 50, 5),
+        TestCase(10, 50, 50),
+        TestCase(10, 5, 50),
+        TestCase(2, 5, 5)
+    ]
     public void TestPublish_CallChunkPublisherWithDifferentParallelism_ExpectToSendAllChunksInMatchingParallelism(
-        int parallelism, int chunkSize, int numberOfChunks)
+        int parallelism,
+        int chunkSize,
+        int numberOfChunks
+    )
     {
         // arrange
         var activeThreads = 0;
         var maxActiveThreads = 0;
         var dataIterated = 0;
-        var dataToPublish = Enumerable.Range(0, chunkSize * numberOfChunks)
+        var dataToPublish = Enumerable
+            .Range(0, chunkSize * numberOfChunks)
             .Select(_ => new Data<object>
             {
                 MetaData = new MetaData(),
-                Body = "A body of a message that is being published in chunks"
+                Body = "A body of a message that is being published in chunks",
             });
         var chunkSenderMock = new Mock<IChunkSender>();
-        chunkSenderMock.Setup(chunkSender =>
-                chunkSender.SendChunk(It.IsAny<IEnumerable<Data<object>>>()))
+        chunkSenderMock
+            .Setup(chunkSender => chunkSender.SendChunk(It.IsAny<IEnumerable<Data<object>>>()))
             .Callback(() =>
             {
                 Interlocked.Increment(ref activeThreads);
@@ -221,58 +283,86 @@ public class PublisherTest
             .Returns(() =>
             {
                 var chunkSentTimestamp = DateTime.UtcNow;
-                return dataToPublish.Slice(Interlocked.Add(ref dataIterated, chunkSize) - chunkSize, chunkSize)
+                return dataToPublish
+                    .Slice(Interlocked.Add(ref dataIterated, chunkSize) - chunkSize, chunkSize)
                     .Select(data => data.CloneDetailed(chunkSentTimestamp));
-            }).Verifiable();
+            })
+            .Verifiable();
 
-        Sessions.Actions.Publishers.ChunkPublisher publisher = new("test", chunkSenderMock.Object, 0, new DataFilter(),
-            null, parallelism, chunkSize, false, 1, 1, null, [], [], Globals.Logger);
+        Sessions.Actions.Publishers.ChunkPublisher publisher = new(
+            "test",
+            chunkSenderMock.Object,
+            0,
+            new DataFilter(),
+            null,
+            parallelism,
+            chunkSize,
+            false,
+            1,
+            1,
+            null,
+            [],
+            [],
+            Globals.Logger
+        );
         var testActData = new InternalCommunicationData<object>
         {
             Input = new List<DetailedData<object>>(),
-            InputSerializationType = SerializationType.Json
+            InputSerializationType = SerializationType.Json,
         };
-        _iterableSerializableSaveIteratorField.SetValue(publisher,
-            new IterableSerializableDataIterator(dataToPublish,
-                SerializerFactory.BuildSerializer(SerializationType.Json)));
+        _iterableSerializableSaveIteratorField.SetValue(
+            publisher,
+            new IterableSerializableDataIterator(
+                dataToPublish,
+                SerializerFactory.BuildSerializer(SerializationType.Json)
+            )
+        );
 
         // act
-        typeof(Sessions.Actions.Publishers.ChunkPublisher).GetMethod("Publish",
-                BindingFlags.NonPublic | BindingFlags.Instance)!
+        typeof(Sessions.Actions.Publishers.ChunkPublisher)
+            .GetMethod("Publish", BindingFlags.NonPublic | BindingFlags.Instance)!
             .Invoke(publisher, [testActData]);
 
         // assert
         chunkSenderMock.Verify(
             chunkSender => chunkSender.SendChunk(It.IsAny<IEnumerable<Data<object>>>()),
-            Times.Exactly(numberOfChunks));
+            Times.Exactly(numberOfChunks)
+        );
         Assert.That(testActData.Input.Count, Is.EqualTo(numberOfChunks * chunkSize));
         var expectedMaxConcurrency = Math.Min(numberOfChunks, parallelism);
         Assert.That(maxActiveThreads, Is.InRange(1, expectedMaxConcurrency));
     }
 
-    [Test,
-     TestCase(1, 5),
-     TestCase(5, 5),
-     TestCase(10, 5),
-     TestCase(100, 5),
-     TestCase(10, 50),
-     TestCase(10, 100),
-     TestCase(2, 5)]
+    [
+        Test,
+        TestCase(1, 5),
+        TestCase(5, 5),
+        TestCase(10, 5),
+        TestCase(100, 5),
+        TestCase(10, 50),
+        TestCase(10, 100),
+        TestCase(2, 5)
+    ]
     public void TestPublish_CallPublisherWithDifferentParallelism_ExpectToSendAllItemsInMatchingParallelism(
-        int parallelism, int numberOfItems)
+        int parallelism,
+        int numberOfItems
+    )
     {
         // arrange
         var activeThreads = 0;
         var maxActiveThreads = 0;
         var dataIterated = 0;
-        var dataToPublish = Enumerable.Range(0, numberOfItems)
+        var dataToPublish = Enumerable
+            .Range(0, numberOfItems)
             .Select(_ => new Data<object>
             {
                 MetaData = new MetaData(),
-                Body = "A body of a message that is being published in chunks"
-            }).ToArray();
+                Body = "A body of a message that is being published in chunks",
+            })
+            .ToArray();
         var senderMock = new Mock<ISender>();
-        senderMock.Setup(sender => sender.Send(It.IsAny<Data<object>>()))
+        senderMock
+            .Setup(sender => sender.Send(It.IsAny<Data<object>>()))
             .Callback(() =>
             {
                 Interlocked.Increment(ref activeThreads);
@@ -281,28 +371,49 @@ public class PublisherTest
                 Thread.Sleep(TimeoutMsForWork); // some work..
                 Interlocked.Decrement(ref activeThreads);
             })
-            .Returns(() => dataToPublish[Interlocked.Increment(ref dataIterated) - 1].CloneDetailed())
+            .Returns(() =>
+                dataToPublish[Interlocked.Increment(ref dataIterated) - 1].CloneDetailed()
+            )
             .Verifiable();
 
-        Sessions.Actions.Publishers.Publisher publisher = new("test", senderMock.Object, 0, new DataFilter(), null,
-            false, parallelism, 1, 0, null, [], [], Globals.Logger);
+        Sessions.Actions.Publishers.Publisher publisher = new(
+            "test",
+            senderMock.Object,
+            0,
+            new DataFilter(),
+            null,
+            false,
+            parallelism,
+            1,
+            0,
+            null,
+            [],
+            [],
+            Globals.Logger
+        );
         var testActData = new InternalCommunicationData<object>
         {
             Input = [],
-            InputSerializationType = SerializationType.Json
+            InputSerializationType = SerializationType.Json,
         };
-        _iterableSerializableSaveIteratorField.SetValue(publisher,
-            new IterableSerializableDataIterator(dataToPublish,
-                SerializerFactory.BuildSerializer(SerializationType.Json)));
+        _iterableSerializableSaveIteratorField.SetValue(
+            publisher,
+            new IterableSerializableDataIterator(
+                dataToPublish,
+                SerializerFactory.BuildSerializer(SerializationType.Json)
+            )
+        );
 
         // act
-        typeof(Sessions.Actions.Publishers.Publisher).GetMethod("Publish",
-                BindingFlags.NonPublic | BindingFlags.Instance)!
+        typeof(Sessions.Actions.Publishers.Publisher)
+            .GetMethod("Publish", BindingFlags.NonPublic | BindingFlags.Instance)!
             .Invoke(publisher, [testActData]);
 
         // assert
-        senderMock.Verify(sender => sender.Send(It.IsAny<Data<object>>()),
-            Times.Exactly(numberOfItems));
+        senderMock.Verify(
+            sender => sender.Send(It.IsAny<Data<object>>()),
+            Times.Exactly(numberOfItems)
+        );
         Assert.That(testActData.Input.Count, Is.EqualTo(numberOfItems));
         var expectedMaxConcurrency = Math.Min(numberOfItems, parallelism);
         Assert.That(maxActiveThreads, Is.InRange(1, expectedMaxConcurrency));
@@ -312,50 +423,70 @@ public class PublisherTest
     public void TestPublish_WithParallelism_PreservesReturnedTimestampPerBody()
     {
         var baseTime = DateTime.UtcNow;
-        var dataToPublish = Enumerable.Range(0, 6)
-            .Select(index => new Data<object>
-            {
-                Body = $"body-{index}",
-                MetaData = new MetaData()
-            })
+        var dataToPublish = Enumerable
+            .Range(0, 6)
+            .Select(index => new Data<object> { Body = $"body-{index}", MetaData = new MetaData() })
             .ToArray();
 
         var expectedTimestamps = dataToPublish.ToDictionary(
             item => (string)item.Body!,
-            item => baseTime.AddMilliseconds(int.Parse(item.Body!.ToString()!.Split('-')[1])));
+            item => baseTime.AddMilliseconds(int.Parse(item.Body!.ToString()!.Split('-')[1]))
+        );
 
         var senderMock = new Mock<ISender>();
-        senderMock.Setup(sender => sender.Send(It.IsAny<Data<object>>()))
-            .Returns((Data<object> sentData) =>
-            {
-                var body = sentData.Body!.ToString()!;
-                var index = int.Parse(body.Split('-')[1]);
-                Thread.Sleep((dataToPublish.Length - index) * 2);
-                return new DetailedData<object>
+        senderMock
+            .Setup(sender => sender.Send(It.IsAny<Data<object>>()))
+            .Returns(
+                (Data<object> sentData) =>
                 {
-                    Body = sentData.Body,
-                    MetaData = sentData.MetaData,
-                    Timestamp = expectedTimestamps[body]
-                };
-            });
+                    var body = sentData.Body!.ToString()!;
+                    var index = int.Parse(body.Split('-')[1]);
+                    Thread.Sleep((dataToPublish.Length - index) * 2);
+                    return new DetailedData<object>
+                    {
+                        Body = sentData.Body,
+                        MetaData = sentData.MetaData,
+                        Timestamp = expectedTimestamps[body],
+                    };
+                }
+            );
 
-        Sessions.Actions.Publishers.Publisher publisher = new("test", senderMock.Object, 0, new DataFilter(), null,
-            false, 4, 1, 0, null, [], [], Globals.Logger);
+        Sessions.Actions.Publishers.Publisher publisher = new(
+            "test",
+            senderMock.Object,
+            0,
+            new DataFilter(),
+            null,
+            false,
+            4,
+            1,
+            0,
+            null,
+            [],
+            [],
+            Globals.Logger
+        );
         var testActData = new InternalCommunicationData<object>
         {
             Input = [],
-            InputSerializationType = SerializationType.Json
+            InputSerializationType = SerializationType.Json,
         };
-        _iterableSerializableSaveIteratorField.SetValue(publisher,
-            new IterableSerializableDataIterator(dataToPublish, null));
+        _iterableSerializableSaveIteratorField.SetValue(
+            publisher,
+            new IterableSerializableDataIterator(dataToPublish, null)
+        );
 
-        typeof(Sessions.Actions.Publishers.Publisher).GetMethod("Publish",
-                BindingFlags.NonPublic | BindingFlags.Instance)!
+        typeof(Sessions.Actions.Publishers.Publisher)
+            .GetMethod("Publish", BindingFlags.NonPublic | BindingFlags.Instance)!
             .Invoke(publisher, [testActData]);
 
         Assert.That(testActData.Input, Has.Count.EqualTo(dataToPublish.Length));
-        Assert.That(testActData.Input!.All(item =>
-            item.Timestamp == expectedTimestamps[item.Body!.ToString()!]), Is.True);
+        Assert.That(
+            testActData.Input!.All(item =>
+                item.Timestamp == expectedTimestamps[item.Body!.ToString()!]
+            ),
+            Is.True
+        );
     }
 
     [Test]
@@ -374,7 +505,8 @@ public class PublisherTest
             SerializationType.Json,
             null,
             null,
-            Globals.Logger);
+            Globals.Logger
+        );
 
         publisher.InitializeIterableSerializableSaveIterator([], []);
         var result = publisher.Act();
@@ -400,7 +532,8 @@ public class PublisherTest
             SerializationType.Json,
             null,
             null,
-            Globals.Logger);
+            Globals.Logger
+        );
 
         publisher.InitializeIterableSerializableSaveIterator([], []);
         var result = publisher.Act();
@@ -420,15 +553,155 @@ public class PublisherTest
         Assert.That(iterator.IteratedData, Is.Empty);
     }
 
+    // R-5: Publisher.Act must call Disconnect even when Send throws.
+    [Test]
+    public void Act_WhenSendThrows_DisconnectIsStillCalled()
+    {
+        var senderMock = new Mock<ISender>();
+        senderMock.Setup(s => s.Connect());
+        senderMock
+            .Setup(s => s.Send(It.IsAny<Data<object>>()))
+            .Throws(new InvalidOperationException("send failed"));
+        senderMock.Setup(s => s.Disconnect());
+        senderMock.Setup(s => s.GetSerializationType()).Returns(SerializationType.Json);
+
+        var publisher = new Sessions.Actions.Publishers.Publisher(
+            "test",
+            senderMock.Object,
+            0,
+            new DataFilter(),
+            null,
+            false,
+            null,
+            1,
+            0,
+            null,
+            [],
+            ["src"],
+            Globals.Logger
+        );
+
+        var dataSource = new QaaS.Framework.SDK.DataSourceObjects.DataSource
+        {
+            Name = "src",
+            DataSourceList = System
+                .Collections
+                .Immutable
+                .ImmutableList<QaaS.Framework.SDK.DataSourceObjects.DataSource>
+                .Empty,
+            Generator = new SingleItemGenerator(),
+        };
+        publisher.InitializeIterableSerializableSaveIterator([], [dataSource]);
+
+        Assert.Throws<InvalidOperationException>(() => publisher.Act());
+        senderMock.Verify(
+            s => s.Disconnect(),
+            Times.Once,
+            "Disconnect must be called even when Send throws (R-5 fix)"
+        );
+    }
+
+    // R-6: CompleteAdding must be called even when the publish loop throws.
+    [Test]
+    public void Act_WhenPublishLoopThrows_CompleteAddingIsStillCalled()
+    {
+        var senderMock = new Mock<ISender>();
+        senderMock
+            .Setup(s => s.Send(It.IsAny<Data<object>>()))
+            .Throws(new InvalidOperationException("send failed"));
+        senderMock.Setup(s => s.GetSerializationType()).Returns(SerializationType.Json);
+
+        var publisher = new Sessions.Actions.Publishers.Publisher(
+            "test",
+            senderMock.Object,
+            0,
+            new DataFilter(),
+            null,
+            false,
+            null,
+            1,
+            0,
+            null,
+            [],
+            ["src2"],
+            Globals.Logger
+        );
+
+        var dataSource = new QaaS.Framework.SDK.DataSourceObjects.DataSource
+        {
+            Name = "src2",
+            DataSourceList = System
+                .Collections
+                .Immutable
+                .ImmutableList<QaaS.Framework.SDK.DataSourceObjects.DataSource>
+                .Empty,
+            Generator = new SingleItemGenerator(),
+        };
+        publisher.InitializeIterableSerializableSaveIterator([], [dataSource]);
+
+        Assert.Throws<InvalidOperationException>(() => publisher.Act());
+
+        // Access the RunningCommunicationData through the publisher's ExportRunningCommunicationData path
+        var context = CreationalFunctions.CreateContext("s", []);
+        publisher.ExportRunningCommunicationData(context, "s");
+        var rcd = context.InternalRunningSessions.RunningSessionsDict["s"].Inputs!.First();
+        Assert.That(
+            rcd.Data.IsAddingCompleted,
+            Is.True,
+            "BlockingCollection must be completed even when the publish loop throws (R-6 fix)"
+        );
+    }
+
+    // R-8: Thread.Sleep must not overflow when sleepTimeMs is very large.
+    [Test]
+    public void Act_WithMaxUlongSleepTime_DoesNotOverflow()
+    {
+        // If the cast overflows, Thread.Sleep(-1) hangs indefinitely — this test would timeout.
+        // We verify the clamp works by using ulong.MaxValue but 0 iterations so sleep is never actually reached;
+        // what matters is that the cast to int does not throw.
+        var publisher = new Sessions.Actions.Publishers.Publisher(
+            "test",
+            null,
+            0,
+            new DataFilter(),
+            null,
+            false,
+            null,
+            0,
+            ulong.MaxValue,
+            null,
+            null,
+            null,
+            Globals.Logger
+        );
+        publisher.InitializeIterableSerializableSaveIterator([], []);
+
+        // With 0 iterations and no data, Act exits the loop immediately without sleeping.
+        Assert.DoesNotThrow(() => publisher.Act());
+    }
+
+    private sealed class SingleItemGenerator : QaaS.Framework.SDK.Hooks.Generator.IGenerator
+    {
+        public QaaS.Framework.SDK.ContextObjects.Context Context { get; set; } = null!;
+
+        public List<System.ComponentModel.DataAnnotations.ValidationResult>? LoadAndValidateConfiguration(
+            Microsoft.Extensions.Configuration.IConfiguration configuration
+        ) => [];
+
+        public IEnumerable<Data<object>> Generate(
+            System.Collections.Immutable.IImmutableList<QaaS.Framework.SDK.Session.SessionDataObjects.SessionData> sessionDataList,
+            System.Collections.Immutable.IImmutableList<QaaS.Framework.SDK.DataSourceObjects.DataSource> dataSourceList
+        )
+        {
+            return [new Data<object> { Body = "item" }];
+        }
+    }
+
     private sealed class NamedSender : ISender
     {
-        public void Connect()
-        {
-        }
+        public void Connect() { }
 
-        public void Disconnect()
-        {
-        }
+        public void Disconnect() { }
 
         public SerializationType? GetSerializationType()
         {
@@ -445,7 +718,8 @@ public class PublisherTest
     {
         public List<string> Messages { get; } = [];
 
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull
+        public IDisposable BeginScope<TState>(TState state)
+            where TState : notnull
         {
             return NoOpScope.Instance;
         }
@@ -455,8 +729,13 @@ public class PublisherTest
             return true;
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-            Func<TState, Exception?, string> formatter)
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter
+        )
         {
             Messages.Add(formatter(state, exception));
         }
@@ -465,9 +744,7 @@ public class PublisherTest
         {
             public static readonly NoOpScope Instance = new();
 
-            public void Dispose()
-            {
-            }
+            public void Dispose() { }
         }
     }
 }

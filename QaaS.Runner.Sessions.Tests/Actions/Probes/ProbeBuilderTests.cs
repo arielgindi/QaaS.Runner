@@ -99,13 +99,20 @@ public class ProbeBuilderTests
     public void AddDataSourceFilters_When_Collections_Are_Null_Initializes_Them()
     {
         var builder = new ProbeBuilder();
-        typeof(ProbeBuilder).GetProperty("DataSourceNames", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+        typeof(ProbeBuilder)
+            .GetProperty(
+                "DataSourceNames",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            )!
             .SetValue(builder, null);
-        typeof(ProbeBuilder).GetProperty("DataSourcePatterns", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+        typeof(ProbeBuilder)
+            .GetProperty(
+                "DataSourcePatterns",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            )!
             .SetValue(builder, null);
 
-        builder.AddDataSourceName("DataSource1")
-            .AddDataSourcePattern(@"^\w+$");
+        builder.AddDataSourceName("DataSource1").AddDataSourcePattern(@"^\w+$");
 
         Assert.That(builder.DataSourceNames, Contains.Item("DataSource1"));
         Assert.That(builder.DataSourcePatterns, Contains.Item(@"^\w+$"));
@@ -128,13 +135,11 @@ public class ProbeBuilderTests
     {
         var probes = new List<KeyValuePair<string, IProbe>>
         {
-            new(ProbeBuilder.BuildScopedHookName("Session1", "TestProbe"), _mockProbe.Object)
+            new(ProbeBuilder.BuildScopedHookName("Session1", "TestProbe"), _mockProbe.Object),
         };
 
         var actionFailures = new List<ActionFailure>();
-        var builder = new ProbeBuilder()
-            .Named("TestProbe")
-            .HookNamed("TestHook");
+        var builder = new ProbeBuilder().Named("TestProbe").HookNamed("TestHook");
 
         var probe = builder.Build(_context, probes, actionFailures, "Session1");
 
@@ -147,9 +152,7 @@ public class ProbeBuilderTests
         var probes = new List<KeyValuePair<string, IProbe>>();
         var actionFailures = new List<ActionFailure>();
 
-        var builder = new ProbeBuilder()
-            .Named("NonExistentProbe")
-            .HookNamed("SomeHook");
+        var builder = new ProbeBuilder().Named("NonExistentProbe").HookNamed("SomeHook");
 
         var probe = builder.Build(_context, probes, actionFailures, "Session1");
 
@@ -160,14 +163,9 @@ public class ProbeBuilderTests
     [Test]
     public void Build_WhenOnlyUnscopedProbeExists_Should_Add_Failure_And_Return_Null()
     {
-        var probes = new List<KeyValuePair<string, IProbe>>
-        {
-            new("TestProbe", _mockProbe.Object)
-        };
+        var probes = new List<KeyValuePair<string, IProbe>> { new("TestProbe", _mockProbe.Object) };
         var actionFailures = new List<ActionFailure>();
-        var builder = new ProbeBuilder()
-            .Named("TestProbe")
-            .HookNamed("SomeHook");
+        var builder = new ProbeBuilder().Named("TestProbe").HookNamed("SomeHook");
 
         var probe = builder.Build(_context, probes, actionFailures, "Session1");
 
@@ -180,8 +178,7 @@ public class ProbeBuilderTests
     {
         var probes = new List<KeyValuePair<string, IProbe>>();
         var actionFailures = new List<ActionFailure>();
-        var builder = new ProbeBuilder()
-            .HookNamed("SomeHook");
+        var builder = new ProbeBuilder().HookNamed("SomeHook");
 
         var probe = builder.Build(_context, probes, actionFailures, "Session1");
 
@@ -214,11 +211,18 @@ public class ProbeBuilderTests
 
         Assert.That(serialized, Is.Not.Null);
         var serializedType = serialized!.GetType();
-        var probeConfiguration = serializedType.GetProperty("ProbeConfiguration")!.GetValue(serialized) as IDictionary;
+        var probeConfiguration =
+            serializedType.GetProperty("ProbeConfiguration")!.GetValue(serialized) as IDictionary;
         Assert.Multiple(() =>
         {
-            Assert.That(serializedType.GetProperty("Name")!.GetValue(serialized), Is.EqualTo("SerializedProbe"));
-            Assert.That(serializedType.GetProperty("Probe")!.GetValue(serialized), Is.EqualTo("ProbeHook"));
+            Assert.That(
+                serializedType.GetProperty("Name")!.GetValue(serialized),
+                Is.EqualTo("SerializedProbe")
+            );
+            Assert.That(
+                serializedType.GetProperty("Probe")!.GetValue(serialized),
+                Is.EqualTo("ProbeHook")
+            );
             Assert.That(serializedType.GetProperty("Stage")!.GetValue(serialized), Is.EqualTo(3));
         });
 
@@ -230,6 +234,3 @@ public class ProbeBuilderTests
         });
     }
 }
-
-
-

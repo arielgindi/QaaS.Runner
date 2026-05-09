@@ -129,7 +129,9 @@ public partial class SessionBuilder
     /// <qaas-docs group="Configuration as Code" subgroup="Sessions" />
     public SessionBuilder AddConsumer(ConsumerBuilder consumerBuilder)
     {
-        Consumers = Consumers is null ? [consumerBuilder] : Consumers.Append(consumerBuilder).ToArray();
+        Consumers = Consumers is null
+            ? [consumerBuilder]
+            : Consumers.Append(consumerBuilder).ToArray();
         return this;
     }
 
@@ -181,7 +183,9 @@ public partial class SessionBuilder
     /// <qaas-docs group="Configuration as Code" subgroup="Sessions" />
     public SessionBuilder AddPublisher(PublisherBuilder publisherBuilder)
     {
-        Publishers = Publishers is null ? [publisherBuilder] : Publishers.Append(publisherBuilder).ToArray();
+        Publishers = Publishers is null
+            ? [publisherBuilder]
+            : Publishers.Append(publisherBuilder).ToArray();
         return this;
     }
 
@@ -233,7 +237,9 @@ public partial class SessionBuilder
     /// <qaas-docs group="Configuration as Code" subgroup="Sessions" />
     public SessionBuilder AddTransaction(TransactionBuilder transactionBuilder)
     {
-        Transactions = Transactions is null ? [transactionBuilder] : Transactions.Append(transactionBuilder).ToArray();
+        Transactions = Transactions is null
+            ? [transactionBuilder]
+            : Transactions.Append(transactionBuilder).ToArray();
         return this;
     }
 
@@ -246,7 +252,12 @@ public partial class SessionBuilder
     /// <qaas-docs group="Configuration as Code" subgroup="Sessions" />
     public SessionBuilder UpdateTransaction(string name, TransactionBuilder transactionBuilder)
     {
-        Transactions = UpdateByName(Transactions, name, transactionBuilder, transaction => transaction.Name);
+        Transactions = UpdateByName(
+            Transactions,
+            name,
+            transactionBuilder,
+            transaction => transaction.Name
+        );
         return this;
     }
 
@@ -337,7 +348,9 @@ public partial class SessionBuilder
     /// <qaas-docs group="Configuration as Code" subgroup="Sessions" />
     public SessionBuilder AddCollector(CollectorBuilder collectorBuilder)
     {
-        Collectors = Collectors is null ? [collectorBuilder] : Collectors.Append(collectorBuilder).ToArray();
+        Collectors = Collectors is null
+            ? [collectorBuilder]
+            : Collectors.Append(collectorBuilder).ToArray();
         return this;
     }
 
@@ -402,9 +415,17 @@ public partial class SessionBuilder
     /// Use this method when working with the documented Runner session builder API surface in code. The change is stored on the current builder instance and is consumed by later build, validation, or execution steps.
     /// </remarks>
     /// <qaas-docs group="Configuration as Code" subgroup="Sessions" />
-    public SessionBuilder UpdateMockerCommand(string name, MockerCommandBuilder mockerCommandBuilder)
+    public SessionBuilder UpdateMockerCommand(
+        string name,
+        MockerCommandBuilder mockerCommandBuilder
+    )
     {
-        MockerCommands = UpdateByName(MockerCommands, name, mockerCommandBuilder, command => command.Name);
+        MockerCommands = UpdateByName(
+            MockerCommands,
+            name,
+            mockerCommandBuilder,
+            command => command.Name
+        );
         return this;
     }
 
@@ -456,7 +477,10 @@ public partial class SessionBuilder
     /// <qaas-docs group="Configuration as Code" subgroup="Sessions" />
     public SessionBuilder UpdateStage(int stageNumber, StageConfig stage)
     {
-        var existingIndex = Array.FindIndex(Stages, configuredStage => configuredStage.StageNumber == stageNumber);
+        var existingIndex = Array.FindIndex(
+            Stages,
+            configuredStage => configuredStage.StageNumber == stageNumber
+        );
         if (existingIndex < 0)
         {
             return this;
@@ -475,7 +499,9 @@ public partial class SessionBuilder
     /// <qaas-docs group="Configuration as Code" subgroup="Sessions" />
     public SessionBuilder RemoveStage(int stageNumber)
     {
-        Stages = Stages.Where(configuredStage => configuredStage.StageNumber != stageNumber).ToArray();
+        Stages = Stages
+            .Where(configuredStage => configuredStage.StageNumber != stageNumber)
+            .ToArray();
         return this;
     }
 
@@ -500,24 +526,38 @@ public partial class SessionBuilder
         var actionFailures = new List<ActionFailure>();
 
         var publishers = (Publishers ??= [])
-            .Select(publisher => publisher.BuildWithTimeZone(context, actionFailures, Name!, TimeZoneId))
-            .Where(publisher => publisher != null).ToArray();
+            .Select(publisher =>
+                publisher.BuildWithTimeZone(context, actionFailures, Name!, TimeZoneId)
+            )
+            .Where(publisher => publisher != null)
+            .ToArray();
 
-        var transactions = (Transactions ??= []).Select(transaction => transaction.Build(context, actionFailures, Name!))
-            .Where(transaction => transaction != null).ToArray();
+        var transactions = (Transactions ??= [])
+            .Select(transaction => transaction.Build(context, actionFailures, Name!))
+            .Where(transaction => transaction != null)
+            .ToArray();
 
         var consumers = (Consumers ??= [])
-            .Select(consumer => consumer.BuildWithTimeZone(context, actionFailures, Name!, TimeZoneId))
-            .Where(consumer => consumer != null).ToArray();
+            .Select(consumer =>
+                consumer.BuildWithTimeZone(context, actionFailures, Name!, TimeZoneId)
+            )
+            .Where(consumer => consumer != null)
+            .ToArray();
 
-        var probes = (Probes ??= []).Select(probe => probe.Build(context, probeHooks, actionFailures, Name!))
-            .Where(probe => probe != null).ToArray();
+        var probes = (Probes ??= [])
+            .Select(probe => probe.Build(context, probeHooks, actionFailures, Name!))
+            .Where(probe => probe != null)
+            .ToArray();
 
-        var mockerCommands = (MockerCommands ??= []).Select(mockerCommand => mockerCommand.Build(context, actionFailures, Name!))
-            .Where(mockerCommand => mockerCommand != null).ToArray();
+        var mockerCommands = (MockerCommands ??= [])
+            .Select(mockerCommand => mockerCommand.Build(context, actionFailures, Name!))
+            .Where(mockerCommand => mockerCommand != null)
+            .ToArray();
 
-        var collectors = (Collectors ??= []).Select(collector => collector.Build(context, actionFailures, Name!))
-            .Where(collector => collector != null).ToArray();
+        var collectors = (Collectors ??= [])
+            .Select(collector => collector.Build(context, actionFailures, Name!))
+            .Where(collector => collector != null)
+            .ToArray();
 
         var concurrentActionFailures = new ConcurrentBag<ActionFailure>(actionFailures);
         var stagedActions = new List<StagedAction>();
@@ -538,14 +578,18 @@ public partial class SessionBuilder
             collectors!,
             context,
             concurrentActionFailures,
-            RunUntilStage);
+            RunUntilStage
+        );
     }
 
     /// <summary>
     ///     Build all the stages and populates them with the built action based on the action builders
     /// </summary>
-    private Dictionary<int, Stage> BuildStages(InternalContext context, List<StagedAction> stagedActions,
-        ConcurrentBag<ActionFailure> actionFailures)
+    private Dictionary<int, Stage> BuildStages(
+        InternalContext context,
+        List<StagedAction> stagedActions,
+        ConcurrentBag<ActionFailure> actionFailures
+    )
     {
         var stages = new Dictionary<int, Stage>();
 
@@ -555,10 +599,21 @@ public partial class SessionBuilder
             {
                 var stageConfig = Stages?.FirstOrDefault(s => s.StageNumber == communication.Stage);
                 if (stageConfig != null)
-                    stages[communication.Stage] = new Stage(context, actionFailures, Name!, communication.Stage,
-                        stageConfig.TimeoutBefore, stageConfig.TimeoutAfter);
+                    stages[communication.Stage] = new Stage(
+                        context,
+                        actionFailures,
+                        Name!,
+                        communication.Stage,
+                        stageConfig.TimeoutBefore,
+                        stageConfig.TimeoutAfter
+                    );
                 else
-                    stages[communication.Stage] = new Stage(context, actionFailures, Name!, communication.Stage);
+                    stages[communication.Stage] = new Stage(
+                        context,
+                        actionFailures,
+                        Name!,
+                        communication.Stage
+                    );
             }
 
             stages[communication.Stage].AddCommunication(communication);
@@ -567,7 +622,12 @@ public partial class SessionBuilder
         return stages;
     }
 
-    private static T[]? UpdateByName<T>(T[]? values, string name, T replacement, Func<T, string?> nameSelector)
+    private static T[]? UpdateByName<T>(
+        T[]? values,
+        string name,
+        T replacement,
+        Func<T, string?> nameSelector
+    )
     {
         if (values == null)
         {
@@ -604,4 +664,3 @@ public partial class SessionBuilder
         return values.Where((_, i) => i != index).ToArray();
     }
 }
-

@@ -28,7 +28,9 @@ public abstract class BaseLink
     ///     Also uses the minimum key and maximum value to find the correct time range to present the date view in
     /// </param>
     /// <returns></returns>
-    public KeyValuePair<string, string> GetLink(IList<KeyValuePair<DateTime, DateTime>> startEndTimesKeyValuePairs)
+    public KeyValuePair<string, string> GetLink(
+        IList<KeyValuePair<DateTime, DateTime>> startEndTimesKeyValuePairs
+    )
     {
         return new KeyValuePair<string, string>(_linkName, BuildLink(startEndTimesKeyValuePairs));
     }
@@ -36,5 +38,7 @@ public abstract class BaseLink
     /// <summary>
     ///     Builds the link string
     /// </summary>
-    protected abstract string BuildLink(IList<KeyValuePair<DateTime, DateTime>> startEndTimesKeyValuePairs);
+    protected abstract string BuildLink(
+        IList<KeyValuePair<DateTime, DateTime>> startEndTimesKeyValuePairs
+    );
 }

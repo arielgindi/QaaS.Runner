@@ -8,25 +8,36 @@ namespace QaaS.Runner.E2ETests.Assertions;
 
 public class RabbitRoundTripAssertion : BaseAssertion<object>
 {
-    public override bool Assert(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+    public override bool Assert(
+        IImmutableList<SessionData> sessionDataList,
+        IImmutableList<DataSource> dataSourceList
+    )
     {
         var session = sessionDataList.SingleOrDefault();
-        var publishedPayloads = session?.Inputs?
-            .SelectMany(input => input.Data)
-            .Select(data => data.Body)
-            .OfType<MockJson>()
-            .ToList() ?? [];
-        var consumedPayloads = session?.Outputs?
-            .SelectMany(output => output.Data)
-            .Select(data => data.Body)
-            .OfType<MockJson>()
-            .ToList() ?? [];
+        var publishedPayloads =
+            session
+                ?.Inputs?.SelectMany(input => input.Data)
+                .Select(data => data.Body)
+                .OfType<MockJson>()
+                .ToList()
+            ?? [];
+        var consumedPayloads =
+            session
+                ?.Outputs?.SelectMany(output => output.Data)
+                .Select(data => data.Body)
+                .OfType<MockJson>()
+                .ToList()
+            ?? [];
         var observedProbeMarkers = ProbeRunRecorder.GetMarkers();
         var expectedProbeMarkers = new[] { "rabbit-roundtrip-probe", "probe-scope-check" };
 
         var matchedPayload = publishedPayloads.FirstOrDefault()?.Property;
-        var payloadPassed = matchedPayload != null && consumedPayloads.Any(payload => payload.Property == matchedPayload);
-        var probesPassed = expectedProbeMarkers.All(marker => observedProbeMarkers.Contains(marker));
+        var payloadPassed =
+            matchedPayload != null
+            && consumedPayloads.Any(payload => payload.Property == matchedPayload);
+        var probesPassed = expectedProbeMarkers.All(marker =>
+            observedProbeMarkers.Contains(marker)
+        );
         var passed = payloadPassed && probesPassed;
 
         AssertionMessage = passed

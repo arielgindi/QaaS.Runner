@@ -13,18 +13,17 @@ internal static class ExecutionBuilderConfiguratorLoader
     internal static IReadOnlyList<IExecutionBuilderConfigurator> Load(
         ILogger logger,
         Assembly? entryAssembly,
-        IEnumerable<Assembly> candidateAssemblies)
+        IEnumerable<Assembly> candidateAssemblies
+    )
     {
-        return Load(
-            logger,
-            entryAssembly,
-            candidateAssemblies.SelectMany(GetLoadableTypes));
+        return Load(logger, entryAssembly, candidateAssemblies.SelectMany(GetLoadableTypes));
     }
 
     internal static IReadOnlyList<IExecutionBuilderConfigurator> Load(
         ILogger logger,
         Assembly? entryAssembly,
-        IEnumerable<Type> candidateTypes)
+        IEnumerable<Type> candidateTypes
+    )
     {
         return candidateTypes
             .Where(type => IsConfiguratorCandidate(type, entryAssembly))
@@ -44,7 +43,9 @@ internal static class ExecutionBuilderConfiguratorLoader
         foreach (var loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
             AddAssembly(assemblies, loadedAssembly);
 
-        foreach (var assemblyPath in Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll"))
+        foreach (
+            var assemblyPath in Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll")
+        )
         {
             try
             {
@@ -89,21 +90,23 @@ internal static class ExecutionBuilderConfiguratorLoader
 
     private static bool IsConfiguratorCandidate(Type configuratorType, Assembly? entryAssembly)
     {
-        if (!typeof(IExecutionBuilderConfigurator).IsAssignableFrom(configuratorType) ||
-            configuratorType is { IsAbstract: true, IsInterface: true } ||
-            configuratorType.ContainsGenericParameters)
+        if (
+            !typeof(IExecutionBuilderConfigurator).IsAssignableFrom(configuratorType)
+            || configuratorType is { IsAbstract: true, IsInterface: true }
+            || configuratorType.ContainsGenericParameters
+        )
         {
             return false;
         }
 
         if (configuratorType.Assembly == entryAssembly)
         {
-            return configuratorType.IsPublic ||
-                   configuratorType.IsNotPublic ||
-                   configuratorType.IsNestedPublic ||
-                   configuratorType.IsNestedAssembly ||
-                   configuratorType.IsNestedFamORAssem ||
-                   configuratorType.IsNestedFamANDAssem;
+            return configuratorType.IsPublic
+                || configuratorType.IsNotPublic
+                || configuratorType.IsNestedPublic
+                || configuratorType.IsNestedAssembly
+                || configuratorType.IsNestedFamORAssem
+                || configuratorType.IsNestedFamANDAssem;
         }
 
         return configuratorType.IsPublic || configuratorType.IsNestedPublic;
@@ -112,31 +115,37 @@ internal static class ExecutionBuilderConfiguratorLoader
     private static IExecutionBuilderConfigurator? TryCreateConfigurator(
         Type configuratorType,
         Assembly? entryAssembly,
-        ILogger logger)
+        ILogger logger
+    )
     {
         var allowNonPublicConstructor = configuratorType.Assembly == entryAssembly;
 
         try
         {
-            return (IExecutionBuilderConfigurator)(Activator.CreateInstance(
-                                                       configuratorType,
-                                                       allowNonPublicConstructor) ??
-                                                   throw new InvalidOperationException(
-                                                       $"Could not create runner execution configurator '{configuratorType.FullName}'."));
+            return (IExecutionBuilderConfigurator)(
+                Activator.CreateInstance(configuratorType, allowNonPublicConstructor)
+                ?? throw new InvalidOperationException(
+                    $"Could not create runner execution configurator '{configuratorType.FullName}'."
+                )
+            );
         }
         catch (Exception exception)
         {
             if (configuratorType.Assembly == entryAssembly)
             {
-                logger.LogError(exception,
+                logger.LogError(
+                    exception,
                     "Failed to create runner execution configurator {ConfiguratorType}",
-                    configuratorType.FullName);
+                    configuratorType.FullName
+                );
                 throw;
             }
 
-            logger.LogWarning(exception,
+            logger.LogWarning(
+                exception,
                 "Skipping runner execution configurator {ConfiguratorType} because it could not be created.",
-                configuratorType.FullName);
+                configuratorType.FullName
+            );
             return null;
         }
     }

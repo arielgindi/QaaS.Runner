@@ -24,32 +24,39 @@ public class GrafanaLinkBuilderTests
             expectedEndTimeMs = "1722927844000";
 
         // Arrange
-        var builder = new GrafanaLink(linkName, new GrafanaLinkConfig
-        {
-            Url = url,
-            DashboardId = "jEhCoNoSk",
-            Variables = new List<KeyValuePair<string, string>>
+        var builder = new GrafanaLink(
+            linkName,
+            new GrafanaLinkConfig
             {
-                new(variableAKey, variableAValue),
-                new(variableBKey, variableBValue)
-            }.ToArray()
-        });
+                Url = url,
+                DashboardId = "jEhCoNoSk",
+                Variables = new List<KeyValuePair<string, string>>
+                {
+                    new(variableAKey, variableAValue),
+                    new(variableBKey, variableBValue),
+                }.ToArray(),
+            }
+        );
         var startTimeOne = new DateTime(2024, 8, 6, 7, 1, 1, DateTimeKind.Utc);
         var endTimeOne = new DateTime(2024, 8, 6, 7, 2, 2, DateTimeKind.Utc);
 
         var startTimeTwo = new DateTime(2024, 8, 6, 7, 3, 3, DateTimeKind.Utc);
         var endTimeTwo = new DateTime(2024, 8, 6, 7, 4, 4, DateTimeKind.Utc);
 
-        Globals.Logger.LogInformation("Start time is {StartTime}, End time is {EndTime}",
-            startTimeOne, endTimeTwo);
+        Globals.Logger.LogInformation(
+            "Start time is {StartTime}, End time is {EndTime}",
+            startTimeOne,
+            endTimeTwo
+        );
 
         // Act
-        var fullUrl = builder
-            .GetLink(new List<KeyValuePair<DateTime, DateTime>>
+        var fullUrl = builder.GetLink(
+            new List<KeyValuePair<DateTime, DateTime>>
             {
                 new(startTimeOne, endTimeOne),
-                new(startTimeTwo, endTimeTwo)
-            });
+                new(startTimeTwo, endTimeTwo),
+            }
+        );
         Globals.Logger.LogInformation("Grafana Url is {FullUrl}", fullUrl);
 
         // Assert

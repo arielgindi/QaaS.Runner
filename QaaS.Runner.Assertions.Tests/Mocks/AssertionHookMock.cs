@@ -9,7 +9,10 @@ public record AssertionHookMockConfig;
 
 public class AssertionHookMock : BaseAssertion<AssertionHookMockConfig>
 {
-    public override bool Assert(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+    public override bool Assert(
+        IImmutableList<SessionData> sessionDataList,
+        IImmutableList<DataSource> dataSourceList
+    )
     {
         return true;
     }

@@ -13,25 +13,36 @@ public class KibanaLink(string linkName, KibanaLinkConfig kibanaLinkConfig) : Ba
         BetweenDatesQueryTemplate = "({0} >= \"{1}\" and {0} <= \"{2}\")";
 
     /// <inheritdoc />
-    protected override string BuildLink(IList<KeyValuePair<DateTime, DateTime>> startEndTimesKeyValuePairs)
+    protected override string BuildLink(
+        IList<KeyValuePair<DateTime, DateTime>> startEndTimesKeyValuePairs
+    )
     {
         var startEndTimesKeyValuePairsArray = startEndTimesKeyValuePairs.ToArray();
 
-        var timeRange = string.Format(TimeRangeTemplate,
+        var timeRange = string.Format(
+            TimeRangeTemplate,
             startEndTimesKeyValuePairsArray.Min(pair => pair.Key).ToString("o"),
-            startEndTimesKeyValuePairsArray.Max(pair => pair.Value).ToString("o"));
+            startEndTimesKeyValuePairsArray.Max(pair => pair.Value).ToString("o")
+        );
 
-        var betweenDatesQuery = string.Join(" or ", startEndTimesKeyValuePairsArray.Select(pair =>
-            string.Format(BetweenDatesQueryTemplate,
-                Uri.EscapeDataString(kibanaLinkConfig.TimestampField),
-                pair.Key.ToString("o"), pair.Value.ToString("o"))));
+        var betweenDatesQuery = string.Join(
+            " or ",
+            startEndTimesKeyValuePairsArray.Select(pair =>
+                string.Format(
+                    BetweenDatesQueryTemplate,
+                    Uri.EscapeDataString(kibanaLinkConfig.TimestampField),
+                    pair.Key.ToString("o"),
+                    pair.Value.ToString("o")
+                )
+            )
+        );
 
         var kqlQuery = kibanaLinkConfig.KqlQuery is not null
             ? $"and ({Uri.EscapeDataString(kibanaLinkConfig.KqlQuery)})"
             : string.Empty;
 
-        return $"{kibanaLinkConfig.Url!}{DiscoveryRoute}#/?_g=({NoRefreshRefreshIntervalAnnotation},{timeRange})" +
-               $"&_a=(index:'{Uri.EscapeDataString(kibanaLinkConfig.DataViewId!)}'," +
-               $"query:(language:kuery,query:'({betweenDatesQuery}) {kqlQuery}'))";
+        return $"{kibanaLinkConfig.Url!}{DiscoveryRoute}#/?_g=({NoRefreshRefreshIntervalAnnotation},{timeRange})"
+            + $"&_a=(index:'{Uri.EscapeDataString(kibanaLinkConfig.DataViewId!)}',"
+            + $"query:(language:kuery,query:'({betweenDatesQuery}) {kqlQuery}'))";
     }
 }

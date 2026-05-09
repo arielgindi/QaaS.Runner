@@ -45,18 +45,18 @@ public class BuilderCrudTests
     [Test]
     public void ConsumerBuilder_UpdateConfiguration_WithConfiguration_MergesSameTypeAndPreservesExistingFields()
     {
-        var builder = new ConsumerBuilder()
-            .Configure(new RabbitMqReaderConfig
+        var builder = new ConsumerBuilder().Configure(
+            new RabbitMqReaderConfig
             {
                 Host = "rabbitmq.local",
                 ExchangeName = "events",
-                RoutingKey = "created"
-            });
+                RoutingKey = "created",
+            }
+        );
 
-        builder.UpdateConfiguration(new RabbitMqReaderConfig
-        {
-            RequestedConnectionTimeoutSeconds = 12
-        });
+        builder.UpdateConfiguration(
+            new RabbitMqReaderConfig { RequestedConnectionTimeoutSeconds = 12 }
+        );
 
         var mergedConfiguration = (RabbitMqReaderConfig)builder.Configuration!;
         Assert.Multiple(() =>
@@ -71,19 +71,19 @@ public class BuilderCrudTests
     [Test]
     public void ConsumerBuilder_UpdateConfiguration_WithSparseSameTypeUpdate_DoesNotClearExistingStringFields()
     {
-        var builder = new ConsumerBuilder()
-            .Configure(new RabbitMqReaderConfig
+        var builder = new ConsumerBuilder().Configure(
+            new RabbitMqReaderConfig
             {
                 Host = "rabbitmq.local",
                 ExchangeName = "events",
                 QueueName = "messages",
-                RoutingKey = "created"
-            });
+                RoutingKey = "created",
+            }
+        );
 
-        builder.UpdateConfiguration(new RabbitMqReaderConfig
-        {
-            HandshakeContinuationTimeoutSeconds = 7
-        });
+        builder.UpdateConfiguration(
+            new RabbitMqReaderConfig { HandshakeContinuationTimeoutSeconds = 7 }
+        );
 
         var mergedConfiguration = (RabbitMqReaderConfig)builder.Configuration!;
         Assert.Multiple(() =>
@@ -98,18 +98,16 @@ public class BuilderCrudTests
     [Test]
     public void ConsumerBuilder_UpdateConfiguration_WithObjectPatch_MergesSameTypeAndPreservesExistingFields()
     {
-        var builder = new ConsumerBuilder()
-            .Configure(new RabbitMqReaderConfig
+        var builder = new ConsumerBuilder().Configure(
+            new RabbitMqReaderConfig
             {
                 Host = "rabbitmq.local",
                 ExchangeName = "events",
-                RoutingKey = "created"
-            });
+                RoutingKey = "created",
+            }
+        );
 
-        builder.UpdateConfiguration(new
-        {
-            RequestedConnectionTimeoutSeconds = 12
-        });
+        builder.UpdateConfiguration(new { RequestedConnectionTimeoutSeconds = 12 });
 
         var mergedConfiguration = (RabbitMqReaderConfig)builder.Configuration!;
         Assert.Multiple(() =>
@@ -143,10 +141,8 @@ public class BuilderCrudTests
         Assert.That(builder.Policies, Has.Length.EqualTo(1));
         Assert.That(builder.Configuration, Is.TypeOf<KafkaTopicSenderConfig>());
 
-        builder.AddDataSource("source-indexed")
-            .AddDataSourcePattern("^indexed-.*$");
-        builder.RemoveDataSourceAt(1)
-            .RemoveDataSourcePatternAt(1);
+        builder.AddDataSource("source-indexed").AddDataSourcePattern("^indexed-.*$");
+        builder.RemoveDataSourceAt(1).RemoveDataSourcePatternAt(1);
 
         Assert.That(builder.DataSourceNames, Is.EquivalentTo(["source-updated"]));
         Assert.That(builder.DataSourcePatterns, Is.EquivalentTo(["^updated-.*$"]));
@@ -158,18 +154,16 @@ public class BuilderCrudTests
     [Test]
     public void PublisherBuilder_UpdateConfiguration_WithConfiguration_MergesSameTypeAndPreservesExistingFields()
     {
-        var builder = new PublisherBuilder()
-            .Configure(new RabbitMqSenderConfig
+        var builder = new PublisherBuilder().Configure(
+            new RabbitMqSenderConfig
             {
                 Host = "rabbitmq.local",
                 ExchangeName = "events",
-                RoutingKey = "published"
-            });
+                RoutingKey = "published",
+            }
+        );
 
-        builder.UpdateConfiguration(new RabbitMqSenderConfig
-        {
-            Expiration = "30000"
-        });
+        builder.UpdateConfiguration(new RabbitMqSenderConfig { Expiration = "30000" });
 
         var mergedConfiguration = (RabbitMqSenderConfig)builder.Configuration!;
         Assert.Multiple(() =>
@@ -184,19 +178,19 @@ public class BuilderCrudTests
     [Test]
     public void PublisherBuilder_UpdateConfiguration_WithSparseSameTypeUpdate_DoesNotClearExistingStringFields()
     {
-        var builder = new PublisherBuilder()
-            .Configure(new RabbitMqSenderConfig
+        var builder = new PublisherBuilder().Configure(
+            new RabbitMqSenderConfig
             {
                 Host = "rabbitmq.local",
                 ExchangeName = "events",
                 QueueName = "messages",
-                RoutingKey = "published"
-            });
+                RoutingKey = "published",
+            }
+        );
 
-        builder.UpdateConfiguration(new RabbitMqSenderConfig
-        {
-            HandshakeContinuationTimeoutSeconds = 5
-        });
+        builder.UpdateConfiguration(
+            new RabbitMqSenderConfig { HandshakeContinuationTimeoutSeconds = 5 }
+        );
 
         var mergedConfiguration = (RabbitMqSenderConfig)builder.Configuration!;
         Assert.Multiple(() =>
@@ -211,23 +205,20 @@ public class BuilderCrudTests
     [Test]
     public void PublisherBuilder_UpdateConfiguration_WithObjectPatch_MergesKafkaHeadersAndPreservesExistingFields()
     {
-        var builder = new PublisherBuilder()
-            .Configure(new KafkaTopicSenderConfig
+        var builder = new PublisherBuilder().Configure(
+            new KafkaTopicSenderConfig
             {
                 HostNames = ["broker:9092"],
                 Username = "runner",
                 Password = "secret",
                 TopicName = "events",
-                DefaultKafkaKey = "default-key"
-            });
-
-        builder.UpdateConfiguration(new
-        {
-            Headers = new Dictionary<string, object?>
-            {
-                ["correlation-id"] = "123"
+                DefaultKafkaKey = "default-key",
             }
-        });
+        );
+
+        builder.UpdateConfiguration(
+            new { Headers = new Dictionary<string, object?> { ["correlation-id"] = "123" } }
+        );
 
         var mergedConfiguration = (KafkaTopicSenderConfig)builder.Configuration!;
         Assert.Multiple(() =>
@@ -262,15 +253,14 @@ public class BuilderCrudTests
         Assert.That(builder.DataSourcePatterns, Is.EquivalentTo(["^updated-.*$"]));
         Assert.That(builder.Configuration, Is.TypeOf<HttpTransactorConfig>());
 
-        builder.AddDataSource("source-indexed")
-            .AddDataSourcePattern("^indexed-.*$");
-        builder.RemoveDataSourceAt(1)
-            .RemoveDataSourcePatternAt(1);
+        builder.AddDataSource("source-indexed").AddDataSourcePattern("^indexed-.*$");
+        builder.RemoveDataSourceAt(1).RemoveDataSourcePatternAt(1);
 
         Assert.That(builder.DataSourceNames, Is.EquivalentTo(["source-updated"]));
         Assert.That(builder.DataSourcePatterns, Is.EquivalentTo(["^updated-.*$"]));
 
-        builder.RemoveDataSource("source-updated")
+        builder
+            .RemoveDataSource("source-updated")
             .RemoveDataSourcePattern("^updated-.*$")
             .RemovePolicyAt(0)
             .Configure(new GrpcTransactorConfig());
@@ -284,19 +274,17 @@ public class BuilderCrudTests
     [Test]
     public void TransactionBuilder_UpdateConfiguration_WithConfiguration_MergesSameTypeAndPreservesExistingFields()
     {
-        var builder = new TransactionBuilder()
-            .Configure(new HttpTransactorConfig
+        var builder = new TransactionBuilder().Configure(
+            new HttpTransactorConfig
             {
                 Method = HttpMethods.Put,
                 BaseAddress = "https://service.local",
                 Route = "/resource",
-                Retries = 3
-            });
+                Retries = 3,
+            }
+        );
 
-        builder.UpdateConfiguration(new HttpTransactorConfig
-        {
-            MessageSendRetriesIntervalMs = 0
-        });
+        builder.UpdateConfiguration(new HttpTransactorConfig { MessageSendRetriesIntervalMs = 0 });
 
         var mergedConfiguration = (HttpTransactorConfig)builder.Configuration!;
         Assert.Multiple(() =>
@@ -312,19 +300,17 @@ public class BuilderCrudTests
     [Test]
     public void TransactionBuilder_UpdateConfiguration_WithObjectPatch_MergesSameTypeAndPreservesExistingFields()
     {
-        var builder = new TransactionBuilder()
-            .Configure(new HttpTransactorConfig
+        var builder = new TransactionBuilder().Configure(
+            new HttpTransactorConfig
             {
                 Method = HttpMethods.Put,
                 BaseAddress = "https://service.local",
                 Route = "/resource",
-                Retries = 3
-            });
+                Retries = 3,
+            }
+        );
 
-        builder.UpdateConfiguration(new
-        {
-            MessageSendRetriesIntervalMs = 0
-        });
+        builder.UpdateConfiguration(new { MessageSendRetriesIntervalMs = 0 });
 
         var mergedConfiguration = (HttpTransactorConfig)builder.Configuration!;
         Assert.Multiple(() =>
@@ -351,7 +337,8 @@ public class BuilderCrudTests
         builder.AddDataSourcePattern("^updated-.*$");
         builder.UpdateConfiguration(new { threshold = 5 });
         builder.UpdateConfiguration(new { nested = new { value = "set" } });
-        builder.AddDataSourceName("source-indexed")
+        builder
+            .AddDataSourceName("source-indexed")
             .AddDataSourcePattern("^indexed-.*$")
             .RemoveDataSourceNameAt(1)
             .RemoveDataSourcePatternAt(1);
@@ -362,7 +349,8 @@ public class BuilderCrudTests
         Assert.That(builder.Configuration["threshold"], Is.EqualTo("5"));
         Assert.That(builder.Configuration["nested:value"], Is.EqualTo("set"));
 
-        builder.RemoveDataSourceName("source-updated")
+        builder
+            .RemoveDataSourceName("source-updated")
             .RemoveDataSourcePattern("^updated-.*$")
             .RemoveConfiguration();
 
@@ -374,48 +362,50 @@ public class BuilderCrudTests
     [Test]
     public void CollectorBuilder_ShouldSupportConfigurationCrud()
     {
-        var builder = new CollectorBuilder().Configure(new PrometheusFetcherConfig
-        {
-            Url = "https://prometheus",
-            Expression = "up"
-        });
+        var builder = new CollectorBuilder().Configure(
+            new PrometheusFetcherConfig { Url = "https://prometheus", Expression = "up" }
+        );
 
-        builder.UpdateConfiguration(new PrometheusFetcherConfig
-        {
-            Url = "https://prometheus-updated",
-            Expression = "sum(up)"
-        });
-        builder.UpdateConfiguration(new PrometheusFetcherConfig
-        {
-            Url = "https://prometheus-updated-again",
-            Expression = "max(up)"
-        });
+        builder.UpdateConfiguration(
+            new PrometheusFetcherConfig
+            {
+                Url = "https://prometheus-updated",
+                Expression = "sum(up)",
+            }
+        );
+        builder.UpdateConfiguration(
+            new PrometheusFetcherConfig
+            {
+                Url = "https://prometheus-updated-again",
+                Expression = "max(up)",
+            }
+        );
 
         Assert.That(builder.Configuration, Is.TypeOf<PrometheusFetcherConfig>());
-        Assert.That(((PrometheusFetcherConfig)builder.Configuration!).Expression, Is.EqualTo("max(up)"));
+        Assert.That(
+            ((PrometheusFetcherConfig)builder.Configuration!).Expression,
+            Is.EqualTo("max(up)")
+        );
 
-        builder.Configure(new PrometheusFetcherConfig
-        {
-            Url = "https://prometheus-latest",
-            Expression = "up"
-        });
+        builder.Configure(
+            new PrometheusFetcherConfig { Url = "https://prometheus-latest", Expression = "up" }
+        );
         Assert.That(builder.Configuration, Is.TypeOf<PrometheusFetcherConfig>());
     }
 
     [Test]
     public void CollectorBuilder_UpdateConfiguration_WithObjectPatch_MergesSameTypeAndPreservesExistingFields()
     {
-        var builder = new CollectorBuilder().Configure(new PrometheusFetcherConfig
-        {
-            Url = "https://prometheus",
-            Expression = "up",
-            SampleIntervalMs = 5000
-        });
+        var builder = new CollectorBuilder().Configure(
+            new PrometheusFetcherConfig
+            {
+                Url = "https://prometheus",
+                Expression = "up",
+                SampleIntervalMs = 5000,
+            }
+        );
 
-        builder.UpdateConfiguration(new
-        {
-            ApiKey = "api-key"
-        });
+        builder.UpdateConfiguration(new { ApiKey = "api-key" });
 
         var mergedConfiguration = (PrometheusFetcherConfig)builder.Configuration!;
         Assert.Multiple(() =>
@@ -430,17 +420,16 @@ public class BuilderCrudTests
     [Test]
     public void CollectorBuilder_UpdateConfiguration_WithConfiguration_MergesSameTypeAndPreservesExistingFields()
     {
-        var builder = new CollectorBuilder().Configure(new PrometheusFetcherConfig
-        {
-            Url = "https://prometheus",
-            Expression = "up",
-            SampleIntervalMs = 5000
-        });
+        var builder = new CollectorBuilder().Configure(
+            new PrometheusFetcherConfig
+            {
+                Url = "https://prometheus",
+                Expression = "up",
+                SampleIntervalMs = 5000,
+            }
+        );
 
-        builder.UpdateConfiguration(new PrometheusFetcherConfig
-        {
-            ApiKey = "api-key"
-        });
+        builder.UpdateConfiguration(new PrometheusFetcherConfig { ApiKey = "api-key" });
 
         var mergedConfiguration = (PrometheusFetcherConfig)builder.Configuration!;
         Assert.Multiple(() =>
@@ -455,49 +444,35 @@ public class BuilderCrudTests
     [Test]
     public void MockerCommandBuilder_ShouldSupportConfigurationCrud()
     {
-        var builder = new MockerCommandBuilder().Configure(new MockerCommandConfig
-        {
-            Consume = new ConsumeCommandConfig()
-        });
+        var builder = new MockerCommandBuilder().Configure(
+            new MockerCommandConfig { Consume = new ConsumeCommandConfig() }
+        );
 
-        builder.UpdateConfiguration(new MockerCommandConfig
-        {
-            TriggerAction = new TriggerAction()
-        });
-        builder.UpdateConfiguration(new MockerCommandConfig
-        {
-            Consume = new ConsumeCommandConfig()
-        });
+        builder.UpdateConfiguration(
+            new MockerCommandConfig { TriggerAction = new TriggerAction() }
+        );
+        builder.UpdateConfiguration(
+            new MockerCommandConfig { Consume = new ConsumeCommandConfig() }
+        );
 
         Assert.That(builder.Configuration, Is.Not.Null);
         Assert.That(builder.Configuration!.Consume, Is.Not.Null);
 
-        builder.Configure(new MockerCommandConfig
-        {
-            TriggerAction = new TriggerAction()
-        });
+        builder.Configure(new MockerCommandConfig { TriggerAction = new TriggerAction() });
         Assert.That(builder.Configuration!.TriggerAction, Is.Not.Null);
     }
 
     [Test]
     public void MockerCommandBuilder_UpdateConfiguration_WithObjectPatch_MergesNestedCommandValues()
     {
-        var builder = new MockerCommandBuilder().Configure(new MockerCommandConfig
-        {
-            TriggerAction = new TriggerAction
+        var builder = new MockerCommandBuilder().Configure(
+            new MockerCommandConfig
             {
-                ActionName = "seed",
-                TimeoutMs = 5
+                TriggerAction = new TriggerAction { ActionName = "seed", TimeoutMs = 5 },
             }
-        });
+        );
 
-        builder.UpdateConfiguration(new
-        {
-            TriggerAction = new
-            {
-                TimeoutMs = 15
-            }
-        });
+        builder.UpdateConfiguration(new { TriggerAction = new { TimeoutMs = 15 } });
 
         var command = builder.Configuration!;
         Assert.Multiple(() =>
@@ -508,6 +483,3 @@ public class BuilderCrudTests
         });
     }
 }
-
-
-

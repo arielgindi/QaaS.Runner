@@ -6,8 +6,8 @@
 public static class DateTimeExtensions
 {
     /// <summary>
-     /// Converts a local wall-clock value into UTC using a summer-time offset and optional DST override.
-     /// </summary>
+    /// Converts a local wall-clock value into UTC using a summer-time offset and optional DST override.
+    /// </summary>
     /// <param name="timeToConvertToUtc"> the datetime to convert to utc </param>
     /// <param name="insertionTimeTimeZoneOffsetSummerTime">
     ///     The timezone offset during summer time
@@ -26,9 +26,13 @@ public static class DateTimeExtensions
         this DateTime timeToConvertToUtc,
         int insertionTimeTimeZoneOffsetSummerTime,
         bool? isDayLightSavingTime = null,
-        string? timeZoneId = null)
+        string? timeZoneId = null
+    )
     {
-        isDayLightSavingTime ??= IsDayLightSavingTimeInGivenDateTime(timeToConvertToUtc, timeZoneId);
+        isDayLightSavingTime ??= IsDayLightSavingTimeInGivenDateTime(
+            timeToConvertToUtc,
+            timeZoneId
+        );
         var dateTimeConvertedToUtc =
             timeToConvertToUtc - TimeSpan.FromHours(insertionTimeTimeZoneOffsetSummerTime);
 
@@ -59,7 +63,8 @@ public static class DateTimeExtensions
         this DateTime utcTimeToConvert,
         int timeZoneOffsetSummerTime,
         bool? isDayLightSavingTime = null,
-        string? timeZoneId = null)
+        string? timeZoneId = null
+    )
     {
         isDayLightSavingTime ??= IsDayLightSavingTimeInGivenDateTime(utcTimeToConvert, timeZoneId);
         var dateTimeWithTimeZoneOffset =
@@ -74,7 +79,10 @@ public static class DateTimeExtensions
     /// <summary>
     /// Determines whether the supplied date falls inside daylight-saving time in the configured timezone.
     /// </summary>
-    private static bool IsDayLightSavingTimeInGivenDateTime(this DateTime dateTime, string? timeZoneId = null)
+    private static bool IsDayLightSavingTimeInGivenDateTime(
+        this DateTime dateTime,
+        string? timeZoneId = null
+    )
     {
         return TimeZoneInfoResolver.ResolveTimeZoneInfo(timeZoneId).IsDaylightSavingTime(dateTime);
     }

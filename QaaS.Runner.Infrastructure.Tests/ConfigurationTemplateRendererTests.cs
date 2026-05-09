@@ -42,42 +42,47 @@ public class ConfigurationTemplateRendererTests
     public void Render_UsesMergedConfigurationValuesAndAugmentsAssertionStatuses()
     {
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Storages:0:FileSystem:Path"] = "SessionDataStorage",
-                ["DataSources:0:Name"] = "RabbitPayload",
-                ["DataSources:0:Generator"] = "TestGenerator",
-                ["DataSources:0:GeneratorConfiguration:Count"] = "1",
-                ["Sessions:0:Name"] = "RabbitRoundTrip",
-                ["Sessions:0:SaveData"] = "true",
-                ["Sessions:0:Publishers:0:Name"] = "PublishToRabbit",
-                ["Sessions:0:Publishers:0:DataSourceNames:0"] = "RabbitPayload",
-                ["Sessions:0:Publishers:0:RabbitMq:Host"] = "localhost",
-                ["Sessions:0:Publishers:0:RabbitMq:Port"] = "5672",
-                ["Sessions:0:Publishers:0:RabbitMq:RoutingKey"] = "/",
-                ["Sessions:0:Publishers:0:RabbitMq:ExchangeName"] = "test",
-                ["Sessions:0:Consumers:0:Name"] = "ConsumeFromRabbit",
-                ["Sessions:0:Consumers:0:TimeoutMs"] = "20000",
-                ["Sessions:0:Consumers:0:RabbitMq:Host"] = "localhost",
-                ["Sessions:0:Consumers:0:RabbitMq:Port"] = "5672",
-                ["Sessions:0:Consumers:0:RabbitMq:RoutingKey"] = "/",
-                ["Sessions:0:Consumers:0:RabbitMq:ExchangeName"] = "test",
-                ["Assertions:0:Name"] = "RabbitRoundTripAssertion",
-                ["Assertions:0:Assertion"] = "RabbitRoundTripAssertion",
-                ["Assertions:0:SessionNames:0"] = "RabbitRoundTrip",
-                ["MetaData:System"] = "QaaS",
-                ["MetaData:Team"] = "Smoke"
-            })
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["Storages:0:FileSystem:Path"] = "SessionDataStorage",
+                    ["DataSources:0:Name"] = "RabbitPayload",
+                    ["DataSources:0:Generator"] = "TestGenerator",
+                    ["DataSources:0:GeneratorConfiguration:Count"] = "1",
+                    ["Sessions:0:Name"] = "RabbitRoundTrip",
+                    ["Sessions:0:SaveData"] = "true",
+                    ["Sessions:0:Publishers:0:Name"] = "PublishToRabbit",
+                    ["Sessions:0:Publishers:0:DataSourceNames:0"] = "RabbitPayload",
+                    ["Sessions:0:Publishers:0:RabbitMq:Host"] = "localhost",
+                    ["Sessions:0:Publishers:0:RabbitMq:Port"] = "5672",
+                    ["Sessions:0:Publishers:0:RabbitMq:RoutingKey"] = "/",
+                    ["Sessions:0:Publishers:0:RabbitMq:ExchangeName"] = "test",
+                    ["Sessions:0:Consumers:0:Name"] = "ConsumeFromRabbit",
+                    ["Sessions:0:Consumers:0:TimeoutMs"] = "20000",
+                    ["Sessions:0:Consumers:0:RabbitMq:Host"] = "localhost",
+                    ["Sessions:0:Consumers:0:RabbitMq:Port"] = "5672",
+                    ["Sessions:0:Consumers:0:RabbitMq:RoutingKey"] = "/",
+                    ["Sessions:0:Consumers:0:RabbitMq:ExchangeName"] = "test",
+                    ["Assertions:0:Name"] = "RabbitRoundTripAssertion",
+                    ["Assertions:0:Assertion"] = "RabbitRoundTripAssertion",
+                    ["Assertions:0:SessionNames:0"] = "RabbitRoundTrip",
+                    ["MetaData:System"] = "QaaS",
+                    ["MetaData:Team"] = "Smoke",
+                }
+            )
             .Build();
 
         var yaml = ConfigurationTemplateRenderer.Render(
             configuration,
             sectionOrder: Constants.ConfigurationSectionNames,
             includedSessionNames: new HashSet<string>(["RabbitRoundTrip"], StringComparer.Ordinal),
-            assertionStatusesToReport: new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+            assertionStatusesToReport: new Dictionary<string, IReadOnlyList<string>>(
+                StringComparer.Ordinal
+            )
             {
-                ["RabbitRoundTripAssertion"] = ["Passed", "Failed", "Broken", "Unknown", "Skipped"]
-            });
+                ["RabbitRoundTripAssertion"] = ["Passed", "Failed", "Broken", "Unknown", "Skipped"],
+            }
+        );
 
         Assert.That(yaml, Does.Contain("Storages:"));
         Assert.That(yaml, Does.Contain("Path: SessionDataStorage"));
@@ -95,25 +100,30 @@ public class ConfigurationTemplateRendererTests
     public void Render_FiltersSessionsAndAssertionsToTheSelectedRuntimeSet()
     {
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Sessions:0:Name"] = "RabbitRoundTrip",
-                ["Sessions:1:Name"] = "ShouldBeFilteredOut",
-                ["Assertions:0:Name"] = "RabbitRoundTripAssertion",
-                ["Assertions:0:Assertion"] = "RabbitRoundTripAssertion",
-                ["Assertions:1:Name"] = "FilteredAssertion",
-                ["Assertions:1:Assertion"] = "FilteredAssertion"
-            })
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["Sessions:0:Name"] = "RabbitRoundTrip",
+                    ["Sessions:1:Name"] = "ShouldBeFilteredOut",
+                    ["Assertions:0:Name"] = "RabbitRoundTripAssertion",
+                    ["Assertions:0:Assertion"] = "RabbitRoundTripAssertion",
+                    ["Assertions:1:Name"] = "FilteredAssertion",
+                    ["Assertions:1:Assertion"] = "FilteredAssertion",
+                }
+            )
             .Build();
 
         var yaml = ConfigurationTemplateRenderer.Render(
             configuration,
             sectionOrder: Constants.ConfigurationSectionNames,
             includedSessionNames: new HashSet<string>(["RabbitRoundTrip"], StringComparer.Ordinal),
-            assertionStatusesToReport: new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+            assertionStatusesToReport: new Dictionary<string, IReadOnlyList<string>>(
+                StringComparer.Ordinal
+            )
             {
-                ["RabbitRoundTripAssertion"] = ["Passed"]
-            });
+                ["RabbitRoundTripAssertion"] = ["Passed"],
+            }
+        );
 
         Assert.That(yaml, Does.Contain("RabbitRoundTrip"));
         Assert.That(yaml, Does.Contain("RabbitRoundTripAssertion"));
@@ -125,10 +135,9 @@ public class ConfigurationTemplateRendererTests
     public void Render_UsesStorageAliasWhenSourceConfigurationUsesLegacySectionName()
     {
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Storage:0:FileSystem:Path"] = "LegacyStorage"
-            })
+            .AddInMemoryCollection(
+                new Dictionary<string, string?> { ["Storage:0:FileSystem:Path"] = "LegacyStorage" }
+            )
             .Build();
 
         var yaml = ConfigurationTemplateRenderer.Render(configuration);
@@ -141,18 +150,17 @@ public class ConfigurationTemplateRendererTests
     public void Render_PreservesExplicitlyConfiguredDefaultValues()
     {
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["MetaData:Count"] = "5"
-            })
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["MetaData:Count"] = "5" })
             .Build();
 
-        var yaml = ConfigurationTemplateRenderer.Render(configuration,
+        var yaml = ConfigurationTemplateRenderer.Render(
+            configuration,
             fallbackSections:
             [
-                new KeyValuePair<string, object?>("MetaData", new DefaultValueSection())
+                new KeyValuePair<string, object?>("MetaData", new DefaultValueSection()),
             ],
-            sectionOrder: ["MetaData"]);
+            sectionOrder: ["MetaData"]
+        );
 
         Assert.That(yaml, Does.Contain("Count: 5"));
     }
@@ -160,12 +168,14 @@ public class ConfigurationTemplateRendererTests
     [Test]
     public void Render_OmitsImplicitDefaultValuesThatWereNotConfigured()
     {
-        var yaml = ConfigurationTemplateRenderer.Render(new ConfigurationBuilder().Build(),
+        var yaml = ConfigurationTemplateRenderer.Render(
+            new ConfigurationBuilder().Build(),
             fallbackSections:
             [
-                new KeyValuePair<string, object?>("MetaData", new DefaultValueSection())
+                new KeyValuePair<string, object?>("MetaData", new DefaultValueSection()),
             ],
-            sectionOrder: ["MetaData"]);
+            sectionOrder: ["MetaData"]
+        );
 
         Assert.That(yaml, Does.Not.Contain("Count: 5"));
     }
@@ -178,16 +188,15 @@ public class ConfigurationTemplateRendererTests
             new Dictionary<string, object?> { ["Name"] = "KeepMe" },
             new Dictionary<string, object?> { ["Name"] = "DropMe" },
             new Dictionary<string, object?> { ["Name"] = " " },
-            new Dictionary<string, object?> { ["Other"] = "MissingName" }
+            new Dictionary<string, object?> { ["Other"] = "MissingName" },
         };
 
-        var yaml = ConfigurationTemplateRenderer.Render(new ConfigurationBuilder().Build(),
-            fallbackSections:
-            [
-                new KeyValuePair<string, object?>("Sessions", sessions)
-            ],
+        var yaml = ConfigurationTemplateRenderer.Render(
+            new ConfigurationBuilder().Build(),
+            fallbackSections: [new KeyValuePair<string, object?>("Sessions", sessions)],
             sectionOrder: ["Sessions"],
-            includedSessionNames: new HashSet<string>(["KeepMe"], StringComparer.Ordinal));
+            includedSessionNames: new HashSet<string>(["KeepMe"], StringComparer.Ordinal)
+        );
 
         Assert.Multiple(() =>
         {
@@ -205,26 +214,27 @@ public class ConfigurationTemplateRendererTests
             new Dictionary<string, object?>
             {
                 ["Name"] = "MappedAssertion",
-                ["StatusesToReport"] = new[] { "Unknown" }
+                ["StatusesToReport"] = new[] { "Unknown" },
             },
             new Dictionary<string, object?>
             {
                 ["Name"] = "UnmappedAssertion",
-                ["StatusesToReport"] = new[] { "Failed" }
-            }
+                ["StatusesToReport"] = new[] { "Failed" },
+            },
         };
 
-        var yaml = ConfigurationTemplateRenderer.Render(new ConfigurationBuilder().Build(),
-            fallbackSections:
-            [
-                new KeyValuePair<string, object?>("Assertions", assertions)
-            ],
+        var yaml = ConfigurationTemplateRenderer.Render(
+            new ConfigurationBuilder().Build(),
+            fallbackSections: [new KeyValuePair<string, object?>("Assertions", assertions)],
             sectionOrder: ["Assertions"],
-            assertionStatusesToReport: new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+            assertionStatusesToReport: new Dictionary<string, IReadOnlyList<string>>(
+                StringComparer.Ordinal
+            )
             {
                 ["MappedAssertion"] = ["Passed", "Broken"],
-                ["UnmappedAssertion"] = ["Failed"]
-            });
+                ["UnmappedAssertion"] = ["Failed"],
+            }
+        );
 
         Assert.Multiple(() =>
         {
@@ -241,48 +251,56 @@ public class ConfigurationTemplateRendererTests
     public void Render_WithSparseSourceIndexes_PreservesOriginalIndexesWhenFallbackSectionsAreRendered()
     {
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Sessions:10:Name"] = "SparseSession",
-                ["Sessions:10:Publishers:10:Name"] = "SparsePublisher",
-                ["Assertions:10:Name"] = "SparseAssertion",
-                ["Assertions:10:Assertion"] = "SparseAssertion"
-            })
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["Sessions:10:Name"] = "SparseSession",
+                    ["Sessions:10:Publishers:10:Name"] = "SparsePublisher",
+                    ["Assertions:10:Name"] = "SparseAssertion",
+                    ["Assertions:10:Assertion"] = "SparseAssertion",
+                }
+            )
             .Build();
 
         var yaml = ConfigurationTemplateRenderer.Render(
             configuration,
             fallbackSections:
             [
-                new KeyValuePair<string, object?>("Sessions", new object?[]
-                {
-                    new Dictionary<string, object?>
+                new KeyValuePair<string, object?>(
+                    "Sessions",
+                    new object?[]
                     {
-                        ["Name"] = "SparseSession",
-                        ["Publishers"] = new object?[]
+                        new Dictionary<string, object?>
                         {
-                            new Dictionary<string, object?>
+                            ["Name"] = "SparseSession",
+                            ["Publishers"] = new object?[]
                             {
-                                ["Name"] = "SparsePublisher"
-                            }
-                        }
+                                new Dictionary<string, object?> { ["Name"] = "SparsePublisher" },
+                            },
+                        },
                     }
-                }),
-                new KeyValuePair<string, object?>("Assertions", new object?[]
-                {
-                    new Dictionary<string, object?>
+                ),
+                new KeyValuePair<string, object?>(
+                    "Assertions",
+                    new object?[]
                     {
-                        ["Name"] = "SparseAssertion",
-                        ["Assertion"] = "SparseAssertion"
+                        new Dictionary<string, object?>
+                        {
+                            ["Name"] = "SparseAssertion",
+                            ["Assertion"] = "SparseAssertion",
+                        },
                     }
-                })
+                ),
             ],
             sectionOrder: ["Sessions", "Assertions"],
             includedSessionNames: new HashSet<string>(["SparseSession"], StringComparer.Ordinal),
-            assertionStatusesToReport: new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+            assertionStatusesToReport: new Dictionary<string, IReadOnlyList<string>>(
+                StringComparer.Ordinal
+            )
             {
-                ["SparseAssertion"] = ["Passed"]
-            });
+                ["SparseAssertion"] = ["Passed"],
+            }
+        );
 
         Assert.Multiple(() =>
         {
@@ -301,12 +319,17 @@ public class ConfigurationTemplateRendererTests
     [Test]
     public void NormalizeValue_DropsBlankDictionaryKeysAndNullEnumerableItems()
     {
-        var normalized = (IDictionary<string, object?>)InvokePrivate("NormalizeValue", new Hashtable
-        {
-            ["Valid"] = "value",
-            [" "] = "ignored",
-            ["Items"] = new object?[] { null, "kept" }
-        })!;
+        var normalized =
+            (IDictionary<string, object?>)
+                InvokePrivate(
+                    "NormalizeValue",
+                    new Hashtable
+                    {
+                        ["Valid"] = "value",
+                        [" "] = "ignored",
+                        ["Items"] = new object?[] { null, "kept" },
+                    }
+                )!;
 
         Assert.Multiple(() =>
         {
@@ -318,10 +341,14 @@ public class ConfigurationTemplateRendererTests
     [Test]
     public void SerializeObject_SkipsIndexersStaticMembersDelegatesAndBlankStrings()
     {
-        var serialized = (IDictionary<string, object?>)InvokePrivate("SerializeObject",
-            new SerializationShape(),
-            "Section",
-            new HashSet<string>(StringComparer.Ordinal))!;
+        var serialized =
+            (IDictionary<string, object?>)
+                InvokePrivate(
+                    "SerializeObject",
+                    new SerializationShape(),
+                    "Section",
+                    new HashSet<string>(StringComparer.Ordinal)
+                )!;
 
         Assert.That(serialized.Keys, Is.EqualTo(new[] { "Name" }));
         Assert.That(serialized["Name"], Is.EqualTo("keep"));
@@ -332,16 +359,22 @@ public class ConfigurationTemplateRendererTests
     {
         var property = typeof(DefaultValueSection).GetProperty(nameof(DefaultValueSection.Count))!;
 
-        var skippedImplicitly = (bool)InvokePrivate("ShouldSkipValue",
-            property,
-            5,
-            "MetaData:Count",
-            new HashSet<string>(StringComparer.Ordinal))!;
-        var keptWhenConfigured = (bool)InvokePrivate("ShouldSkipValue",
-            property,
-            5,
-            "MetaData:Count",
-            new HashSet<string>(StringComparer.Ordinal) { "MetaData:Count" })!;
+        var skippedImplicitly = (bool)
+            InvokePrivate(
+                "ShouldSkipValue",
+                property,
+                5,
+                "MetaData:Count",
+                new HashSet<string>(StringComparer.Ordinal)
+            )!;
+        var keptWhenConfigured = (bool)
+            InvokePrivate(
+                "ShouldSkipValue",
+                property,
+                5,
+                "MetaData:Count",
+                new HashSet<string>(StringComparer.Ordinal) { "MetaData:Count" }
+            )!;
 
         Assert.Multiple(() =>
         {
@@ -356,7 +389,11 @@ public class ConfigurationTemplateRendererTests
         var value = new Dictionary<string, object?> { ["Name"] = "ignored" };
 
         var withoutNames = InvokePrivate("FilterNamedSection", value, null);
-        var nonListValue = InvokePrivate("FilterNamedSection", value, new HashSet<string>(["name"], StringComparer.Ordinal));
+        var nonListValue = InvokePrivate(
+            "FilterNamedSection",
+            value,
+            new HashSet<string>(["name"], StringComparer.Ordinal)
+        );
 
         Assert.Multiple(() =>
         {
@@ -372,15 +409,22 @@ public class ConfigurationTemplateRendererTests
         {
             "plain-item",
             new Dictionary<string, object?> { ["Other"] = "MissingName" },
-            new Dictionary<string, object?> { ["Name"] = "Unmapped", ["StatusesToReport"] = new[] { "Failed" } }
+            new Dictionary<string, object?>
+            {
+                ["Name"] = "Unmapped",
+                ["StatusesToReport"] = new[] { "Failed" },
+            },
         };
 
-        var updated = (IList)InvokePrivate("AugmentAssertionStatuses",
-            originalList,
-            new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
-            {
-                ["Mapped"] = ["Passed"]
-            })!;
+        var updated = (IList)
+            InvokePrivate(
+                "AugmentAssertionStatuses",
+                originalList,
+                new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+                {
+                    ["Mapped"] = ["Passed"],
+                }
+            )!;
 
         Assert.Multiple(() =>
         {
@@ -398,10 +442,14 @@ public class ConfigurationTemplateRendererTests
     [Test]
     public void SerializeEnumerable_DropsItemsThatNormalizeToNothing()
     {
-        var serialized = (IList<object?>)InvokePrivate("SerializeEnumerable",
-            new object?[] { null, Array.Empty<object>(), new Hashtable(), "kept" },
-            "Section",
-            new HashSet<string>(StringComparer.Ordinal))!;
+        var serialized =
+            (IList<object?>)
+                InvokePrivate(
+                    "SerializeEnumerable",
+                    new object?[] { null, Array.Empty<object>(), new Hashtable(), "kept" },
+                    "Section",
+                    new HashSet<string>(StringComparer.Ordinal)
+                )!;
 
         Assert.That(serialized, Is.EqualTo(new object?[] { "kept" }));
     }
@@ -409,15 +457,19 @@ public class ConfigurationTemplateRendererTests
     [Test]
     public void SerializeDictionary_DropsBlankKeysAndValuesThatShouldBeSkipped()
     {
-        var serialized = (IDictionary<string, object?>)InvokePrivate("SerializeDictionary",
-            new Hashtable
-            {
-                [" "] = "ignored",
-                ["BlankValue"] = string.Empty,
-                ["Valid"] = "kept"
-            },
-            "Section",
-            new HashSet<string>(StringComparer.Ordinal))!;
+        var serialized =
+            (IDictionary<string, object?>)
+                InvokePrivate(
+                    "SerializeDictionary",
+                    new Hashtable
+                    {
+                        [" "] = "ignored",
+                        ["BlankValue"] = string.Empty,
+                        ["Valid"] = "kept",
+                    },
+                    "Section",
+                    new HashSet<string>(StringComparer.Ordinal)
+                )!;
 
         Assert.That(serialized.Keys, Is.EqualTo(new[] { "Valid" }));
         Assert.That(serialized["Valid"], Is.EqualTo("kept"));
@@ -426,11 +478,16 @@ public class ConfigurationTemplateRendererTests
     [Test]
     public void ShouldSerializeProperty_ReturnsFalseForRecordEqualityContractAndTrueForRegularProperties()
     {
-        var equalityContract = typeof(RecordShape).GetProperty("EqualityContract", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
+        var equalityContract = typeof(RecordShape).GetProperty(
+            "EqualityContract",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+        )!;
         var regularProperty = typeof(RecordShape).GetProperty(nameof(RecordShape.Name))!;
 
-        var shouldSerializeEqualityContract = (bool)InvokePrivate("ShouldSerializeProperty", equalityContract)!;
-        var shouldSerializeRegularProperty = (bool)InvokePrivate("ShouldSerializeProperty", regularProperty)!;
+        var shouldSerializeEqualityContract = (bool)
+            InvokePrivate("ShouldSerializeProperty", equalityContract)!;
+        var shouldSerializeRegularProperty = (bool)
+            InvokePrivate("ShouldSerializeProperty", regularProperty)!;
 
         Assert.Multiple(() =>
         {
@@ -442,10 +499,15 @@ public class ConfigurationTemplateRendererTests
     [Test]
     public void IsDefaultValue_ReturnsFalseWhenAttributeIsMissingAndHandlesNullDefaults()
     {
-        var withoutDefaultAttribute = typeof(NoDefaultValueSection).GetProperty(nameof(NoDefaultValueSection.Count))!;
-        var nullDefaultProperty = typeof(NullableDefaultSection).GetProperty(nameof(NullableDefaultSection.Value))!;
+        var withoutDefaultAttribute = typeof(NoDefaultValueSection).GetProperty(
+            nameof(NoDefaultValueSection.Count)
+        )!;
+        var nullDefaultProperty = typeof(NullableDefaultSection).GetProperty(
+            nameof(NullableDefaultSection.Value)
+        )!;
 
-        var missingAttributeResult = (bool)InvokePrivate("IsDefaultValue", withoutDefaultAttribute, 0)!;
+        var missingAttributeResult = (bool)
+            InvokePrivate("IsDefaultValue", withoutDefaultAttribute, 0)!;
         var nullDefaultResult = (bool)InvokePrivate("IsDefaultValue", nullDefaultProperty, null!)!;
 
         Assert.Multiple(() =>
@@ -458,10 +520,9 @@ public class ConfigurationTemplateRendererTests
     [Test]
     public void TryGetName_ReturnsFalseForMissingOrBlankNames()
     {
-        var missingName = (bool)InvokePrivate("TryGetName",
-            new Hashtable { ["Other"] = "value" }, null!)!;
-        var blankName = (bool)InvokePrivate("TryGetName",
-            new Hashtable { ["Name"] = " " }, null!)!;
+        var missingName = (bool)
+            InvokePrivate("TryGetName", new Hashtable { ["Other"] = "value" }, null!)!;
+        var blankName = (bool)InvokePrivate("TryGetName", new Hashtable { ["Name"] = " " }, null!)!;
 
         Assert.Multiple(() =>
         {

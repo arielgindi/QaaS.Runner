@@ -32,9 +32,20 @@ public abstract class BasePublisher : StagedAction
     protected IterableSerializableDataIterator IterableSerializableSaveIterator = default!;
     protected SemaphoreSlim? ParallelismSemaphore;
 
-    protected BasePublisher(string name, int stage, DataFilter dataFilter, string[]? dataSourceNames,
-        string[]? dataSourcePatterns, int? parallelism, int iterations, bool loop, ulong sleepTimeMs,
-        SerializationType? serializationType, Policy? policies, ILogger logger)
+    protected BasePublisher(
+        string name,
+        int stage,
+        DataFilter dataFilter,
+        string[]? dataSourceNames,
+        string[]? dataSourcePatterns,
+        int? parallelism,
+        int iterations,
+        bool loop,
+        ulong sleepTimeMs,
+        SerializationType? serializationType,
+        Policy? policies,
+        ILogger logger
+    )
         : base(name, stage, policies, logger)
     {
         DataFilter = dataFilter;
@@ -42,7 +53,8 @@ public abstract class BasePublisher : StagedAction
         _dataSourcePatterns = dataSourcePatterns;
         _iterations = iterations;
         Parallelism = parallelism;
-        if (Parallelism != null) InitializeSemaphore(Parallelism.Value);
+        if (Parallelism != null)
+            InitializeSemaphore(Parallelism.Value);
         _loop = loop;
         _sleepTimeMs = sleepTimeMs;
         SerializationType = serializationType;
@@ -50,26 +62,46 @@ public abstract class BasePublisher : StagedAction
     }
 
     /// <summary>
-    /// Retrieves all Enumerable Generators and merges them into one Enumerable, to be used as the published data. 
+    /// Retrieves all Enumerable Generators and merges them into one Enumerable, to be used as the published data.
     /// </summary>
     /// <param name="ranSessions"> previously ran session that some generators depend on </param>
     /// <param name="dataSources"> previously ran datasources that some generators depend on </param>
-    public void InitializeIterableSerializableSaveIterator(List<SessionData?> ranSessions, List<DataSource> dataSources)
+    public void InitializeIterableSerializableSaveIterator(
+        List<SessionData?> ranSessions,
+        List<DataSource> dataSources
+    )
     {
-        GeneratedData = EnumerableExtensions.GetFilteredConfigurationObjectList(dataSources.ToImmutableList(),
+        GeneratedData = EnumerableExtensions
+            .GetFilteredConfigurationObjectList(
+                dataSources.ToImmutableList(),
                 _dataSourcePatterns,
                 RegexFilters.DataSource,
-                "DataSource List")
-            .Union(EnumerableExtensions.GetFilteredConfigurationObjectList(dataSources.ToImmutableList(),
-                _dataSourceNames,
-                NameFilters.DataSource,
-                "DataSource List")).SelectMany(ds =>
-                ds.Retrieve(ranSessions.Where(sessionData => sessionData != null).ToImmutableList()!));
-        IterableSerializableSaveIterator = new IterableSerializableDataIterator(GeneratedData, _serializer);
+                "DataSource List"
+            )
+            .Union(
+                EnumerableExtensions.GetFilteredConfigurationObjectList(
+                    dataSources.ToImmutableList(),
+                    _dataSourceNames,
+                    NameFilters.DataSource,
+                    "DataSource List"
+                )
+            )
+            .SelectMany(ds =>
+                ds.Retrieve(
+                    ranSessions.Where(sessionData => sessionData != null).ToImmutableList()!
+                )
+            );
+        IterableSerializableSaveIterator = new IterableSerializableDataIterator(
+            GeneratedData,
+            _serializer
+        );
         Logger.LogDebug(
             "Prepared publisher {ActionName}. DataSourceNames={DataSourceNames}, DataSourcePatterns={DataSourcePatterns}, Parallelism={Parallelism}",
-            Name, _dataSourceNames == null ? "<none>" : string.Join(", ", _dataSourceNames),
-            _dataSourcePatterns == null ? "<none>" : string.Join(", ", _dataSourcePatterns), Parallelism);
+            Name,
+            _dataSourceNames == null ? "<none>" : string.Join(", ", _dataSourceNames),
+            _dataSourcePatterns == null ? "<none>" : string.Join(", ", _dataSourcePatterns),
+            Parallelism
+        );
     }
 
     /// <summary>
@@ -80,8 +112,10 @@ public abstract class BasePublisher : StagedAction
     {
         var maxConnections = connectionAcceptanceValue;
         ParallelismSemaphore = new SemaphoreSlim(maxConnections, maxConnections);
-        Logger.LogDebug("Connection Acceptance Semaphore initiated with max parallelism of {MaxConnections}",
-            maxConnections);
+        Logger.LogDebug(
+            "Connection Acceptance Semaphore initiated with max parallelism of {MaxConnections}",
+            maxConnections
+        );
     }
 
     /// <summary>
@@ -104,31 +138,51 @@ public abstract class BasePublisher : StagedAction
         var data = new InternalCommunicationData<object>
         {
             Input = new List<DetailedData<object>>(),
-            InputSerializationType = GetCommunicationSerializationType()
+            InputSerializationType = GetCommunicationSerializationType(),
         };
 
         var shouldAct = true;
         Policies?.SetupChain();
         int iteration = 0;
-        while (shouldAct)
+        try
         {
-            Logger.LogDebug("Starting publisher {ActionName} iteration {Iteration}. Mode={Mode}",
-                Name, iteration + 1, _loop ? "Loop" : "FixedIterations");
-            shouldAct = Publish(data) && (_loop || _iterations > ++iteration);
-            Logger.LogDebug("Finished publisher {ActionName} iteration {Iteration}. Sleeping {SleepTimeMs} ms",
-                Name, iteration, _sleepTimeMs);
-            Thread.Sleep((int)_sleepTimeMs);
+            while (shouldAct)
+            {
+                Logger.LogDebug(
+                    "Starting publisher {ActionName} iteration {Iteration}. Mode={Mode}",
+                    Name,
+                    iteration + 1,
+                    _loop ? "Loop" : "FixedIterations"
+                );
+                shouldAct = Publish(data) && (_loop || _iterations > ++iteration);
+                Logger.LogDebug(
+                    "Finished publisher {ActionName} iteration {Iteration}. Sleeping {SleepTimeMs} ms",
+                    Name,
+                    iteration,
+                    _sleepTimeMs
+                );
+                Thread.Sleep((int)Math.Min(_sleepTimeMs, (ulong)int.MaxValue));
+            }
+        }
+        finally
+        {
+            RunningCommunicationData.Data.CompleteAdding();
         }
 
-        RunningCommunicationData.Data.CompleteAdding();
-        Logger.LogDebug("Finished publisher {ActionName}. LoggedInputCount={InputCount}",
-            Name, data.Input?.Count ?? 0);
+        Logger.LogDebug(
+            "Finished publisher {ActionName}. LoggedInputCount={InputCount}",
+            Name,
+            data.Input?.Count ?? 0
+        );
         return data;
     }
 
     /// <inheritdoc />
-    protected internal override void LogData(InternalCommunicationData<object> actData,
-        DetailedData<object> itemBeforeSerialization, InputOutputState? saveData = null)
+    protected internal override void LogData(
+        InternalCommunicationData<object> actData,
+        DetailedData<object> itemBeforeSerialization,
+        InputOutputState? saveData = null
+    )
     {
         var savedData = itemBeforeSerialization.FilterData(DataFilter);
 
@@ -141,6 +195,8 @@ public abstract class BasePublisher : StagedAction
         RunningCommunicationData.Queue.Enqueue(savedData);
     }
 
-    internal override void ExportRunningCommunicationData(InternalContext context, string sessionName)
-        => context.GetRunningSession(sessionName).Inputs!.Add(RunningCommunicationData);
+    internal override void ExportRunningCommunicationData(
+        InternalContext context,
+        string sessionName
+    ) => context.GetRunningSession(sessionName).Inputs!.Add(RunningCommunicationData);
 }

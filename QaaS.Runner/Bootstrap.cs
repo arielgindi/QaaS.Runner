@@ -18,7 +18,9 @@ namespace QaaS.Runner;
 /// </summary>
 public static class Bootstrap
 {
-    private static readonly Lazy<bool> ShouldForceDisableSendLogs = new(() => !CanUseFrameworkDefaultLoggers());
+    private static readonly Lazy<bool> ShouldForceDisableSendLogs = new(() =>
+        !CanUseFrameworkDefaultLoggers()
+    );
 
     /// <summary>
     /// Creates a new Runner instance from the supplied bootstrap inputs.
@@ -39,7 +41,8 @@ public static class Bootstrap
     /// This is the primary code-first entry point for bootstrapping the product from command-line style arguments so library startup and CLI startup stay aligned.
     /// </remarks>
     /// <qaas-docs group="Getting Started" subgroup="Bootstrap" />
-    public static Runner New<TRunner>(IEnumerable<string>? args = null) where TRunner : Runner
+    public static Runner New<TRunner>(IEnumerable<string>? args = null)
+        where TRunner : Runner
     {
         return GetRunner<TRunner>(args);
     }
@@ -50,7 +53,10 @@ public static class Bootstrap
     /// <param name="args">Command-line arguments</param>
     /// <param name="executionId">Optional execution ID</param>
     /// <returns>A <see cref="Runner" /> instance</returns>
-    internal static TRunner GetRunner<TRunner>(IEnumerable<string>? args, string? executionId = null)
+    internal static TRunner GetRunner<TRunner>(
+        IEnumerable<string>? args,
+        string? executionId = null
+    )
         where TRunner : Runner
     {
         var commandLineArgs = NormalizeArguments(args ?? []);
@@ -64,18 +70,31 @@ public static class Bootstrap
 
         var cliParserResult = ParseSupportedArguments(cliParser, commandLineArgs);
 
-        return cliParserResult
-            .MapResult(
-                (TemplateOptions options) =>
-                    new RunLoader<TRunner, TemplateOptions>(GetSafeLoggerOptions(options), executionId).GetLoadedRunner(),
-                (RunOptions options) =>
-                    new RunLoader<TRunner, RunOptions>(GetSafeLoggerOptions(options), executionId).GetLoadedRunner(),
-                (ActOptions options) =>
-                    new RunLoader<TRunner, ActOptions>(GetSafeLoggerOptions(options), executionId).GetLoadedRunner(),
-                (AssertOptions options) =>
-                    new RunLoader<TRunner, AssertOptions>(GetSafeLoggerOptions(options), executionId).GetLoadedRunner(),
-                (ExecuteOptions options) => new ExecuteLoader<TRunner>(GetSafeLoggerOptions(options)).GetLoadedRunner(),
-                errors => HandleParseError<TRunner>(cliParserResult, errors));
+        return cliParserResult.MapResult(
+            (TemplateOptions options) =>
+                new RunLoader<TRunner, TemplateOptions>(
+                    GetSafeLoggerOptions(options),
+                    executionId
+                ).GetLoadedRunner(),
+            (RunOptions options) =>
+                new RunLoader<TRunner, RunOptions>(
+                    GetSafeLoggerOptions(options),
+                    executionId
+                ).GetLoadedRunner(),
+            (ActOptions options) =>
+                new RunLoader<TRunner, ActOptions>(
+                    GetSafeLoggerOptions(options),
+                    executionId
+                ).GetLoadedRunner(),
+            (AssertOptions options) =>
+                new RunLoader<TRunner, AssertOptions>(
+                    GetSafeLoggerOptions(options),
+                    executionId
+                ).GetLoadedRunner(),
+            (ExecuteOptions options) =>
+                new ExecuteLoader<TRunner>(GetSafeLoggerOptions(options)).GetLoadedRunner(),
+            errors => HandleParseError<TRunner>(cliParserResult, errors)
+        );
     }
 
     /// <summary>
@@ -84,7 +103,8 @@ public static class Bootstrap
     internal static string[] NormalizeArguments(
         IEnumerable<string> args,
         string? appBaseDirectory = null,
-        Func<string, bool>? fileExists = null)
+        Func<string, bool>? fileExists = null
+    )
     {
         var arguments = args.ToArray();
         _ = appBaseDirectory;
@@ -106,8 +126,11 @@ public static class Bootstrap
     /// bootstrap exit code; <see cref="Runner.RunAndGetExitCode" /> sees that sentinel and exits before setup,
     /// building, execution, or teardown begin.
     /// </summary>
-    private static TRunner HandleParseError<TRunner>(ParserResult<object> cliParserResult,
-        IEnumerable<Error> errors) where TRunner : Runner
+    private static TRunner HandleParseError<TRunner>(
+        ParserResult<object> cliParserResult,
+        IEnumerable<Error> errors
+    )
+        where TRunner : Runner
     {
         var parseErrors = errors.ToArray();
         var (logger, serilogLogger, ownsSerilogLogger) = GetDefaultLoggers();
@@ -115,21 +138,32 @@ public static class Bootstrap
         if (IsVersionOnlyRequest(parseErrors))
         {
             const string qaasFrameworkAssemblyName = "QaaS.Framework.Executions";
-            logger.LogInformation($"\nQaaS Framework Versions:\n" +
-                                                   $"{qaasFrameworkAssemblyName} {GetAssemblyVersionFromName(qaasFrameworkAssemblyName)}\n");
-            return CreateBootstrapHandledRunner<TRunner>(0, logger, serilogLogger, ownsSerilogLogger);
+            logger.LogInformation(
+                $"\nQaaS Framework Versions:\n"
+                    + $"{qaasFrameworkAssemblyName} {GetAssemblyVersionFromName(qaasFrameworkAssemblyName)}\n"
+            );
+            return CreateBootstrapHandledRunner<TRunner>(
+                0,
+                logger,
+                serilogLogger,
+                ownsSerilogLogger
+            );
         }
 
         if (IsHelpOnlyRequest(parseErrors))
         {
-            return WriteHelpAndCreateBootstrapHandledRunner<TRunner>(cliParserResult, 0, logger, serilogLogger,
-                ownsSerilogLogger);
+            return WriteHelpAndCreateBootstrapHandledRunner<TRunner>(
+                cliParserResult,
+                0,
+                logger,
+                serilogLogger,
+                ownsSerilogLogger
+            );
         }
 
         WriteHelpText(cliParserResult);
         logger.LogCritical("Failed to parse/process the command line arguments");
-        return CreateBootstrapHandledRunner<TRunner>(1, logger, serilogLogger,
-            ownsSerilogLogger);
+        return CreateBootstrapHandledRunner<TRunner>(1, logger, serilogLogger, ownsSerilogLogger);
     }
 
     private static bool IsVersionOnlyRequest(IEnumerable<Error> errors)
@@ -139,16 +173,20 @@ public static class Bootstrap
 
     private static bool IsHelpOnlyRequest(IEnumerable<Error> errors)
     {
-        return errors.All(error => error.Tag is ErrorType.HelpRequestedError or ErrorType.HelpVerbRequestedError);
+        return errors.All(error =>
+            error.Tag is ErrorType.HelpRequestedError or ErrorType.HelpVerbRequestedError
+        );
     }
 
     private static bool ShouldAssumeRunMode(IReadOnlyList<string> arguments)
     {
         var firstArgument = arguments[0];
-        if (IsExecutionModeAlias(firstArgument) ||
-            IsHelpOption(firstArgument) ||
-            IsVersionOption(firstArgument) ||
-            IsOption(firstArgument))
+        if (
+            IsExecutionModeAlias(firstArgument)
+            || IsHelpOption(firstArgument)
+            || IsVersionOption(firstArgument)
+            || IsOption(firstArgument)
+        )
         {
             return false;
         }
@@ -158,17 +196,17 @@ public static class Bootstrap
 
     private static bool IsExecutionModeAlias(string argument)
     {
-        return string.Equals(argument, "run", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(argument, "act", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(argument, "assert", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(argument, "template", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(argument, "execute", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(argument, "run", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(argument, "act", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(argument, "assert", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(argument, "template", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(argument, "execute", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsHelpOption(string argument)
     {
-        return string.Equals(argument, "--help", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(argument, "-h", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(argument, "--help", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(argument, "-h", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsVersionOption(string argument)
@@ -185,8 +223,8 @@ public static class Bootstrap
             return true;
 
         var extension = Path.GetExtension(argument);
-        return extension.Equals(".yaml", StringComparison.OrdinalIgnoreCase) ||
-               extension.Equals(".yml", StringComparison.OrdinalIgnoreCase);
+        return extension.Equals(".yaml", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".yml", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsOption(string argument)
@@ -249,8 +287,10 @@ public static class Bootstrap
 
     private static bool TryParseServeResultsOption(string argument, out string? inlineValue)
     {
-        if (string.Equals(argument, "-s", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(argument, "--serve-results", StringComparison.OrdinalIgnoreCase))
+        if (
+            string.Equals(argument, "-s", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(argument, "--serve-results", StringComparison.OrdinalIgnoreCase)
+        )
         {
             inlineValue = null;
             return true;
@@ -267,15 +307,20 @@ public static class Bootstrap
         return false;
     }
 
-    private static void AppendServeResultsTokens(ICollection<string> normalizedArguments, string? folder)
+    private static void AppendServeResultsTokens(
+        ICollection<string> normalizedArguments,
+        string? folder
+    )
     {
         if (IsBooleanFalse(folder))
             return;
 
         normalizedArguments.Add("--serve-results");
-        normalizedArguments.Add(IsBooleanTrue(folder) || string.IsNullOrWhiteSpace(folder)
-            ? AssertableOptions.DefaultServeResultsFolder
-            : folder.Trim());
+        normalizedArguments.Add(
+            IsBooleanTrue(folder) || string.IsNullOrWhiteSpace(folder)
+                ? AssertableOptions.DefaultServeResultsFolder
+                : folder.Trim()
+        );
     }
 
     private static bool IsBooleanTrue(string? value)
@@ -288,59 +333,88 @@ public static class Bootstrap
         return string.Equals(value, bool.FalseString, StringComparison.OrdinalIgnoreCase);
     }
 
-    internal static TOptions GetSafeLoggerOptions<TOptions>(TOptions options, bool forceDisableSendLogs,
-        Func<TOptions, TOptions> disableSendLogs)
+    internal static TOptions GetSafeLoggerOptions<TOptions>(
+        TOptions options,
+        bool forceDisableSendLogs,
+        Func<TOptions, TOptions> disableSendLogs
+    )
     {
         return forceDisableSendLogs ? disableSendLogs(options) : options;
     }
 
     private static RunOptions GetSafeLoggerOptions(RunOptions options) =>
-        GetSafeLoggerOptions(options, ShouldForceDisableSendLogs.Value,
-            currentOptions => currentOptions with { SendLogs = false });
+        GetSafeLoggerOptions(
+            options,
+            ShouldForceDisableSendLogs.Value,
+            currentOptions => currentOptions with { SendLogs = false }
+        );
 
     private static ActOptions GetSafeLoggerOptions(ActOptions options) =>
-        GetSafeLoggerOptions(options, ShouldForceDisableSendLogs.Value,
-            currentOptions => currentOptions with { SendLogs = false });
+        GetSafeLoggerOptions(
+            options,
+            ShouldForceDisableSendLogs.Value,
+            currentOptions => currentOptions with { SendLogs = false }
+        );
 
     private static AssertOptions GetSafeLoggerOptions(AssertOptions options) =>
-        GetSafeLoggerOptions(options, ShouldForceDisableSendLogs.Value,
-            currentOptions => currentOptions with { SendLogs = false });
+        GetSafeLoggerOptions(
+            options,
+            ShouldForceDisableSendLogs.Value,
+            currentOptions => currentOptions with { SendLogs = false }
+        );
 
     private static TemplateOptions GetSafeLoggerOptions(TemplateOptions options) =>
-        GetSafeLoggerOptions(options, ShouldForceDisableSendLogs.Value,
-            currentOptions => currentOptions with { SendLogs = false });
+        GetSafeLoggerOptions(
+            options,
+            ShouldForceDisableSendLogs.Value,
+            currentOptions => currentOptions with { SendLogs = false }
+        );
 
     private static ExecuteOptions GetSafeLoggerOptions(ExecuteOptions options) =>
-        GetSafeLoggerOptions(options, ShouldForceDisableSendLogs.Value,
-            currentOptions => currentOptions with { SendLogs = false });
+        GetSafeLoggerOptions(
+            options,
+            ShouldForceDisableSendLogs.Value,
+            currentOptions => currentOptions with { SendLogs = false }
+        );
 
     // Create a custom runner using activator to dynamically get a new instance of any implementation of TRunner
-    internal static TRunner CreateRunner<TRunner>(ILifetimeScope scope, List<ExecutionBuilder> executionBuilders,
-        ILogger logger, Serilog.ILogger serilogLogger, bool emptyResults = false, bool serveResults = false,
-        bool disposeSerilogLogger = true)
+    internal static TRunner CreateRunner<TRunner>(
+        ILifetimeScope scope,
+        List<ExecutionBuilder> executionBuilders,
+        ILogger logger,
+        Serilog.ILogger serilogLogger,
+        bool emptyResults = false,
+        bool serveResults = false,
+        bool disposeSerilogLogger = true
+    )
         where TRunner : Runner
     {
-        var runner = (TRunner)Activator.CreateInstance(
-            typeof(TRunner),
-            scope,
-            executionBuilders,
-            logger,
-            serilogLogger,
-            emptyResults,
-            serveResults
-        )!;
+        var runner = (TRunner)
+            Activator.CreateInstance(
+                typeof(TRunner),
+                scope,
+                executionBuilders,
+                logger,
+                serilogLogger,
+                emptyResults,
+                serveResults
+            )!;
         runner.WithSerilogLoggerDisposal(disposeSerilogLogger);
         return runner;
     }
 
     private static string GetAssemblyVersionFromName(string assemblyName)
     {
-        return Assembly.Load(assemblyName)
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
+        return Assembly
+            .Load(assemblyName)
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
+            .InformationalVersion;
     }
 
-    internal static bool CanUseFrameworkDefaultLoggers(Func<ILogger> loggerAccessor,
-        Func<Serilog.ILogger> serilogLoggerAccessor)
+    internal static bool CanUseFrameworkDefaultLoggers(
+        Func<ILogger> loggerAccessor,
+        Func<Serilog.ILogger> serilogLoggerAccessor
+    )
     {
         try
         {
@@ -348,7 +422,8 @@ public static class Bootstrap
             _ = serilogLoggerAccessor();
             return true;
         }
-        catch (Exception exception) when (exception is TypeInitializationException or UriFormatException)
+        catch (Exception exception)
+            when (exception is TypeInitializationException or UriFormatException)
         {
             return false;
         }
@@ -358,23 +433,36 @@ public static class Bootstrap
     {
         return CanUseFrameworkDefaultLoggers(
             () => Framework.Executions.ExecutionLogging.DefaultLogger,
-            () => Framework.Executions.ExecutionLogging.DefaultSerilogLogger);
+            () => Framework.Executions.ExecutionLogging.DefaultSerilogLogger
+        );
     }
 
-    internal static (ILogger logger, Serilog.ILogger serilogLogger, bool ownsSerilogLogger) GetDefaultLoggers(
-        bool forceDisableSendLogs)
+    internal static (
+        ILogger logger,
+        Serilog.ILogger serilogLogger,
+        bool ownsSerilogLogger
+    ) GetDefaultLoggers(bool forceDisableSendLogs)
     {
         if (!forceDisableSendLogs)
-            return (Framework.Executions.ExecutionLogging.DefaultLogger, Framework.Executions.ExecutionLogging.DefaultSerilogLogger,
-                false);
+            return (
+                Framework.Executions.ExecutionLogging.DefaultLogger,
+                Framework.Executions.ExecutionLogging.DefaultSerilogLogger,
+                false
+            );
 
         var fallbackSerilogLogger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
-        return (new SerilogLoggerFactory(fallbackSerilogLogger).CreateLogger("BootstrapFallbackLogger"),
+        return (
+            new SerilogLoggerFactory(fallbackSerilogLogger).CreateLogger("BootstrapFallbackLogger"),
             fallbackSerilogLogger,
-            true);
+            true
+        );
     }
 
-    private static (ILogger logger, Serilog.ILogger serilogLogger, bool ownsSerilogLogger) GetDefaultLoggers()
+    private static (
+        ILogger logger,
+        Serilog.ILogger serilogLogger,
+        bool ownsSerilogLogger
+    ) GetDefaultLoggers()
     {
         return GetDefaultLoggers(ShouldForceDisableSendLogs.Value);
     }
@@ -395,7 +483,8 @@ public static class Bootstrap
     private static TRunner CreateDefaultRunner<TRunner>(
         ILogger? logger = null,
         Serilog.ILogger? serilogLogger = null,
-        bool? ownsSerilogLogger = null)
+        bool? ownsSerilogLogger = null
+    )
         where TRunner : Runner
     {
         (ILogger logger, Serilog.ILogger serilogLogger, bool ownsSerilogLogger) resolvedLoggers;
@@ -413,13 +502,23 @@ public static class Bootstrap
             [],
             resolvedLoggers.logger,
             resolvedLoggers.serilogLogger,
-            disposeSerilogLogger: resolvedLoggers.ownsSerilogLogger);
+            disposeSerilogLogger: resolvedLoggers.ownsSerilogLogger
+        );
     }
 
-    private static ParserResult<object> ParseSupportedArguments(Parser cliParser, IEnumerable<string> args)
+    private static ParserResult<object> ParseSupportedArguments(
+        Parser cliParser,
+        IEnumerable<string> args
+    )
     {
-        return cliParser.ParseArguments<RunOptions, ActOptions, AssertOptions, TemplateOptions, ExecuteOptions, int>(
-            args);
+        return cliParser.ParseArguments<
+            RunOptions,
+            ActOptions,
+            AssertOptions,
+            TemplateOptions,
+            ExecuteOptions,
+            int
+        >(args);
     }
 
     private static void WriteHelpText(ParserResult<object> cliParserResult)
@@ -430,15 +529,15 @@ public static class Bootstrap
     private static string BuildHelpTextWithGuidance(ParserResult<object> cliParserResult)
     {
         return string.Join(
-                   Environment.NewLine,
-                   [
-                       HelpTextBuilder.BuildHelpText(cliParserResult).ToString().TrimEnd(),
-                       string.Empty,
-                       "No-args guidance:",
-                       "  Empty arguments only work for code-only hosts that choose a no-args path in Program.cs.",
-                       "  If a YAML file is part of the scenario, pass it explicitly: dotnet run -- run <config-file>."
-                   ]) +
-               Environment.NewLine;
+                Environment.NewLine,
+                [
+                    HelpTextBuilder.BuildHelpText(cliParserResult).ToString().TrimEnd(),
+                    string.Empty,
+                    "No-args guidance:",
+                    "  Empty arguments only work for code-only hosts that choose a no-args path in Program.cs.",
+                    "  If a YAML file is part of the scenario, pass it explicitly: dotnet run -- run <config-file>.",
+                ]
+            ) + Environment.NewLine;
     }
 
     private static TRunner WriteHelpAndCreateBootstrapHandledRunner<TRunner>(
@@ -446,11 +545,17 @@ public static class Bootstrap
         int exitCode = 0,
         ILogger? logger = null,
         Serilog.ILogger? serilogLogger = null,
-        bool? ownsSerilogLogger = null)
+        bool? ownsSerilogLogger = null
+    )
         where TRunner : Runner
     {
         WriteHelpText(cliParserResult);
-        return CreateBootstrapHandledRunner<TRunner>(exitCode, logger, serilogLogger, ownsSerilogLogger);
+        return CreateBootstrapHandledRunner<TRunner>(
+            exitCode,
+            logger,
+            serilogLogger,
+            ownsSerilogLogger
+        );
     }
 
     /// <summary>
@@ -462,10 +567,12 @@ public static class Bootstrap
         int exitCode,
         ILogger? logger = null,
         Serilog.ILogger? serilogLogger = null,
-        bool? ownsSerilogLogger = null)
+        bool? ownsSerilogLogger = null
+    )
         where TRunner : Runner
     {
-        return (TRunner)CreateDefaultRunner<TRunner>(logger, serilogLogger, ownsSerilogLogger)
-            .WithBootstrapHandledExitCode(exitCode);
+        return (TRunner)
+            CreateDefaultRunner<TRunner>(logger, serilogLogger, ownsSerilogLogger)
+                .WithBootstrapHandledExitCode(exitCode);
     }
 }

@@ -19,9 +19,7 @@ public class AllureWrapper
     /// <summary>
     ///     Constructor
     /// </summary>
-    public AllureWrapper()
-    {
-    }
+    public AllureWrapper() { }
 
     /// <summary>
     ///     Cleans the allure results directory
@@ -41,7 +39,13 @@ public class AllureWrapper
 
         foreach (var directory in Directory.EnumerateDirectories(resultsDirectory))
         {
-            if (string.Equals(Path.GetFileName(directory), HistoryDirectoryName, StringComparison.OrdinalIgnoreCase))
+            if (
+                string.Equals(
+                    Path.GetFileName(directory),
+                    HistoryDirectoryName,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
                 continue;
 
             Directory.Delete(directory, true);
@@ -53,8 +57,10 @@ public class AllureWrapper
     /// <summary>
     ///     Automatically serves the test results in a human-readable manner
     /// </summary>
-    public virtual void ServeTestResults(string allureRunnablePath = DefaultAllureRunnablePath,
-        string? resultsDirectoryName = null)
+    public virtual void ServeTestResults(
+        string allureRunnablePath = DefaultAllureRunnablePath,
+        string? resultsDirectoryName = null
+    )
     {
         var resolvedAllureRunnablePath = ResolveAllureRunnablePath(allureRunnablePath);
         var serveTargetDirectory = ResolveServeTargetDirectory(resultsDirectoryName);
@@ -63,7 +69,9 @@ public class AllureWrapper
         if (ShouldGenerateReportBeforeOpen(serveTargetDirectory))
         {
             var generatedReportDirectory = ResolveGeneratedReportDirectory(serveTargetDirectory);
-            RunProcess(CreateGenerateProcessStartInfo(resolvedAllureRunnablePath, generatedReportDirectory));
+            RunProcess(
+                CreateGenerateProcessStartInfo(resolvedAllureRunnablePath, generatedReportDirectory)
+            );
             CopyGeneratedHistoryToResultsDirectory(generatedReportDirectory);
             openTargetDirectory = generatedReportDirectory;
         }
@@ -91,33 +99,46 @@ public class AllureWrapper
     /// </summary>
     protected virtual Process StartProcess(ProcessStartInfo startInfo)
     {
-        return Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start Allure serve process.");
+        return Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Failed to start Allure serve process.");
     }
 
     /// <summary>
     ///     Builds the shell command used to refresh the report history in the generated report directory.
     /// </summary>
-    protected virtual ProcessStartInfo CreateGenerateProcessStartInfo(string allureRunnablePath,
-        string generatedReportDirectory)
+    protected virtual ProcessStartInfo CreateGenerateProcessStartInfo(
+        string allureRunnablePath,
+        string generatedReportDirectory
+    )
     {
-        return CreateAllureProcessStartInfo(allureRunnablePath,
-            $"generate {QuoteForShell(ResolveResultsDirectory())} -o {QuoteForShell(generatedReportDirectory)} --clean");
+        return CreateAllureProcessStartInfo(
+            allureRunnablePath,
+            $"generate {QuoteForShell(ResolveResultsDirectory())} -o {QuoteForShell(generatedReportDirectory)} --clean"
+        );
     }
 
     /// <summary>
     ///     Builds the shell command used to launch <c>allure open</c> against the generated report directory.
     /// </summary>
-    protected virtual ProcessStartInfo CreateOpenProcessStartInfo(string allureRunnablePath,
-        string reportDirectory)
+    protected virtual ProcessStartInfo CreateOpenProcessStartInfo(
+        string allureRunnablePath,
+        string reportDirectory
+    )
     {
-        return CreateAllureProcessStartInfo(allureRunnablePath, $"open {QuoteForShell(reportDirectory)}");
+        return CreateAllureProcessStartInfo(
+            allureRunnablePath,
+            $"open {QuoteForShell(reportDirectory)}"
+        );
     }
 
     /// <summary>
     ///     Builds the shell command used to launch an Allure CLI subcommand. Empty or whitespace inputs
     ///     intentionally fall back to the default executable name so callers do not have to special-case it.
     /// </summary>
-    protected virtual ProcessStartInfo CreateAllureProcessStartInfo(string allureRunnablePath, string subCommand)
+    protected virtual ProcessStartInfo CreateAllureProcessStartInfo(
+        string allureRunnablePath,
+        string subCommand
+    )
     {
         var resolvedAllureRunnablePath = ResolveAllureRunnablePath(allureRunnablePath);
 
@@ -130,11 +151,14 @@ public class AllureWrapper
                 Arguments = $"/c {resolvedAllureRunnablePath} {subCommand}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                UseShellExecute = false
+                UseShellExecute = false,
             };
         }
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        if (
+            RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+            || RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+        )
         {
             return new ProcessStartInfo
             {
@@ -143,7 +167,7 @@ public class AllureWrapper
                 Arguments = $"-lc \"{resolvedAllureRunnablePath} {subCommand}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                UseShellExecute = false
+                UseShellExecute = false,
             };
         }
 
@@ -165,7 +189,10 @@ public class AllureWrapper
     /// <returns>The absolute Allure results directory path.</returns>
     protected virtual string ResolveResultsDirectory()
     {
-        return Path.GetFullPath(AllureLifecycle.Instance.ResultsDirectory, ResolveWorkingDirectory());
+        return Path.GetFullPath(
+            AllureLifecycle.Instance.ResultsDirectory,
+            ResolveWorkingDirectory()
+        );
     }
 
     /// <summary>
@@ -175,7 +202,8 @@ public class AllureWrapper
     protected virtual string ResolveReportDirectory()
     {
         var resultsDirectory = ResolveResultsDirectory();
-        var reportParentDirectory = Directory.GetParent(resultsDirectory)?.FullName ?? ResolveWorkingDirectory();
+        var reportParentDirectory =
+            Directory.GetParent(resultsDirectory)?.FullName ?? ResolveWorkingDirectory();
         return Path.Combine(reportParentDirectory, "allure-report");
     }
 
@@ -185,7 +213,10 @@ public class AllureWrapper
     /// <param name="generatedReportDirectory">The generated report directory that may contain a history folder.</param>
     protected virtual void CopyGeneratedHistoryToResultsDirectory(string generatedReportDirectory)
     {
-        var generatedHistoryDirectory = Path.Combine(generatedReportDirectory, HistoryDirectoryName);
+        var generatedHistoryDirectory = Path.Combine(
+            generatedReportDirectory,
+            HistoryDirectoryName
+        );
         if (!Directory.Exists(generatedHistoryDirectory))
             return;
 
@@ -212,7 +243,8 @@ public class AllureWrapper
     /// </summary>
     protected virtual bool ShouldGenerateReportBeforeOpen(string serveTargetDirectory)
     {
-        return PathsEqual(serveTargetDirectory, ResolveResultsDirectory()) || !Directory.Exists(serveTargetDirectory);
+        return PathsEqual(serveTargetDirectory, ResolveResultsDirectory())
+            || !Directory.Exists(serveTargetDirectory);
     }
 
     /// <summary>
@@ -246,10 +278,7 @@ public class AllureWrapper
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
 
-        return string.Equals(
-            Path.GetFullPath(leftPath),
-            Path.GetFullPath(rightPath),
-            comparison);
+        return string.Equals(Path.GetFullPath(leftPath), Path.GetFullPath(rightPath), comparison);
     }
 
     /// <summary>
@@ -279,7 +308,10 @@ public class AllureWrapper
 
         foreach (var sourceSubDirectory in Directory.EnumerateDirectories(sourceDirectory))
         {
-            var destinationSubDirectory = Path.Combine(destinationDirectory, Path.GetFileName(sourceSubDirectory));
+            var destinationSubDirectory = Path.Combine(
+                destinationDirectory,
+                Path.GetFileName(sourceSubDirectory)
+            );
             CopyDirectory(sourceSubDirectory, destinationSubDirectory);
         }
     }

@@ -24,23 +24,36 @@ public static class ConfigurationTemplateRenderer
         IEnumerable<KeyValuePair<string, object?>>? fallbackSections = null,
         IEnumerable<string>? sectionOrder = null,
         ISet<string>? includedSessionNames = null,
-        IDictionary<string, IReadOnlyList<string>>? assertionStatusesToReport = null)
+        IDictionary<string, IReadOnlyList<string>>? assertionStatusesToReport = null
+    )
     {
         var orderedSections = (sectionOrder ?? Constants.ConfigurationSectionNames).ToList();
         var configuredPaths = GetConfiguredPaths(rootConfiguration);
-        var rootSections = rootConfiguration.GetDictionaryFromConfiguration()
-            .ToDictionary(section => section.Key, section => NormalizeValue(section.Value), StringComparer.Ordinal);
-        var fallbackSectionMap = (fallbackSections ?? [])
+        var rootSections = rootConfiguration
+            .GetDictionaryFromConfiguration()
             .ToDictionary(
                 section => section.Key,
-                section => SerializeValue(section.Value, section.Key, null, configuredPaths),
-                StringComparer.Ordinal);
+                section => NormalizeValue(section.Value),
+                StringComparer.Ordinal
+            );
+        var fallbackSectionMap = (fallbackSections ?? []).ToDictionary(
+            section => section.Key,
+            section => SerializeValue(section.Value, section.Key, null, configuredPaths),
+            StringComparer.Ordinal
+        );
         var assertionNames = assertionStatusesToReport?.Keys.ToHashSet(StringComparer.Ordinal);
 
         var serializedSections = new Dictionary<string, object?>(StringComparer.Ordinal);
         foreach (var sectionName in orderedSections)
         {
-            if (!TryGetSectionValue(sectionName, fallbackSectionMap, rootSections, out var serializedValue))
+            if (
+                !TryGetSectionValue(
+                    sectionName,
+                    fallbackSectionMap,
+                    rootSections,
+                    out var serializedValue
+                )
+            )
             {
                 continue;
             }
@@ -50,8 +63,9 @@ public static class ConfigurationTemplateRenderer
                 "Sessions" => FilterNamedSection(serializedValue, includedSessionNames),
                 "Assertions" => AugmentAssertionStatuses(
                     FilterNamedSection(serializedValue, assertionNames),
-                    assertionStatusesToReport),
-                _ => serializedValue
+                    assertionStatusesToReport
+                ),
+                _ => serializedValue,
             };
 
             if (serializedValue == null || IsEmptyContainer(serializedValue))
@@ -72,9 +86,14 @@ public static class ConfigurationTemplateRenderer
         string sectionName,
         IReadOnlyDictionary<string, object?> fallbackSections,
         IReadOnlyDictionary<string, object?> rootSections,
-        out object? sectionValue)
+        out object? sectionValue
+    )
     {
-        var hasFallbackValue = TryGetAliasedValue(sectionName, fallbackSections, out var fallbackValue);
+        var hasFallbackValue = TryGetAliasedValue(
+            sectionName,
+            fallbackSections,
+            out var fallbackValue
+        );
         var hasRootValue = TryGetAliasedValue(sectionName, rootSections, out var rootValue);
         if (hasFallbackValue)
         {
@@ -94,7 +113,8 @@ public static class ConfigurationTemplateRenderer
     private static bool TryGetAliasedValue(
         string sectionName,
         IReadOnlyDictionary<string, object?> sections,
-        out object? sectionValue)
+        out object? sectionValue
+    )
     {
         foreach (var key in ResolveSectionAliases(sectionName))
         {
@@ -128,7 +148,8 @@ public static class ConfigurationTemplateRenderer
     private static void CollectConfiguredPaths(
         IConfiguration configuration,
         string currentPath,
-        ISet<string> configuredPaths)
+        ISet<string> configuredPaths
+    )
     {
         var children = configuration.GetChildren().ToList();
         if (children.Count == 0)
@@ -154,7 +175,8 @@ public static class ConfigurationTemplateRenderer
         object? value,
         string currentPath,
         PropertyInfo? sourceProperty,
-        ISet<string> configuredPaths)
+        ISet<string> configuredPaths
+    )
     {
         if (ShouldSkipValue(sourceProperty, value, currentPath, configuredPaths))
         {
@@ -167,18 +189,24 @@ public static class ConfigurationTemplateRenderer
             IConfiguration configuration => SerializeDictionary(
                 configuration.GetDictionaryFromConfiguration(),
                 currentPath,
-                configuredPaths),
+                configuredPaths
+            ),
             IDictionary dictionary => SerializeDictionary(dictionary, currentPath, configuredPaths),
-            IEnumerable enumerable when value is not string => SerializeEnumerable(enumerable, currentPath, configuredPaths),
+            IEnumerable enumerable when value is not string => SerializeEnumerable(
+                enumerable,
+                currentPath,
+                configuredPaths
+            ),
             object nonNullValue when IsScalar(nonNullValue.GetType()) => nonNullValue,
-            object nonNullObject => SerializeObject(nonNullObject, currentPath, configuredPaths)
+            object nonNullObject => SerializeObject(nonNullObject, currentPath, configuredPaths),
         };
     }
 
     private static Dictionary<string, object?> SerializeDictionary(
         IDictionary dictionary,
         string currentPath,
-        ISet<string> configuredPaths)
+        ISet<string> configuredPaths
+    )
     {
         var serializedDictionary = new Dictionary<string, object?>(StringComparer.Ordinal);
         foreach (DictionaryEntry item in dictionary)
@@ -213,15 +241,16 @@ public static class ConfigurationTemplateRenderer
             return sourceValue;
         }
 
-        if (sourceValue is IDictionary sourceDictionary &&
-            renderedValue is IList renderedList &&
-            IsNumericKeyDictionary(sourceDictionary))
+        if (
+            sourceValue is IDictionary sourceDictionary
+            && renderedValue is IList renderedList
+            && IsNumericKeyDictionary(sourceDictionary)
+        )
         {
             return RehydrateSparseIndexedDictionary(sourceDictionary, renderedList);
         }
 
-        if (sourceValue is IDictionary sourceObject &&
-            renderedValue is IDictionary renderedObject)
+        if (sourceValue is IDictionary sourceObject && renderedValue is IDictionary renderedObject)
         {
             return MergeDictionariesPreservingSourceStructure(sourceObject, renderedObject);
         }
@@ -232,7 +261,8 @@ public static class ConfigurationTemplateRenderer
     private static List<object?> SerializeEnumerable(
         IEnumerable enumerable,
         string currentPath,
-        ISet<string> configuredPaths)
+        ISet<string> configuredPaths
+    )
     {
         var serializedList = new List<object?>();
         var itemIndex = 0;
@@ -256,7 +286,8 @@ public static class ConfigurationTemplateRenderer
     /// </summary>
     private static Dictionary<string, object?> MergeDictionariesPreservingSourceStructure(
         IDictionary sourceDictionary,
-        IDictionary renderedDictionary)
+        IDictionary renderedDictionary
+    )
     {
         var merged = new Dictionary<string, object?>(StringComparer.Ordinal);
         var renderedEntries = GetDictionaryEntries(renderedDictionary)
@@ -264,7 +295,10 @@ public static class ConfigurationTemplateRenderer
 
         foreach (var sourceEntry in GetDictionaryEntries(sourceDictionary))
         {
-            merged[sourceEntry.Key] = renderedEntries.TryGetValue(sourceEntry.Key, out var renderedValue)
+            merged[sourceEntry.Key] = renderedEntries.TryGetValue(
+                sourceEntry.Key,
+                out var renderedValue
+            )
                 ? PreserveSourceStructure(sourceEntry.Value, renderedValue)
                 : sourceEntry.Value;
         }
@@ -285,22 +319,28 @@ public static class ConfigurationTemplateRenderer
     /// </summary>
     private static Dictionary<string, object?> RehydrateSparseIndexedDictionary(
         IDictionary sourceDictionary,
-        IList renderedList)
+        IList renderedList
+    )
     {
         var sourceEntries = GetDictionaryEntries(sourceDictionary).ToList();
         var renderedItems = renderedList.Cast<object?>().ToList();
         var matchedRenderedIndices = MatchRenderedItemsByName(sourceEntries, renderedItems);
         var consumedRenderedIndices = matchedRenderedIndices.Values.ToHashSet();
-        var remainingRenderedIndices = new Queue<int>(Enumerable.Range(0, renderedItems.Count)
-            .Where(index => !consumedRenderedIndices.Contains(index)));
+        var remainingRenderedIndices = new Queue<int>(
+            Enumerable
+                .Range(0, renderedItems.Count)
+                .Where(index => !consumedRenderedIndices.Contains(index))
+        );
         var rehydrated = new Dictionary<string, object?>(StringComparer.Ordinal);
 
         foreach (var sourceEntry in sourceEntries)
         {
             if (matchedRenderedIndices.TryGetValue(sourceEntry.Key, out var renderedIndex))
             {
-                rehydrated[sourceEntry.Key] =
-                    PreserveSourceStructure(sourceEntry.Value, renderedItems[renderedIndex]);
+                rehydrated[sourceEntry.Key] = PreserveSourceStructure(
+                    sourceEntry.Value,
+                    renderedItems[renderedIndex]
+                );
                 continue;
             }
 
@@ -310,7 +350,10 @@ public static class ConfigurationTemplateRenderer
             }
 
             renderedIndex = remainingRenderedIndices.Dequeue();
-            rehydrated[sourceEntry.Key] = PreserveSourceStructure(sourceEntry.Value, renderedItems[renderedIndex]);
+            rehydrated[sourceEntry.Key] = PreserveSourceStructure(
+                sourceEntry.Value,
+                renderedItems[renderedIndex]
+            );
         }
 
         var nextSparseIndex = sourceEntries
@@ -321,7 +364,9 @@ public static class ConfigurationTemplateRenderer
         {
             nextSparseIndex++;
             var renderedIndex = remainingRenderedIndices.Dequeue();
-            rehydrated[nextSparseIndex.ToString(CultureInfo.InvariantCulture)] = renderedItems[renderedIndex];
+            rehydrated[nextSparseIndex.ToString(CultureInfo.InvariantCulture)] = renderedItems[
+                renderedIndex
+            ];
         }
 
         return rehydrated;
@@ -333,7 +378,8 @@ public static class ConfigurationTemplateRenderer
     /// </summary>
     private static Dictionary<string, int> MatchRenderedItemsByName(
         IReadOnlyList<KeyValuePair<string, object?>> sourceEntries,
-        IReadOnlyList<object?> renderedItems)
+        IReadOnlyList<object?> renderedItems
+    )
     {
         var matchedIndices = new Dictionary<string, int>(StringComparer.Ordinal);
         var consumedRenderedIndices = new HashSet<int>();
@@ -347,9 +393,11 @@ public static class ConfigurationTemplateRenderer
 
             for (var renderedIndex = 0; renderedIndex < renderedItems.Count; renderedIndex++)
             {
-                if (consumedRenderedIndices.Contains(renderedIndex) ||
-                    !TryGetItemName(renderedItems[renderedIndex], out var renderedName) ||
-                    !string.Equals(sourceName, renderedName, StringComparison.Ordinal))
+                if (
+                    consumedRenderedIndices.Contains(renderedIndex)
+                    || !TryGetItemName(renderedItems[renderedIndex], out var renderedName)
+                    || !string.Equals(sourceName, renderedName, StringComparison.Ordinal)
+                )
                 {
                     continue;
                 }
@@ -385,7 +433,9 @@ public static class ConfigurationTemplateRenderer
     /// <summary>
     /// Enumerates dictionary entries while skipping blank keys.
     /// </summary>
-    private static IEnumerable<KeyValuePair<string, object?>> GetDictionaryEntries(IDictionary dictionary)
+    private static IEnumerable<KeyValuePair<string, object?>> GetDictionaryEntries(
+        IDictionary dictionary
+    )
     {
         foreach (DictionaryEntry entry in dictionary)
         {
@@ -402,10 +452,12 @@ public static class ConfigurationTemplateRenderer
     private static Dictionary<string, object?> SerializeObject(
         object value,
         string currentPath,
-        ISet<string> configuredPaths)
+        ISet<string> configuredPaths
+    )
     {
         var serializedObject = new Dictionary<string, object?>(StringComparer.Ordinal);
-        var properties = value.GetType()
+        var properties = value
+            .GetType()
             .GetProperties(ConfigPropertyBindingFlags)
             .Where(ShouldSerializeProperty)
             .OrderBy(property => property.MetadataToken);
@@ -414,7 +466,12 @@ public static class ConfigurationTemplateRenderer
         {
             var propertyPath = $"{currentPath}:{property.Name}";
             var propertyValue = property.GetValue(value);
-            var serializedValue = SerializeValue(propertyValue, propertyPath, property, configuredPaths);
+            var serializedValue = SerializeValue(
+                propertyValue,
+                propertyPath,
+                property,
+                configuredPaths
+            );
             if (serializedValue == null || IsEmptyContainer(serializedValue))
             {
                 continue;
@@ -444,9 +501,11 @@ public static class ConfigurationTemplateRenderer
             return false;
         }
 
-        if (typeof(Delegate).IsAssignableFrom(property.PropertyType) ||
-            property.PropertyType.IsPointer ||
-            property.PropertyType.IsByRef)
+        if (
+            typeof(Delegate).IsAssignableFrom(property.PropertyType)
+            || property.PropertyType.IsPointer
+            || property.PropertyType.IsByRef
+        )
         {
             return false;
         }
@@ -458,7 +517,8 @@ public static class ConfigurationTemplateRenderer
         PropertyInfo? property,
         object? value,
         string currentPath,
-        ISet<string> configuredPaths)
+        ISet<string> configuredPaths
+    )
     {
         if (value == null)
         {
@@ -480,18 +540,27 @@ public static class ConfigurationTemplateRenderer
             return false;
         }
 
-        if (property.GetCustomAttributesData().Any(attribute =>
-                attribute.AttributeType.FullName == typeof(System.ComponentModel.DefaultValueAttribute).FullName) &&
-            IsDefaultValue(property, value) &&
-            !IsExplicitlyConfigured(currentPath, configuredPaths))
+        if (
+            property
+                .GetCustomAttributesData()
+                .Any(attribute =>
+                    attribute.AttributeType.FullName
+                    == typeof(System.ComponentModel.DefaultValueAttribute).FullName
+                )
+            && IsDefaultValue(property, value)
+            && !IsExplicitlyConfigured(currentPath, configuredPaths)
+        )
         {
             return true;
         }
 
-        var propertyType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
-        if (propertyType.IsValueType &&
-            Equals(value, Activator.CreateInstance(propertyType)) &&
-            !IsExplicitlyConfigured(currentPath, configuredPaths))
+        var propertyType =
+            Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+        if (
+            propertyType.IsValueType
+            && Equals(value, Activator.CreateInstance(propertyType))
+            && !IsExplicitlyConfigured(currentPath, configuredPaths)
+        )
         {
             return true;
         }
@@ -504,15 +573,18 @@ public static class ConfigurationTemplateRenderer
         var defaultValueAttribute = property
             .GetCustomAttributes(inherit: true)
             .FirstOrDefault(attribute =>
-                attribute.GetType().FullName == typeof(System.ComponentModel.DefaultValueAttribute).FullName);
+                attribute.GetType().FullName
+                == typeof(System.ComponentModel.DefaultValueAttribute).FullName
+            );
         if (defaultValueAttribute == null)
         {
             return false;
         }
 
-        var defaultValue = defaultValueAttribute.GetType()
-            .GetProperty("Value", BindingFlags.Public | BindingFlags.Instance)?
-            .GetValue(defaultValueAttribute);
+        var defaultValue = defaultValueAttribute
+            .GetType()
+            .GetProperty("Value", BindingFlags.Public | BindingFlags.Instance)
+            ?.GetValue(defaultValueAttribute);
         if (defaultValue == null)
         {
             return value == null;
@@ -534,8 +606,10 @@ public static class ConfigurationTemplateRenderer
 
     private static bool IsExplicitlyConfigured(string currentPath, ISet<string> configuredPaths)
     {
-        return configuredPaths.Contains(currentPath) ||
-               configuredPaths.Any(path => path.StartsWith($"{currentPath}:", StringComparison.Ordinal));
+        return configuredPaths.Contains(currentPath)
+            || configuredPaths.Any(path =>
+                path.StartsWith($"{currentPath}:", StringComparison.Ordinal)
+            );
     }
 
     private static bool ShouldAlwaysInclude(PropertyInfo property)
@@ -550,7 +624,7 @@ public static class ConfigurationTemplateRenderer
             null => null,
             IDictionary dictionary => NormalizeDictionary(dictionary),
             IEnumerable enumerable when value is not string => NormalizeEnumerable(enumerable),
-            _ => value
+            _ => value,
         };
     }
 
@@ -599,7 +673,10 @@ public static class ConfigurationTemplateRenderer
             return FilterNamedListSection(sectionList, includedNames);
         }
 
-        if (sectionValue is IDictionary sectionDictionary && IsNumericKeyDictionary(sectionDictionary))
+        if (
+            sectionValue is IDictionary sectionDictionary
+            && IsNumericKeyDictionary(sectionDictionary)
+        )
         {
             return FilterNamedDictionarySection(sectionDictionary, includedNames);
         }
@@ -610,7 +687,10 @@ public static class ConfigurationTemplateRenderer
     /// <summary>
     /// Filters list-based named sections while preserving item order.
     /// </summary>
-    private static List<object?> FilterNamedListSection(IList sectionList, ISet<string> includedNames)
+    private static List<object?> FilterNamedListSection(
+        IList sectionList,
+        ISet<string> includedNames
+    )
     {
         var filteredItems = new List<object?>();
         foreach (var item in sectionList)
@@ -634,12 +714,16 @@ public static class ConfigurationTemplateRenderer
     /// </summary>
     private static Dictionary<string, object?> FilterNamedDictionarySection(
         IDictionary sectionDictionary,
-        ISet<string> includedNames)
+        ISet<string> includedNames
+    )
     {
         var filteredItems = new Dictionary<string, object?>(StringComparer.Ordinal);
         foreach (var entry in GetDictionaryEntries(sectionDictionary))
         {
-            if (entry.Value is not IDictionary dictionary || !TryGetName(dictionary, out var itemName))
+            if (
+                entry.Value is not IDictionary dictionary
+                || !TryGetName(dictionary, out var itemName)
+            )
             {
                 continue;
             }
@@ -655,7 +739,8 @@ public static class ConfigurationTemplateRenderer
 
     private static object? AugmentAssertionStatuses(
         object? sectionValue,
-        IDictionary<string, IReadOnlyList<string>>? assertionStatusesToReport)
+        IDictionary<string, IReadOnlyList<string>>? assertionStatusesToReport
+    )
     {
         if (assertionStatusesToReport == null)
         {
@@ -667,7 +752,10 @@ public static class ConfigurationTemplateRenderer
             return AugmentAssertionStatusList(assertionList, assertionStatusesToReport);
         }
 
-        if (sectionValue is IDictionary assertionDictionary && IsNumericKeyDictionary(assertionDictionary))
+        if (
+            sectionValue is IDictionary assertionDictionary
+            && IsNumericKeyDictionary(assertionDictionary)
+        )
         {
             return AugmentAssertionStatusDictionary(assertionDictionary, assertionStatusesToReport);
         }
@@ -680,7 +768,8 @@ public static class ConfigurationTemplateRenderer
     /// </summary>
     private static List<object?> AugmentAssertionStatusList(
         IList assertionList,
-        IDictionary<string, IReadOnlyList<string>> assertionStatusesToReport)
+        IDictionary<string, IReadOnlyList<string>> assertionStatusesToReport
+    )
     {
         var updatedAssertions = new List<object?>();
         foreach (var item in assertionList)
@@ -696,12 +785,16 @@ public static class ConfigurationTemplateRenderer
     /// </summary>
     private static Dictionary<string, object?> AugmentAssertionStatusDictionary(
         IDictionary assertionDictionary,
-        IDictionary<string, IReadOnlyList<string>> assertionStatusesToReport)
+        IDictionary<string, IReadOnlyList<string>> assertionStatusesToReport
+    )
     {
         var updatedAssertions = new Dictionary<string, object?>(StringComparer.Ordinal);
         foreach (var entry in GetDictionaryEntries(assertionDictionary))
         {
-            updatedAssertions[entry.Key] = UpdateAssertionStatuses(entry.Value, assertionStatusesToReport);
+            updatedAssertions[entry.Key] = UpdateAssertionStatuses(
+                entry.Value,
+                assertionStatusesToReport
+            );
         }
 
         return updatedAssertions;
@@ -712,7 +805,8 @@ public static class ConfigurationTemplateRenderer
     /// </summary>
     private static object? UpdateAssertionStatuses(
         object? item,
-        IDictionary<string, IReadOnlyList<string>> assertionStatusesToReport)
+        IDictionary<string, IReadOnlyList<string>> assertionStatusesToReport
+    )
     {
         if (item is not IDictionary dictionary || !TryGetName(dictionary, out var assertionName))
         {
@@ -770,8 +864,11 @@ public static class ConfigurationTemplateRenderer
     {
         foreach (DictionaryEntry entry in dictionary)
         {
-            if (entry.Key?.ToString() != "Name" || entry.Value is not string stringValue ||
-                string.IsNullOrWhiteSpace(stringValue))
+            if (
+                entry.Key?.ToString() != "Name"
+                || entry.Value is not string stringValue
+                || string.IsNullOrWhiteSpace(stringValue)
+            )
             {
                 continue;
             }
@@ -787,14 +884,14 @@ public static class ConfigurationTemplateRenderer
     private static bool IsScalar(Type type)
     {
         var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
-        return effectiveType.IsPrimitive ||
-               effectiveType.IsEnum ||
-               effectiveType == typeof(string) ||
-               effectiveType == typeof(decimal) ||
-               effectiveType == typeof(DateTime) ||
-               effectiveType == typeof(DateTimeOffset) ||
-               effectiveType == typeof(TimeSpan) ||
-               effectiveType == typeof(Guid);
+        return effectiveType.IsPrimitive
+            || effectiveType.IsEnum
+            || effectiveType == typeof(string)
+            || effectiveType == typeof(decimal)
+            || effectiveType == typeof(DateTime)
+            || effectiveType == typeof(DateTimeOffset)
+            || effectiveType == typeof(TimeSpan)
+            || effectiveType == typeof(Guid);
     }
 
     private static bool IsEmptyContainer(object value)
@@ -803,7 +900,7 @@ public static class ConfigurationTemplateRenderer
         {
             IDictionary dictionary => dictionary.Count == 0,
             ICollection collection => collection.Count == 0,
-            _ => false
+            _ => false,
         };
     }
 }

@@ -14,7 +14,8 @@ public class BootstrapTests
     [TestCaseSource(nameof(GetRunnerTestCases))]
     public void TestGetRunner_CallsCorrectLoaderAndReturnsRunner(
         IEnumerable<string> args,
-        string expectedRunnerType)
+        string expectedRunnerType
+    )
     {
         Runner result;
 
@@ -45,7 +46,8 @@ public class BootstrapTests
     {
         var canUseDefaultLoggers = Bootstrap.CanUseFrameworkDefaultLoggers(
             () => LoggerFactory.Create(_ => { }).CreateLogger("test"),
-            () => new LoggerConfiguration().CreateLogger());
+            () => new LoggerConfiguration().CreateLogger()
+        );
 
         Assert.That(canUseDefaultLoggers, Is.True);
     }
@@ -54,8 +56,13 @@ public class BootstrapTests
     public void CanUseFrameworkDefaultLoggers_ReturnsFalse_WhenLoggerAccessorThrowsTypeInitializationException()
     {
         var canUseDefaultLoggers = Bootstrap.CanUseFrameworkDefaultLoggers(
-            () => throw new TypeInitializationException("BrokenLogger", new InvalidOperationException("boom")),
-            () => new LoggerConfiguration().CreateLogger());
+            () =>
+                throw new TypeInitializationException(
+                    "BrokenLogger",
+                    new InvalidOperationException("boom")
+                ),
+            () => new LoggerConfiguration().CreateLogger()
+        );
 
         Assert.That(canUseDefaultLoggers, Is.False);
     }
@@ -65,7 +72,8 @@ public class BootstrapTests
     {
         var canUseDefaultLoggers = Bootstrap.CanUseFrameworkDefaultLoggers(
             () => LoggerFactory.Create(_ => { }).CreateLogger("test"),
-            () => throw new UriFormatException("bad uri"));
+            () => throw new UriFormatException("bad uri")
+        );
 
         Assert.That(canUseDefaultLoggers, Is.False);
     }
@@ -77,8 +85,14 @@ public class BootstrapTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(logger, Is.SameAs(QaaS.Framework.Executions.ExecutionLogging.DefaultLogger));
-            Assert.That(serilogLogger, Is.SameAs(QaaS.Framework.Executions.ExecutionLogging.DefaultSerilogLogger));
+            Assert.That(
+                logger,
+                Is.SameAs(QaaS.Framework.Executions.ExecutionLogging.DefaultLogger)
+            );
+            Assert.That(
+                serilogLogger,
+                Is.SameAs(QaaS.Framework.Executions.ExecutionLogging.DefaultSerilogLogger)
+            );
             Assert.That(ownsSerilogLogger, Is.False);
         });
     }
@@ -102,8 +116,11 @@ public class BootstrapTests
     {
         var options = new RunOptions { SendLogs = true };
 
-        var safeOptions = Bootstrap.GetSafeLoggerOptions(options, false, currentOptions =>
-            currentOptions with { SendLogs = false });
+        var safeOptions = Bootstrap.GetSafeLoggerOptions(
+            options,
+            false,
+            currentOptions => currentOptions with { SendLogs = false }
+        );
 
         Assert.That(safeOptions.SendLogs, Is.True);
     }
@@ -113,8 +130,11 @@ public class BootstrapTests
     {
         var options = new RunOptions { SendLogs = true };
 
-        var safeOptions = Bootstrap.GetSafeLoggerOptions(options, true, currentOptions =>
-            currentOptions with { SendLogs = false });
+        var safeOptions = Bootstrap.GetSafeLoggerOptions(
+            options,
+            true,
+            currentOptions => currentOptions with { SendLogs = false }
+        );
 
         Assert.That(safeOptions.SendLogs, Is.False);
     }
@@ -122,11 +142,14 @@ public class BootstrapTests
     [Test]
     public void New_WithNullArgs_WritesHelpWithNoArgsGuidance()
     {
-        var output = CaptureConsoleOut(out var exitCode, () =>
-        {
-            var runner = Bootstrap.New(null);
-            Assert.That(runner.RunAndGetExitCode(), Is.EqualTo(0));
-        });
+        var output = CaptureConsoleOut(
+            out var exitCode,
+            () =>
+            {
+                var runner = Bootstrap.New(null);
+                Assert.That(runner.RunAndGetExitCode(), Is.EqualTo(0));
+            }
+        );
 
         Assert.Multiple(() =>
         {
@@ -140,10 +163,7 @@ public class BootstrapTests
     [Test]
     public void NormalizeArguments_WhenNoArgsAndDefaultConfigurationExists_PreservesEmptyArgs()
     {
-        var normalizedArguments = Bootstrap.NormalizeArguments(
-            [],
-            @"C:\temp",
-            _ => true);
+        var normalizedArguments = Bootstrap.NormalizeArguments([], @"C:\temp", _ => true);
 
         Assert.That(normalizedArguments, Is.Empty);
     }
@@ -161,24 +181,44 @@ public class BootstrapTests
     {
         var normalizedArguments = Bootstrap.NormalizeArguments(["run", "test.qaas.yaml", "-s"]);
 
-        Assert.That(normalizedArguments,
-            Is.EqualTo(new[] { "run", "test.qaas.yaml", "--serve-results", AssertableOptions.DefaultServeResultsFolder }));
+        Assert.That(
+            normalizedArguments,
+            Is.EqualTo(
+                new[]
+                {
+                    "run",
+                    "test.qaas.yaml",
+                    "--serve-results",
+                    AssertableOptions.DefaultServeResultsFolder,
+                }
+            )
+        );
     }
 
     [Test]
     public void NormalizeArguments_WhenServeResultsFlagHasFolder_KeepsRequestedFolder()
     {
-        var normalizedArguments =
-            Bootstrap.NormalizeArguments(["run", "test.qaas.yaml", "-s", "allure-report"]);
+        var normalizedArguments = Bootstrap.NormalizeArguments([
+            "run",
+            "test.qaas.yaml",
+            "-s",
+            "allure-report",
+        ]);
 
-        Assert.That(normalizedArguments,
-            Is.EqualTo(new[] { "run", "test.qaas.yaml", "--serve-results", "allure-report" }));
+        Assert.That(
+            normalizedArguments,
+            Is.EqualTo(new[] { "run", "test.qaas.yaml", "--serve-results", "allure-report" })
+        );
     }
 
     [Test]
     public void NormalizeArguments_WhenServeResultsFlagIsExplicitlyFalse_RemovesServeResults()
     {
-        var normalizedArguments = Bootstrap.NormalizeArguments(["run", "test.qaas.yaml", "--serve-results=false"]);
+        var normalizedArguments = Bootstrap.NormalizeArguments([
+            "run",
+            "test.qaas.yaml",
+            "--serve-results=false",
+        ]);
 
         Assert.That(normalizedArguments, Is.EqualTo(new[] { "run", "test.qaas.yaml" }));
     }
@@ -188,8 +228,18 @@ public class BootstrapTests
     {
         var normalizedArguments = Bootstrap.NormalizeArguments(["run", "-s", "test.qaas.yaml"]);
 
-        Assert.That(normalizedArguments,
-            Is.EqualTo(new[] { "run", "--serve-results", AssertableOptions.DefaultServeResultsFolder, "test.qaas.yaml" }));
+        Assert.That(
+            normalizedArguments,
+            Is.EqualTo(
+                new[]
+                {
+                    "run",
+                    "--serve-results",
+                    AssertableOptions.DefaultServeResultsFolder,
+                    "test.qaas.yaml",
+                }
+            )
+        );
     }
 
     private static string CaptureConsoleOut(out int exitCode, Action action)
@@ -215,22 +265,54 @@ public class BootstrapTests
     private static IEnumerable<TestCaseData> GetRunnerTestCases()
     {
         yield return new TestCaseData(
-            new[] { "run", "TestData/test.qaas.yaml", "-w", "TestData/override.yaml", "--send-logs", "true" },
+            new[]
+            {
+                "run",
+                "TestData/test.qaas.yaml",
+                "-w",
+                "TestData/override.yaml",
+                "--send-logs",
+                "true",
+            },
             "Runner"
         ).SetName("WithRunOptions");
 
         yield return new TestCaseData(
-            new[] { "act", "TestData/test.qaas.yaml", "-w", "TestData/override.yaml", "--send-logs", "false" },
+            new[]
+            {
+                "act",
+                "TestData/test.qaas.yaml",
+                "-w",
+                "TestData/override.yaml",
+                "--send-logs",
+                "false",
+            },
             "Runner"
         ).SetName("WithActOptions");
 
         yield return new TestCaseData(
-            new[] { "assert", "TestData/test.qaas.yaml", "-w", "TestData/override.yaml", "--send-logs", "false" },
+            new[]
+            {
+                "assert",
+                "TestData/test.qaas.yaml",
+                "-w",
+                "TestData/override.yaml",
+                "--send-logs",
+                "false",
+            },
             "Runner"
         ).SetName("WithAssertOptions");
 
         yield return new TestCaseData(
-            new[] { "template", "TestData/test.qaas.yaml", "-w", "TestData/override.yaml", "--send-logs", "false" },
+            new[]
+            {
+                "template",
+                "TestData/test.qaas.yaml",
+                "-w",
+                "TestData/override.yaml",
+                "--send-logs",
+                "false",
+            },
             "Runner"
         ).SetName("WithTemplateOptions");
 
@@ -239,28 +321,23 @@ public class BootstrapTests
             "Runner"
         ).SetName("WithExecuteOptions");
 
-        yield return new TestCaseData(
-            new[] { "--help" },
-            "Runner"
-        ).SetName("WithHelpFlag");
+        yield return new TestCaseData(new[] { "--help" }, "Runner").SetName("WithHelpFlag");
 
-        yield return new TestCaseData(
-            new[] { "--version" },
-            "Runner"
-        ).SetName("WithVersionFlag");
+        yield return new TestCaseData(new[] { "--version" }, "Runner").SetName("WithVersionFlag");
 
-        yield return new TestCaseData(
-            new[] { "invalid-command" },
-            "Runner"
-        ).SetName("WithInvalidCommand");
+        yield return new TestCaseData(new[] { "invalid-command" }, "Runner").SetName(
+            "WithInvalidCommand"
+        );
     }
 
     private static IEnumerable<TestCaseData> GetNoProcessExitRunnerTestCases()
     {
-        yield return new TestCaseData(new object[] { new[] { "run", "TestData/test.qaas.yaml", "--no-process-exit" } })
-            .SetName("WithRunNoProcessExitFlag");
+        yield return new TestCaseData(
+            new object[] { new[] { "run", "TestData/test.qaas.yaml", "--no-process-exit" } }
+        ).SetName("WithRunNoProcessExitFlag");
 
-        yield return new TestCaseData(new object[] { new[] { "execute", "TestData/executable.yaml", "--no-process-exit" } })
-            .SetName("WithExecuteNoProcessExitFlag");
+        yield return new TestCaseData(
+            new object[] { new[] { "execute", "TestData/executable.yaml", "--no-process-exit" } }
+        ).SetName("WithExecuteNoProcessExitFlag");
     }
 }

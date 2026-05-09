@@ -29,11 +29,11 @@ public class ReportLogicTests
                     AssertionStatus.Failed,
                     AssertionStatus.Passed,
                     AssertionStatus.Skipped,
-                    AssertionStatus.Unknown
+                    AssertionStatus.Unknown,
                 ],
                 ReporterType = typeof(RecordingReporter),
                 AssertionName = null,
-                AssertionHook = null
+                AssertionHook = null,
             };
             var assertionResult = new AssertionResult
             {
@@ -87,15 +87,15 @@ public class ReportLogicTests
                     AssertionStatus.Failed,
                     AssertionStatus.Passed,
                     AssertionStatus.Skipped,
-                    AssertionStatus.Unknown
+                    AssertionStatus.Unknown,
                 ],
                 ReporterType = typeof(RecordingReporter),
                 AssertionName = null,
-                AssertionHook = null
+                AssertionHook = null,
             },
             AssertionStatus = AssertionStatus.Passed,
             TestDurationMs = 0,
-            Flaky = null
+            Flaky = null,
         };
         var secondAssertionResult = new AssertionResult
         {
@@ -108,18 +108,21 @@ public class ReportLogicTests
                     AssertionStatus.Failed,
                     AssertionStatus.Passed,
                     AssertionStatus.Skipped,
-                    AssertionStatus.Unknown
+                    AssertionStatus.Unknown,
                 ],
                 ReporterType = typeof(AlternateRecordingReporter),
                 AssertionName = null,
-                AssertionHook = null
+                AssertionHook = null,
             },
             AssertionStatus = AssertionStatus.Passed,
             TestDurationMs = 0,
-            Flaky = null
+            Flaky = null,
         };
 
-        var reportLogic = new ReportLogic([firstReporter, secondReporter], Globals.GetContextWithMetadata());
+        var reportLogic = new ReportLogic(
+            [firstReporter, secondReporter],
+            Globals.GetContextWithMetadata()
+        );
         var executionData = new ExecutionData();
         executionData.AssertionResults.Add(firstAssertionResult);
         executionData.AssertionResults.Add(secondAssertionResult);
@@ -146,11 +149,11 @@ public class ReportLogicTests
                 StatussesToReport = [AssertionStatus.Failed],
                 ReporterType = typeof(RecordingReporter),
                 AssertionName = null,
-                AssertionHook = null
+                AssertionHook = null,
             },
             AssertionStatus = AssertionStatus.Passed,
             TestDurationMs = 0,
-            Flaky = null
+            Flaky = null,
         };
         var executionData = new ExecutionData();
         executionData.AssertionResults.Add(assertionResult);
@@ -178,7 +181,5 @@ public class ReportLogicTests
         }
     }
 
-    private sealed class AlternateRecordingReporter : RecordingReporter
-    {
-    }
+    private sealed class AlternateRecordingReporter : RecordingReporter { }
 }

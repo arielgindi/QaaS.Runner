@@ -19,7 +19,5 @@ public abstract class Action : IDisposable
     /// <summary>
     /// Releases action-owned resources after the session has finished using the action result.
     /// </summary>
-    public virtual void Dispose()
-    {
-    }
+    public virtual void Dispose() { }
 }

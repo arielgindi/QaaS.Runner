@@ -9,12 +9,12 @@ namespace QaaS.Runner.Storage.Tests;
 public static class Globals
 {
     public static readonly ILogger Logger = new SerilogLoggerFactory(
-        new LoggerConfiguration().MinimumLevel.Warning()
-            .CreateLogger()).CreateLogger("TestsLogger");
+        new LoggerConfiguration().MinimumLevel.Warning().CreateLogger()
+    ).CreateLogger("TestsLogger");
 
     public static readonly Context Context = new()
     {
         Logger = Logger,
-        RootConfiguration = new ConfigurationBuilder().Build()
+        RootConfiguration = new ConfigurationBuilder().Build(),
     };
 }

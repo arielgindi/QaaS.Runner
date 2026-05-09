@@ -31,21 +31,30 @@ public class AssertionLogic(IList<Assertion> assertions, InternalContext context
 
         var assertionResults = new ConcurrentBag<AssertionResult>();
 
-        Parallel.ForEach(assertions, assertion =>
-        {
-            // Log before execution
-            context.Logger.LogInformationWithMetaData("Running assertion {AssertionType} {AssertionName}",
-                metaData, new object?[] { assertion.AssertionName, assertion.Name });
+        Parallel.ForEach(
+            assertions,
+            assertion =>
+            {
+                // Log before execution
+                context.Logger.LogInformationWithMetaData(
+                    "Running assertion {AssertionType} {AssertionName}",
+                    metaData,
+                    new object?[] { assertion.AssertionName, assertion.Name }
+                );
 
-            // Execute the assertion
-            var result = assertion.Execute(sessionDataSnapshot, dataSourcesSnapshot);
+                // Execute the assertion
+                var result = assertion.Execute(sessionDataSnapshot, dataSourcesSnapshot);
 
-            // Log debug with exit code after execution
-            context.Logger.LogDebugWithMetaData("Assertion {AssertionName} completed with exit code: {ExitCode}",
-                metaData, new object?[] { assertion.Name, result.AssertionStatus.ToString() });
+                // Log debug with exit code after execution
+                context.Logger.LogDebugWithMetaData(
+                    "Assertion {AssertionName} completed with exit code: {ExitCode}",
+                    metaData,
+                    new object?[] { assertion.Name, result.AssertionStatus.ToString() }
+                );
 
-            assertionResults.Add(result);
-        });
+                assertionResults.Add(result);
+            }
+        );
 
         foreach (var assertionResult in assertionResults)
             executionData.AssertionResults.Add(assertionResult);

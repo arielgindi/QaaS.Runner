@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using QaaS.Framework.SDK.ContextObjects;
 using NUnit.Framework;
+using QaaS.Framework.SDK.ContextObjects;
 
 namespace QaaS.Runner.Infrastructure.Tests;
 
@@ -49,7 +49,10 @@ public class ContextArtifactExtensionsTests
     public void GetRenderedConfigurationTemplate_FallsBackToLegacyUnscopedValue()
     {
         var context = CreateContext(new Dictionary<string, object?>(), "exec-a", "case-a");
-        context.InsertValueIntoGlobalDictionary(["__RunnerArtifacts", "RenderedTemplate"], "legacy-template");
+        context.InsertValueIntoGlobalDictionary(
+            ["__RunnerArtifacts", "RenderedTemplate"],
+            "legacy-template"
+        );
 
         Assert.That(context.GetRenderedConfigurationTemplate(), Is.EqualTo("legacy-template"));
     }
@@ -98,8 +101,9 @@ public class ContextArtifactExtensionsTests
             ["__RunnerArtifacts", "SessionLogs"],
             new ConcurrentDictionary<string, ConcurrentQueue<string>>(StringComparer.Ordinal)
             {
-                ["legacy-session"] = new ConcurrentQueue<string>(["legacy-line"])
-            });
+                ["legacy-session"] = new ConcurrentQueue<string>(["legacy-line"]),
+            }
+        );
 
         Assert.That(context.GetSessionLog("legacy-session"), Does.Contain("legacy-line"));
     }
@@ -108,18 +112,26 @@ public class ContextArtifactExtensionsTests
     public void AppendSessionLog_WhenScopedStoreAlreadyExists_ReusesExistingStore()
     {
         var sharedGlobalDict = new Dictionary<string, object?>();
-        var existingStore = new ConcurrentDictionary<string, ConcurrentQueue<string>>(StringComparer.Ordinal)
+        var existingStore = new ConcurrentDictionary<string, ConcurrentQueue<string>>(
+            StringComparer.Ordinal
+        )
         {
-            ["session-a"] = new ConcurrentQueue<string>(["first-line"])
+            ["session-a"] = new ConcurrentQueue<string>(["first-line"]),
         };
         var context = CreateContext(sharedGlobalDict, "exec-a", "case-a");
         context.InsertValueIntoGlobalDictionary(
             ["__RunnerArtifacts", "Scoped", "exec-a::case-a", "SessionLogs"],
-            existingStore);
+            existingStore
+        );
 
         context.AppendSessionLog("session-a", "second-line");
-        var storedStore = context.GetValueFromGlobalDictionary(["__RunnerArtifacts", "Scoped", "exec-a::case-a", "SessionLogs"])
-            as ConcurrentDictionary<string, ConcurrentQueue<string>>;
+        var storedStore =
+            context.GetValueFromGlobalDictionary([
+                "__RunnerArtifacts",
+                "Scoped",
+                "exec-a::case-a",
+                "SessionLogs",
+            ]) as ConcurrentDictionary<string, ConcurrentQueue<string>>;
 
         Assert.Multiple(() =>
         {
@@ -136,23 +148,30 @@ public class ContextArtifactExtensionsTests
         var context = CreateContext(new Dictionary<string, object?>(), "exec-a", "case-a");
         using var releaseWrites = new ManualResetEventSlim(false);
 
-        var appendTasks = Enumerable.Range(0, concurrentWrites)
-            .Select(index => Task.Run(() =>
-            {
-                releaseWrites.Wait();
-                context.AppendSessionLog("session-a", $"line-{index}");
-            }))
+        var appendTasks = Enumerable
+            .Range(0, concurrentWrites)
+            .Select(index =>
+                Task.Run(() =>
+                {
+                    releaseWrites.Wait();
+                    context.AppendSessionLog("session-a", $"line-{index}");
+                })
+            )
             .ToArray();
 
         releaseWrites.Set();
         await Task.WhenAll(appendTasks);
 
         var sessionLog = context.GetSessionLog("session-a");
-        var capturedLines = sessionLog?
-            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        var capturedLines = sessionLog
+            ?.Split(
+                Environment.NewLine,
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+            )
             .OrderBy(line => line, StringComparer.Ordinal)
             .ToArray();
-        var expectedLines = Enumerable.Range(0, concurrentWrites)
+        var expectedLines = Enumerable
+            .Range(0, concurrentWrites)
             .Select(index => $"line-{index}")
             .OrderBy(line => line, StringComparer.Ordinal)
             .ToArray();
@@ -168,8 +187,9 @@ public class ContextArtifactExtensionsTests
             ["__RunnerArtifacts", "Scoped", "exec-a::case-a", "SessionLogs"],
             new ConcurrentDictionary<string, ConcurrentQueue<string>>(StringComparer.Ordinal)
             {
-                ["session-a"] = new ConcurrentQueue<string>()
-            });
+                ["session-a"] = new ConcurrentQueue<string>(),
+            }
+        );
 
         Assert.That(context.GetSessionLog("session-a"), Is.Null);
     }
@@ -186,20 +206,29 @@ public class ContextArtifactExtensionsTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(executionOnlyContext.GetRenderedConfigurationTemplate(), Is.EqualTo("execution-only"));
-            Assert.That(caseOnlyContext.GetRenderedConfigurationTemplate(), Is.EqualTo("case-only"));
+            Assert.That(
+                executionOnlyContext.GetRenderedConfigurationTemplate(),
+                Is.EqualTo("execution-only")
+            );
+            Assert.That(
+                caseOnlyContext.GetRenderedConfigurationTemplate(),
+                Is.EqualTo("case-only")
+            );
         });
     }
 
-    private static InternalContext CreateContext(Dictionary<string, object?> sharedGlobalDict, string executionId,
-        string caseName)
+    private static InternalContext CreateContext(
+        Dictionary<string, object?> sharedGlobalDict,
+        string executionId,
+        string caseName
+    )
     {
         return new InternalContext
         {
             Logger = Globals.Logger,
             ExecutionId = executionId,
             CaseName = caseName,
-            InternalGlobalDict = sharedGlobalDict
+            InternalGlobalDict = sharedGlobalDict,
         };
     }
 }

@@ -5,7 +5,7 @@ using QaaS.Framework.SDK.ExecutionObjects;
 namespace QaaS.Runner.Options;
 
 /// <summary>
-/// Options object to be mapped for `run` runnable command 
+/// Options object to be mapped for `run` runnable command
 /// </summary>
 [Verb("run", HelpText = "Run a qaas test according to the given configurations.")]
 public record RunOptions : AssertableOptions

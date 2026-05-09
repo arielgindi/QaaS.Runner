@@ -32,7 +32,8 @@ public class SessionBuilderCrudTests
 
         Assert.DoesNotThrow(() =>
         {
-            builder.RemoveConsumer("missing")
+            builder
+                .RemoveConsumer("missing")
                 .RemovePublisher("missing")
                 .RemoveTransaction("missing")
                 .RemoveProbe("missing")
@@ -40,7 +41,8 @@ public class SessionBuilderCrudTests
                 .RemoveMockerCommand("missing");
         });
 
-        builder.AddConsumer(new ConsumerBuilder().Named("consumer-a"))
+        builder
+            .AddConsumer(new ConsumerBuilder().Named("consumer-a"))
             .AddPublisher(new PublisherBuilder().Named("publisher-a"))
             .AddTransaction(new TransactionBuilder().Named("transaction-a"))
             .AddProbe(new ProbeBuilder().Named("probe-a"))
@@ -70,8 +72,10 @@ public class SessionBuilderCrudTests
 
         Assert.That(builder.Consumers, Has.Length.EqualTo(1));
         Assert.That(builder.Consumers![0].Name, Is.EqualTo("consumer-updated"));
-        Assert.That(builder.Consumers.FirstOrDefault(consumer => consumer.Name == "consumer-updated")?.Name,
-            Is.EqualTo("consumer-updated"));
+        Assert.That(
+            builder.Consumers.FirstOrDefault(consumer => consumer.Name == "consumer-updated")?.Name,
+            Is.EqualTo("consumer-updated")
+        );
     }
 
     [Test]
@@ -93,7 +97,8 @@ public class SessionBuilderCrudTests
             .AddStage(new StageConfig(stageNumber: 1, timeoutBefore: 10, timeoutAfter: 20))
             .AddStage(new StageConfig(stageNumber: 2, timeoutBefore: 30, timeoutAfter: 40));
 
-        builder.RemoveConsumerAt(0)
+        builder
+            .RemoveConsumerAt(0)
             .RemovePublisherAt(0)
             .RemoveTransactionAt(0)
             .RemoveProbeAt(0)
@@ -122,20 +127,36 @@ public class SessionBuilderCrudTests
             .AddProbe(new ProbeBuilder().Named("probe-a"));
 
         builder.UpdatePublisher("publisher-a", new PublisherBuilder().Named("publisher-updated"));
-        builder.UpdateTransaction("transaction-a", new TransactionBuilder().Named("transaction-updated"));
+        builder.UpdateTransaction(
+            "transaction-a",
+            new TransactionBuilder().Named("transaction-updated")
+        );
         builder.UpdateProbe("probe-a", new ProbeBuilder().Named("probe-updated"));
 
         Assert.That(builder.Publishers![0].Name, Is.EqualTo("publisher-updated"));
         Assert.That(builder.Transactions![0].Name, Is.EqualTo("transaction-updated"));
         Assert.That(builder.Probes![0].Name, Is.EqualTo("probe-updated"));
-        Assert.That(builder.Publishers.FirstOrDefault(publisher => publisher.Name == "publisher-updated")?.Name,
-            Is.EqualTo("publisher-updated"));
-        Assert.That(builder.Transactions.FirstOrDefault(transaction => transaction.Name == "transaction-updated")?.Name,
-            Is.EqualTo("transaction-updated"));
-        Assert.That(builder.Probes.FirstOrDefault(probe => probe.Name == "probe-updated")?.Name,
-            Is.EqualTo("probe-updated"));
+        Assert.That(
+            builder
+                .Publishers.FirstOrDefault(publisher => publisher.Name == "publisher-updated")
+                ?.Name,
+            Is.EqualTo("publisher-updated")
+        );
+        Assert.That(
+            builder
+                .Transactions.FirstOrDefault(transaction =>
+                    transaction.Name == "transaction-updated"
+                )
+                ?.Name,
+            Is.EqualTo("transaction-updated")
+        );
+        Assert.That(
+            builder.Probes.FirstOrDefault(probe => probe.Name == "probe-updated")?.Name,
+            Is.EqualTo("probe-updated")
+        );
 
-        builder.RemovePublisher("publisher-updated")
+        builder
+            .RemovePublisher("publisher-updated")
             .RemoveTransaction("transaction-updated")
             .RemoveProbe("probe-updated");
 
@@ -152,17 +173,27 @@ public class SessionBuilderCrudTests
             .AddMockerCommand(new MockerCommandBuilder().Named("command-a"));
 
         builder.UpdateCollector("collector-a", new CollectorBuilder().Named("collector-updated"));
-        builder.UpdateMockerCommand("command-a", new MockerCommandBuilder().Named("command-updated"));
+        builder.UpdateMockerCommand(
+            "command-a",
+            new MockerCommandBuilder().Named("command-updated")
+        );
 
         Assert.That(builder.Collectors![0].Name, Is.EqualTo("collector-updated"));
         Assert.That(builder.MockerCommands![0].Name, Is.EqualTo("command-updated"));
-        Assert.That(builder.Collectors.FirstOrDefault(collector => collector.Name == "collector-updated")?.Name,
-            Is.EqualTo("collector-updated"));
-        Assert.That(builder.MockerCommands.FirstOrDefault(command => command.Name == "command-updated")?.Name,
-            Is.EqualTo("command-updated"));
+        Assert.That(
+            builder
+                .Collectors.FirstOrDefault(collector => collector.Name == "collector-updated")
+                ?.Name,
+            Is.EqualTo("collector-updated")
+        );
+        Assert.That(
+            builder
+                .MockerCommands.FirstOrDefault(command => command.Name == "command-updated")
+                ?.Name,
+            Is.EqualTo("command-updated")
+        );
 
-        builder.RemoveCollector("collector-updated")
-            .RemoveMockerCommand("command-updated");
+        builder.RemoveCollector("collector-updated").RemoveMockerCommand("command-updated");
 
         Assert.That(builder.Collectors, Is.Empty);
         Assert.That(builder.MockerCommands, Is.Empty);
@@ -175,11 +206,20 @@ public class SessionBuilderCrudTests
             .AddStage(new StageConfig(stageNumber: 1, timeoutBefore: 10, timeoutAfter: 20))
             .AddStage(new StageConfig(stageNumber: 2, timeoutBefore: 30, timeoutAfter: 40));
 
-        builder.UpdateStage(1, new StageConfig(stageNumber: 1, timeoutBefore: 99, timeoutAfter: 100));
+        builder.UpdateStage(
+            1,
+            new StageConfig(stageNumber: 1, timeoutBefore: 99, timeoutAfter: 100)
+        );
 
         Assert.That(builder.Stages, Has.Length.EqualTo(2));
-        Assert.That(builder.Stages.First(stage => stage.StageNumber == 1).TimeoutBefore, Is.EqualTo(99));
-        Assert.That(builder.Stages.FirstOrDefault(stage => stage.StageNumber == 1)?.TimeoutBefore, Is.EqualTo(99));
+        Assert.That(
+            builder.Stages.First(stage => stage.StageNumber == 1).TimeoutBefore,
+            Is.EqualTo(99)
+        );
+        Assert.That(
+            builder.Stages.FirstOrDefault(stage => stage.StageNumber == 1)?.TimeoutBefore,
+            Is.EqualTo(99)
+        );
 
         builder.RemoveStage(2);
         Assert.That(builder.Stages, Has.Length.EqualTo(1));
@@ -199,26 +239,56 @@ public class SessionBuilderCrudTests
 
         builder.UpdateConsumer("consumer-a", new ConsumerBuilder().Named("consumer-mutated"));
         builder.UpdatePublisher("publisher-a", new PublisherBuilder().Named("publisher-mutated"));
-        builder.UpdateTransaction("transaction-a", new TransactionBuilder().Named("transaction-mutated"));
+        builder.UpdateTransaction(
+            "transaction-a",
+            new TransactionBuilder().Named("transaction-mutated")
+        );
         builder.UpdateProbe("probe-a", new ProbeBuilder().Named("probe-mutated"));
         builder.UpdateCollector("collector-a", new CollectorBuilder().Named("collector-mutated"));
-        builder.UpdateMockerCommand("command-a", new MockerCommandBuilder().Named("command-mutated"));
+        builder.UpdateMockerCommand(
+            "command-a",
+            new MockerCommandBuilder().Named("command-mutated")
+        );
 
-        Assert.That(builder.Consumers!.FirstOrDefault(consumer => consumer.Name == "consumer-mutated"), Is.Not.Null);
-        Assert.That(builder.Publishers!.FirstOrDefault(publisher => publisher.Name == "publisher-mutated"), Is.Not.Null);
-        Assert.That(builder.Transactions!.FirstOrDefault(transaction => transaction.Name == "transaction-mutated"), Is.Not.Null);
-        Assert.That(builder.Probes!.FirstOrDefault(probe => probe.Name == "probe-mutated"), Is.Not.Null);
-        Assert.That(builder.Collectors!.FirstOrDefault(collector => collector.Name == "collector-mutated"), Is.Not.Null);
-        Assert.That(builder.MockerCommands!.FirstOrDefault(command => command.Name == "command-mutated"), Is.Not.Null);
+        Assert.That(
+            builder.Consumers!.FirstOrDefault(consumer => consumer.Name == "consumer-mutated"),
+            Is.Not.Null
+        );
+        Assert.That(
+            builder.Publishers!.FirstOrDefault(publisher => publisher.Name == "publisher-mutated"),
+            Is.Not.Null
+        );
+        Assert.That(
+            builder.Transactions!.FirstOrDefault(transaction =>
+                transaction.Name == "transaction-mutated"
+            ),
+            Is.Not.Null
+        );
+        Assert.That(
+            builder.Probes!.FirstOrDefault(probe => probe.Name == "probe-mutated"),
+            Is.Not.Null
+        );
+        Assert.That(
+            builder.Collectors!.FirstOrDefault(collector => collector.Name == "collector-mutated"),
+            Is.Not.Null
+        );
+        Assert.That(
+            builder.MockerCommands!.FirstOrDefault(command => command.Name == "command-mutated"),
+            Is.Not.Null
+        );
     }
 
     [Test]
     public void UpdateStage_WhenStageNumberDoesNotExist_DoesNotChangeStages()
     {
-        var builder = new SessionBuilder()
-            .AddStage(new StageConfig(stageNumber: 1, timeoutBefore: 10, timeoutAfter: 20));
+        var builder = new SessionBuilder().AddStage(
+            new StageConfig(stageNumber: 1, timeoutBefore: 10, timeoutAfter: 20)
+        );
 
-        builder.UpdateStage(99, new StageConfig(stageNumber: 99, timeoutBefore: 1, timeoutAfter: 1));
+        builder.UpdateStage(
+            99,
+            new StageConfig(stageNumber: 99, timeoutBefore: 1, timeoutAfter: 1)
+        );
 
         Assert.That(builder.Stages, Has.Length.EqualTo(1));
         Assert.That(builder.Stages[0].StageNumber, Is.EqualTo(1));
@@ -228,21 +298,38 @@ public class SessionBuilderCrudTests
     public void UpdateByName_WhenCollectionIsNull_DoesNotThrowAndKeepsCollectionNull()
     {
         var builder = new SessionBuilder();
-        typeof(SessionBuilder).GetProperty("Consumers", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+        typeof(SessionBuilder)
+            .GetProperty(
+                "Consumers",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            )!
             .SetValue(builder, null);
 
-        Assert.DoesNotThrow(() => builder.UpdateConsumer("missing", new ConsumerBuilder().Named("replacement")));
-        Assert.That(typeof(SessionBuilder).GetProperty("Consumers", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .GetValue(builder), Is.Null);
+        Assert.DoesNotThrow(() =>
+            builder.UpdateConsumer("missing", new ConsumerBuilder().Named("replacement"))
+        );
+        Assert.That(
+            typeof(SessionBuilder)
+                .GetProperty(
+                    "Consumers",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                )!
+                .GetValue(builder),
+            Is.Null
+        );
     }
 
     [Test]
     public void UpdateByName_WhenNameIsMissing_DoesNotMutateCollection()
     {
-        var builder = new SessionBuilder()
-            .AddPublisher(new PublisherBuilder().Named("publisher-a"));
+        var builder = new SessionBuilder().AddPublisher(
+            new PublisherBuilder().Named("publisher-a")
+        );
 
-        builder.UpdatePublisher("publisher-missing", new PublisherBuilder().Named("publisher-updated"));
+        builder.UpdatePublisher(
+            "publisher-missing",
+            new PublisherBuilder().Named("publisher-updated")
+        );
 
         Assert.That(builder.Publishers, Has.Length.EqualTo(1));
         Assert.That(builder.Publishers![0].Name, Is.EqualTo("publisher-a"));
@@ -250,22 +337,24 @@ public class SessionBuilderCrudTests
 
     private static void SetActionCollections(SessionBuilder builder, object? value)
     {
-        foreach (var propertyName in new[]
-                 {
-                     "Consumers",
-                     "Publishers",
-                     "Transactions",
-                     "Probes",
-                     "Collectors",
-                     "MockerCommands"
-                 })
+        foreach (
+            var propertyName in new[]
+            {
+                "Consumers",
+                "Publishers",
+                "Transactions",
+                "Probes",
+                "Collectors",
+                "MockerCommands",
+            }
+        )
         {
-            typeof(SessionBuilder).GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+            typeof(SessionBuilder)
+                .GetProperty(
+                    propertyName,
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                )!
                 .SetValue(builder, value);
         }
     }
 }
-
-
-
-

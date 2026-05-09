@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using NUnit.Framework;
 using QaaS.Framework.Protocols.ConfigurationObjects.Http;
 using QaaS.Framework.Protocols.ConfigurationObjects.Kafka;
-using QaaS.Framework.SDK.ContextObjects;
 using QaaS.Framework.SDK.ConfigurationObjects;
+using QaaS.Framework.SDK.ContextObjects;
 using QaaS.Framework.SDK.Hooks.Probe;
 using QaaS.Framework.SDK.Session.DataObjects;
 using QaaS.Framework.SDK.Session.SessionDataObjects;
@@ -37,30 +39,70 @@ public class StageTests
     [Test]
     public void TestExportRCD_ValidExportRcdParams_WillLoadTheRcdToTheContextDict()
     {
-        _context.InternalRunningSessions.RunningSessionsDict[_sessionName] =
-            new RunningSessionData<object, object> { Inputs = [], Outputs = [] };
+        _context.InternalRunningSessions.RunningSessionsDict[_sessionName] = new RunningSessionData<
+            object,
+            object
+        >
+        {
+            Inputs = [],
+            Outputs = [],
+        };
 
         _stage!.AddCommunication(
-            new PublisherBuilder().Configure(new KafkaTopicSenderConfig
-                {
-                    TopicName = "test", Username = "testUser", Password = "SHHHHHH", HostNames = ["h1-prod", "h2-test"]
-                })
-                .Build(_context!, [], _sessionName)!);
+            new PublisherBuilder()
+                .Configure(
+                    new KafkaTopicSenderConfig
+                    {
+                        TopicName = "test",
+                        Username = "testUser",
+                        Password = "SHHHHHH",
+                        HostNames = ["h1-prod", "h2-test"],
+                    }
+                )
+                .Build(_context!, [], _sessionName)!
+        );
         _stage.AddCommunication(
-            new ConsumerBuilder().WithTimeout(1000).Configure(new KafkaTopicReaderConfig
-                {
-                    TopicName = "test", Username = "testUser", Password = "SHHHHHH", HostNames = ["h1-prod", "h2-test"],
-                    GroupId = "1"
-                })
-                .Build(_context!, [], _sessionName)!);
+            new ConsumerBuilder()
+                .WithTimeout(1000)
+                .Configure(
+                    new KafkaTopicReaderConfig
+                    {
+                        TopicName = "test",
+                        Username = "testUser",
+                        Password = "SHHHHHH",
+                        HostNames = ["h1-prod", "h2-test"],
+                        GroupId = "1",
+                    }
+                )
+                .Build(_context!, [], _sessionName)!
+        );
         _stage.AddCommunication(
-            new TransactionBuilder().WithTimeout(1000)
-                .Configure(new HttpTransactorConfig { BaseAddress = "http://test", Method = HttpMethods.Get })
-                .Build(_context!, [], _sessionName)!);
+            new TransactionBuilder()
+                .WithTimeout(1000)
+                .Configure(
+                    new HttpTransactorConfig
+                    {
+                        BaseAddress = "http://test",
+                        Method = HttpMethods.Get,
+                    }
+                )
+                .Build(_context!, [], _sessionName)!
+        );
         _stage.AddCommunication(
-            new ProbeBuilder().Named("testProbe").Build(_context!,
-                [new(ProbeBuilder.BuildScopedHookName(_sessionName, "testProbe"), InitializeProbeHook())], [],
-                _sessionName)!);
+            new ProbeBuilder()
+                .Named("testProbe")
+                .Build(
+                    _context!,
+                    [
+                        new(
+                            ProbeBuilder.BuildScopedHookName(_sessionName, "testProbe"),
+                            InitializeProbeHook()
+                        ),
+                    ],
+                    [],
+                    _sessionName
+                )!
+        );
         _stage.ExportRunningCommunicationData();
 
         const int exportedNumOfInputRcd = 2;
@@ -69,12 +111,14 @@ public class StageTests
         Assert.That(
             _context.InternalRunningSessions.RunningSessionsDict[_sessionName].Inputs!.Count,
             Is.EqualTo(exportedNumOfInputRcd),
-            "Test Failed: the number of input rcd that were loaded was not 2!");
+            "Test Failed: the number of input rcd that were loaded was not 2!"
+        );
 
         Assert.That(
             _context.InternalRunningSessions.RunningSessionsDict[_sessionName].Outputs!.Count,
             Is.EqualTo(exportedNumOfOutputRcd),
-            "Test Failed: the number of output rcd that were loaded was not 2!");
+            "Test Failed: the number of output rcd that were loaded was not 2!"
+        );
     }
 
     [Test]
@@ -97,8 +141,77 @@ public class StageTests
 
         var sessionLog = context.GetSessionLog(_sessionName);
         Assert.That(tasks, Has.Count.EqualTo(1));
-        Assert.That(sessionLog, Does.Contain("Starting action stage 0 for session TestSession with 1 action(s)"));
+        Assert.That(
+            sessionLog,
+            Does.Contain("Starting action stage 0 for session TestSession with 1 action(s)")
+        );
         Assert.That(sessionLog, Does.Contain("Finished action stage 0 for session TestSession"));
+    }
+
+    // R-4: SleepAfter must fire AFTER stage work has finished, not concurrently.
+    [Test]
+    public async Task RunAsync_WithSleepAfter_SleepStartsAfterAllStageTasksComplete()
+    {
+        const int sleepAfterMs = 50;
+        var context = CreationalFunctions.CreateContext(_sessionName, []);
+        var stage = new Stage(
+            context,
+            new ConcurrentBag<ActionFailure>(),
+            _sessionName,
+            0,
+            sleepBeforeMilliseconds: 0,
+            sleepAfterMilliseconds: sleepAfterMs
+        );
+
+        DateTime actionCompletedAt = default;
+        stage.AddCommunication(
+            new TimestampedAction(
+                "timestamped",
+                0,
+                () =>
+                {
+                    Thread.Sleep(20); // simulate work
+                    actionCompletedAt = DateTime.UtcNow;
+                }
+            )
+        );
+
+        var stageStartedAt = DateTime.UtcNow;
+        var tasks = await stage.RunAsync();
+        var stageReturnedAt = DateTime.UtcNow;
+
+        // RunAsync should have awaited all tasks AND the sleep before returning
+        Assert.That(
+            stageReturnedAt,
+            Is.GreaterThanOrEqualTo(actionCompletedAt.AddMilliseconds(sleepAfterMs - 10)),
+            "RunAsync returned before the SleepAfter delay elapsed past action completion"
+        );
+        await Task.WhenAll(tasks); // should be already complete
+    }
+
+    private sealed class TimestampedAction(string name, int stage, System.Action onAct)
+        : StagedAction(name, stage, null, Globals.Logger)
+    {
+        internal override void ExportRunningCommunicationData(
+            InternalContext context,
+            string sessionName
+        ) { }
+
+        internal override InternalCommunicationData<object> Act()
+        {
+            onAct();
+            return new InternalCommunicationData<object>
+            {
+                Output = [],
+                OutputSerializationType = SerializationType.Json,
+            };
+        }
+
+        protected internal override void LogData(
+            InternalCommunicationData<object> actData,
+            DetailedData<object> itemBeforeSerialization,
+            InputOutputState? saveAt = null
+        ) { }
     }
 
     private IProbe InitializeProbeHook()
@@ -106,24 +219,27 @@ public class StageTests
         return new TestProbe();
     }
 
-    private sealed class NoOpStagedAction(string name, int stage) : StagedAction(name, stage, null, Globals.Logger)
+    private sealed class NoOpStagedAction(string name, int stage)
+        : StagedAction(name, stage, null, Globals.Logger)
     {
-        internal override void ExportRunningCommunicationData(InternalContext context, string sessionName)
-        {
-        }
+        internal override void ExportRunningCommunicationData(
+            InternalContext context,
+            string sessionName
+        ) { }
 
         internal override InternalCommunicationData<object> Act()
         {
             return new InternalCommunicationData<object>
             {
                 Output = [new DetailedData<object> { Body = "ok" }],
-                OutputSerializationType = SerializationType.Json
+                OutputSerializationType = SerializationType.Json,
             };
         }
 
-        protected internal override void LogData(InternalCommunicationData<object> actData,
-            DetailedData<object> itemBeforeSerialization, InputOutputState? saveAt = null)
-        {
-        }
+        protected internal override void LogData(
+            InternalCommunicationData<object> actData,
+            DetailedData<object> itemBeforeSerialization,
+            InputOutputState? saveAt = null
+        ) { }
     }
 }

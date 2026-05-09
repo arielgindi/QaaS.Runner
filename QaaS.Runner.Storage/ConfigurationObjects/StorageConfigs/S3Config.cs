@@ -13,12 +13,15 @@ public record S3Config : S3BucketConfig, IStorageConfig
     [DefaultValue("")]
     public string Delimiter { get; set; } = "";
 
-    [Description("The maximum number of times to retry when an action against the S3 fails due to maximum" +
-                 " S3 supported IOPS, if no value is given will retry indefinitely")]
+    [Description(
+        "The maximum number of times to retry when an action against the S3 fails due to maximum"
+            + " S3 supported IOPS, if no value is given will retry indefinitely"
+    )]
     public int? MaximumRetryCount { get; set; } // By default null which means no limit to the amounts of retries
 
     [Description(
-        "Whether to skip the retrieval of empty s3 objects or not, if true skips them if false doesnt skip them")]
+        "Whether to skip the retrieval of empty s3 objects or not, if true skips them if false doesnt skip them"
+    )]
     [DefaultValue(true)]
     public bool SkipEmptyObjects { get; set; } = true;
 }

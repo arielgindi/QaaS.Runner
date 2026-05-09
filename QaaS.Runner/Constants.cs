@@ -30,7 +30,7 @@ public static class Constants
         Sessions,
         Storages,
         Assertions,
-        Links
+        Links,
     };
 
     /// <summary>
@@ -41,28 +41,28 @@ public static class Constants
     public static readonly IList<string> SupportedUniqueIdsPathRegexes = new List<string>
     {
         // DataSources
-        nameof(DataSources) + ListPathSeparator +
-        nameof(DataSourceBuilder.Name),
-
-        nameof(DataSources) + ListPathSeparator +
-        nameof(DataSourceBuilder.DataSourceNames) + EndOfListPath,
-
+        nameof(DataSources) + ListPathSeparator + nameof(DataSourceBuilder.Name),
+        nameof(DataSources)
+            + ListPathSeparator
+            + nameof(DataSourceBuilder.DataSourceNames)
+            + EndOfListPath,
         // Sessions
         nameof(Sessions) + ListPathSeparator + "Name",
-
-        nameof(Sessions) + ListPathSeparator +
-        "Publishers" + ListPathSeparator +
-        "DataSourceNames" + EndOfListPath,
-
-        nameof(Sessions) + ListPathSeparator +
-        "Transactions" + ListPathSeparator +
-        "DataSourceNames" + EndOfListPath,
-
+        nameof(Sessions)
+            + ListPathSeparator
+            + "Publishers"
+            + ListPathSeparator
+            + "DataSourceNames"
+            + EndOfListPath,
+        nameof(Sessions)
+            + ListPathSeparator
+            + "Transactions"
+            + ListPathSeparator
+            + "DataSourceNames"
+            + EndOfListPath,
         // Assertions
         nameof(Assertions) + ListPathSeparator + "Name",
-
         nameof(Assertions) + ListPathSeparator + "SessionNames" + EndOfListPath,
-
-        nameof(Assertions) + ListPathSeparator + "DataSourceNames" + EndOfListPath
+        nameof(Assertions) + ListPathSeparator + "DataSourceNames" + EndOfListPath,
     };
 }

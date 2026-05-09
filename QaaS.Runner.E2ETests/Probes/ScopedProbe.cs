@@ -28,7 +28,10 @@ public static class ProbeRunRecorder
 
 public class ScopedProbe : BaseProbe<ProbeMarkerConfig>
 {
-    public override void Run(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+    public override void Run(
+        IImmutableList<SessionData> sessionDataList,
+        IImmutableList<DataSource> dataSourceList
+    )
     {
         ProbeRunRecorder.Record(Configuration.Marker);
     }

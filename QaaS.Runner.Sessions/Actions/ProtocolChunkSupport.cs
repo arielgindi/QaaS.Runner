@@ -30,7 +30,7 @@ internal enum ProtocolChunkMode
     /// <summary>
     /// The protocol supports both single-message and chunk-based communication.
     /// </summary>
-    SingleOrChunk
+    SingleOrChunk,
 }
 
 /// <summary>
@@ -38,36 +38,43 @@ internal enum ProtocolChunkMode
 /// </summary>
 internal static class ProtocolChunkSupport
 {
-    private static readonly IReadOnlyDictionary<Type, (ProtocolChunkMode Mode, string PropertyName)> SenderModes =
-        new Dictionary<Type, (ProtocolChunkMode Mode, string PropertyName)>
-        {
-            [typeof(RabbitMqSenderConfig)] = (ProtocolChunkMode.SingleOnly, "RabbitMq"),
-            [typeof(KafkaTopicSenderConfig)] = (ProtocolChunkMode.SingleOnly, "KafkaTopic"),
-            [typeof(SftpSenderConfig)] = (ProtocolChunkMode.SingleOnly, "Sftp"),
-            [typeof(SocketSenderConfig)] = (ProtocolChunkMode.SingleOnly, "Socket"),
-            [typeof(S3BucketSenderConfig)] = (ProtocolChunkMode.SingleOnly, "S3Bucket"),
-            [typeof(ElasticSenderConfig)] = (ProtocolChunkMode.ChunkOnly, "ElasticIndex"),
-            [typeof(MongoDbCollectionSenderConfig)] = (ProtocolChunkMode.ChunkOnly, "MongoDbCollection"),
-            [typeof(OracleSenderConfig)] = (ProtocolChunkMode.ChunkOnly, "OracleSqlTable"),
-            [typeof(MsSqlSenderConfig)] = (ProtocolChunkMode.ChunkOnly, "MsSqlTable"),
-            [typeof(RedisSenderConfig)] = (ProtocolChunkMode.ChunkOnly, "Redis"),
-            [typeof(PostgreSqlSenderConfig)] = (ProtocolChunkMode.SingleOrChunk, "PostgreSqlTable")
-        };
+    private static readonly IReadOnlyDictionary<
+        Type,
+        (ProtocolChunkMode Mode, string PropertyName)
+    > SenderModes = new Dictionary<Type, (ProtocolChunkMode Mode, string PropertyName)>
+    {
+        [typeof(RabbitMqSenderConfig)] = (ProtocolChunkMode.SingleOnly, "RabbitMq"),
+        [typeof(KafkaTopicSenderConfig)] = (ProtocolChunkMode.SingleOnly, "KafkaTopic"),
+        [typeof(SftpSenderConfig)] = (ProtocolChunkMode.SingleOnly, "Sftp"),
+        [typeof(SocketSenderConfig)] = (ProtocolChunkMode.SingleOnly, "Socket"),
+        [typeof(S3BucketSenderConfig)] = (ProtocolChunkMode.SingleOnly, "S3Bucket"),
+        [typeof(ElasticSenderConfig)] = (ProtocolChunkMode.ChunkOnly, "ElasticIndex"),
+        [typeof(MongoDbCollectionSenderConfig)] = (
+            ProtocolChunkMode.ChunkOnly,
+            "MongoDbCollection"
+        ),
+        [typeof(OracleSenderConfig)] = (ProtocolChunkMode.ChunkOnly, "OracleSqlTable"),
+        [typeof(MsSqlSenderConfig)] = (ProtocolChunkMode.ChunkOnly, "MsSqlTable"),
+        [typeof(RedisSenderConfig)] = (ProtocolChunkMode.ChunkOnly, "Redis"),
+        [typeof(PostgreSqlSenderConfig)] = (ProtocolChunkMode.SingleOrChunk, "PostgreSqlTable"),
+    };
 
-    private static readonly IReadOnlyDictionary<Type, (ProtocolChunkMode Mode, string PropertyName)> ReaderModes =
-        new Dictionary<Type, (ProtocolChunkMode Mode, string PropertyName)>
-        {
-            [typeof(RabbitMqReaderConfig)] = (ProtocolChunkMode.SingleOnly, "RabbitMq"),
-            [typeof(KafkaTopicReaderConfig)] = (ProtocolChunkMode.SingleOnly, "KafkaTopic"),
-            [typeof(SocketReaderConfig)] = (ProtocolChunkMode.SingleOnly, "Socket"),
-            [typeof(IbmMqReaderConfig)] = (ProtocolChunkMode.SingleOnly, "IbmMqQueue"),
-            [typeof(PostgreSqlReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "PostgreSqlTable"),
-            [typeof(OracleReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "OracleSqlTable"),
-            [typeof(MsSqlReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "MsSqlTable"),
-            [typeof(TrinoReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "TrinoSqlTable"),
-            [typeof(ElasticReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "ElasticIndices"),
-            [typeof(S3BucketReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "S3Bucket")
-        };
+    private static readonly IReadOnlyDictionary<
+        Type,
+        (ProtocolChunkMode Mode, string PropertyName)
+    > ReaderModes = new Dictionary<Type, (ProtocolChunkMode Mode, string PropertyName)>
+    {
+        [typeof(RabbitMqReaderConfig)] = (ProtocolChunkMode.SingleOnly, "RabbitMq"),
+        [typeof(KafkaTopicReaderConfig)] = (ProtocolChunkMode.SingleOnly, "KafkaTopic"),
+        [typeof(SocketReaderConfig)] = (ProtocolChunkMode.SingleOnly, "Socket"),
+        [typeof(IbmMqReaderConfig)] = (ProtocolChunkMode.SingleOnly, "IbmMqQueue"),
+        [typeof(PostgreSqlReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "PostgreSqlTable"),
+        [typeof(OracleReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "OracleSqlTable"),
+        [typeof(MsSqlReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "MsSqlTable"),
+        [typeof(TrinoReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "TrinoSqlTable"),
+        [typeof(ElasticReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "ElasticIndices"),
+        [typeof(S3BucketReaderConfig)] = (ProtocolChunkMode.ChunkOnly, "S3Bucket"),
+    };
 
     /// <summary>
     /// Resolves the sender mode for the configured publisher protocol.
@@ -107,7 +114,8 @@ internal static class ProtocolChunkSupport
     private static (ProtocolChunkMode Mode, string PropertyName) ResolveSupport<TConfiguration>(
         TConfiguration configuration,
         IReadOnlyDictionary<Type, (ProtocolChunkMode Mode, string PropertyName)> supportedModes,
-        string protocolRole)
+        string protocolRole
+    )
         where TConfiguration : class
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -122,6 +130,7 @@ internal static class ProtocolChunkSupport
         }
 
         throw new InvalidOperationException(
-            $"Protocol type {configurationType.Name} is not supported for {protocolRole} chunk validation.");
+            $"Protocol type {configurationType.Name} is not supported for {protocolRole} chunk validation."
+        );
     }
 }

@@ -8,20 +8,47 @@ using QaaS.Runner.Sessions.ConfigurationObjects;
 
 namespace QaaS.Runner.Sessions.RuntimeOverrides;
 
-internal sealed record ConsumerOverrideRequest(string ActionName, IReaderConfig Configuration, ILogger Logger,
-    DataFilter DataFilter, string TimeZoneId);
+internal sealed record ConsumerOverrideRequest(
+    string ActionName,
+    IReaderConfig Configuration,
+    ILogger Logger,
+    DataFilter DataFilter,
+    string TimeZoneId
+);
 
-internal sealed record PublisherOverrideRequest(string ActionName, ISenderConfig Configuration, bool UseChunks,
-    ILogger Logger, DataFilter DataFilter, string TimeZoneId);
+internal sealed record PublisherOverrideRequest(
+    string ActionName,
+    ISenderConfig Configuration,
+    bool UseChunks,
+    ILogger Logger,
+    DataFilter DataFilter,
+    string TimeZoneId
+);
 
-internal sealed record TransactionOverrideRequest(string ActionName, ITransactorConfig Configuration, ILogger Logger,
-    TimeSpan Timeout);
+internal sealed record TransactionOverrideRequest(
+    string ActionName,
+    ITransactorConfig Configuration,
+    ILogger Logger,
+    TimeSpan Timeout
+);
 
-internal sealed record CollectorOverrideRequest(string ActionName, IFetcherConfig Configuration, ILogger Logger);
+internal sealed record CollectorOverrideRequest(
+    string ActionName,
+    IFetcherConfig Configuration,
+    ILogger Logger
+);
 
-internal sealed record MockerCommandOverrideRequest(string ActionName, int Stage, object SupportedCommand,
-    MockerCommandConfig Command, RedisConfig Redis, string ServerName, int RequestDurationMs, int RequestRetries,
-    ILogger Logger);
+internal sealed record MockerCommandOverrideRequest(
+    string ActionName,
+    int Stage,
+    object SupportedCommand,
+    MockerCommandConfig Command,
+    RedisConfig Redis,
+    string ServerName,
+    int RequestDurationMs,
+    int RequestRetries,
+    ILogger Logger
+);
 
 /// <summary>
 /// Stores optional factory overrides for session actions in the runtime context.
@@ -30,9 +57,15 @@ internal sealed record MockerCommandOverrideRequest(string ActionName, int Stage
 /// </summary>
 internal sealed class SessionActionOverrides
 {
-    public Func<ConsumerOverrideRequest, (IReader? Reader, IChunkReader? ChunkReader)>? Consumer { get; init; }
+    public Func<
+        ConsumerOverrideRequest,
+        (IReader? Reader, IChunkReader? ChunkReader)
+    >? Consumer { get; init; }
 
-    public Func<PublisherOverrideRequest, (ISender? Sender, IChunkSender? ChunkSender)>? Publisher { get; init; }
+    public Func<
+        PublisherOverrideRequest,
+        (ISender? Sender, IChunkSender? ChunkSender)
+    >? Publisher { get; init; }
 
     public Func<TransactionOverrideRequest, ITransactor>? Transaction { get; init; }
 
@@ -49,7 +82,10 @@ internal static class SessionActionOverrideExtensions
     /// Persists the current session-action override set on the shared internal context so the
     /// builders can swap real runtime dependencies for test doubles on demand.
     /// </summary>
-    public static void SetSessionActionOverrides(this InternalContext context, SessionActionOverrides overrides)
+    public static void SetSessionActionOverrides(
+        this InternalContext context,
+        SessionActionOverrides overrides
+    )
     {
         context.InternalGlobalDict ??= new Dictionary<string, object?>();
         context.InternalGlobalDict[OverridesKey] = overrides;

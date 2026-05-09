@@ -9,7 +9,8 @@ internal static class RunnerDiagnosticMessageFormatter
         IEnumerable<string?>? contextLines = null,
         string? detailHeading = null,
         IEnumerable<string?>? detailLines = null,
-        IEnumerable<string?>? guidanceLines = null)
+        IEnumerable<string?>? guidanceLines = null
+    )
     {
         var builder = new StringBuilder();
         builder.AppendLine(headline);
@@ -23,19 +24,25 @@ internal static class RunnerDiagnosticMessageFormatter
 
     public static string SummarizeValues(IEnumerable<string?>? values)
     {
-        var materializedValues = values?
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Select(value => value!.Trim())
-            .Distinct(StringComparer.Ordinal)
-            .ToList() ?? [];
+        var materializedValues =
+            values
+                ?.Where(value => !string.IsNullOrWhiteSpace(value))
+                .Select(value => value!.Trim())
+                .Distinct(StringComparer.Ordinal)
+                .ToList()
+            ?? [];
 
         return materializedValues.Count == 0 ? "<none>" : string.Join(", ", materializedValues);
     }
 
-    private static void AppendBulletedSection(StringBuilder builder, string title, IEnumerable<string?>? lines)
+    private static void AppendBulletedSection(
+        StringBuilder builder,
+        string title,
+        IEnumerable<string?>? lines
+    )
     {
-        var materializedLines = lines?
-            .Where(line => !string.IsNullOrWhiteSpace(line))
+        var materializedLines = lines
+            ?.Where(line => !string.IsNullOrWhiteSpace(line))
             .Select(line => line!.Trim())
             .ToList();
 
@@ -52,14 +59,22 @@ internal static class RunnerDiagnosticMessageFormatter
         }
     }
 
-    private static void AppendNumberedSection(StringBuilder builder, string? title, IEnumerable<string?>? lines)
+    private static void AppendNumberedSection(
+        StringBuilder builder,
+        string? title,
+        IEnumerable<string?>? lines
+    )
     {
-        var materializedLines = lines?
-            .Where(line => !string.IsNullOrWhiteSpace(line))
+        var materializedLines = lines
+            ?.Where(line => !string.IsNullOrWhiteSpace(line))
             .Select(line => line!.Trim())
             .ToList();
 
-        if (string.IsNullOrWhiteSpace(title) || materializedLines == null || materializedLines.Count == 0)
+        if (
+            string.IsNullOrWhiteSpace(title)
+            || materializedLines == null
+            || materializedLines.Count == 0
+        )
         {
             return;
         }

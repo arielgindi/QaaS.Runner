@@ -12,46 +12,67 @@ public sealed class Consumer : BaseConsumer
 {
     private readonly IReader? _reader;
 
-    public Consumer(string name, IReader? reader, TimeSpan timeoutMs, TimeSpan? initialTimeoutMs, int stage, Policy? policies,
-        DataFilter dataFilter, SerializationType? serializationType, Type? deserializerSpecificType,
-        ILogger logger) : base(name, timeoutMs, initialTimeoutMs, stage, policies, dataFilter, serializationType,
-        deserializerSpecificType, logger)
+    public Consumer(
+        string name,
+        IReader? reader,
+        TimeSpan timeoutMs,
+        TimeSpan? initialTimeoutMs,
+        int stage,
+        Policy? policies,
+        DataFilter dataFilter,
+        SerializationType? serializationType,
+        Type? deserializerSpecificType,
+        ILogger logger
+    )
+        : base(
+            name,
+            timeoutMs,
+            initialTimeoutMs,
+            stage,
+            policies,
+            dataFilter,
+            serializationType,
+            deserializerSpecificType,
+            logger
+        )
     {
         _reader = reader;
         Logger.LogInformation(
             "Initializing {Consumer} {ConsumerName} with Reader type {ReaderType} and Deserializer {DeserializerType}",
-            GetType().Name, Name, _reader?.GetType().Name, SerializationType);
+            GetType().Name,
+            Name,
+            _reader?.GetType().Name,
+            SerializationType
+        );
 
         RunningCommunicationData = new RunningCommunicationData<object>
         {
             Name = Name,
-            SerializationType = GetCommunicationSerializationType()
+            SerializationType = GetCommunicationSerializationType(),
         };
     }
 
     protected override void Consume(InternalCommunicationData<object> actData)
     {
-        while (TryReadAndLog(actData, TimeoutMs))
-        {
-        }
+        while (TryReadAndLog(actData, TimeoutMs)) { }
 
         TerminateConsumer();
     }
 
     protected override bool InitialConsume(InternalCommunicationData<object> actData)
     {
-        if (InitialTimeoutMs == null) return true;
+        if (InitialTimeoutMs == null)
+            return true;
 
-        if (TryReadAndLog(actData, InitialTimeoutMs.Value)) return true;
+        if (TryReadAndLog(actData, InitialTimeoutMs.Value))
+            return true;
 
         TerminateConsumer();
         return false;
     }
-    
 
     protected override SerializationType? GetCommunicationSerializationType() =>
         _reader?.GetSerializationType() ?? SerializationType;
-
 
     internal override InternalCommunicationData<object> Act()
     {

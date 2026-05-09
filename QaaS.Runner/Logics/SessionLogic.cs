@@ -79,7 +79,10 @@ public class SessionLogic : ILogic
     public ExecutionData Run(ExecutionData executionData)
     {
         _context.Logger.LogInformation("Running {LogicType} Logic", "Sessions");
-        _context.Logger.LogInformation("Received {SessionCount} session definitions for execution", _sessions.Count);
+        _context.Logger.LogInformation(
+            "Received {SessionCount} session definitions for execution",
+            _sessions.Count
+        );
 
         var stages = BuildStageMap();
         _context.Logger.LogDebug("Grouped sessions into {StageCount} stage buckets", stages.Count);
@@ -87,26 +90,42 @@ public class SessionLogic : ILogic
         var blockingSessionsByTargetStage = new Dictionary<int, List<Task<SessionData?>>>();
         foreach (var (stage, stageSessions) in stages)
         {
-            MaterializeDeferredSessionsForStage(stage, blockingSessionsByTargetStage, executionData);
+            MaterializeDeferredSessionsForStage(
+                stage,
+                blockingSessionsByTargetStage,
+                executionData
+            );
 
             _context.Logger.LogInformation(
                 "Starting session stage {Stage} with {SessionCount} session(s): {SessionNames}",
-                stage, stageSessions.Count, string.Join(", ", stageSessions.Select(session => session.Name)));
-            var immediateSessionsInThisStage =
-                StartSessionsForCurrentStage(stageSessions, executionData, blockingSessionsByTargetStage);
+                stage,
+                stageSessions.Count,
+                string.Join(", ", stageSessions.Select(session => session.Name))
+            );
+            var immediateSessionsInThisStage = StartSessionsForCurrentStage(
+                stageSessions,
+                executionData,
+                blockingSessionsByTargetStage
+            );
 
             // Sessions without RunUntilStage are visible to the next stage only after the full
             // current stage has been launched and completed.
-            executionData.SessionDatas.AddRange(MaterializeSessionResults(immediateSessionsInThisStage));
+            executionData.SessionDatas.AddRange(
+                MaterializeSessionResults(immediateSessionsInThisStage)
+            );
             _context.Logger.LogDebug(
                 "Finished session stage {Stage}. Immediate session results captured: {CapturedSessionCount}",
-                stage, immediateSessionsInThisStage.Count);
+                stage,
+                immediateSessionsInThisStage.Count
+            );
         }
 
         MaterializeRemainingDeferredSessions(blockingSessionsByTargetStage, executionData);
 
-        _context.Logger.LogInformation("Session logic completed. Total collected session results: {SessionDataCount}",
-            executionData.SessionDatas.Count);
+        _context.Logger.LogInformation(
+            "Session logic completed. Total collected session results: {SessionDataCount}",
+            executionData.SessionDatas.Count
+        );
 
         return executionData;
     }
@@ -140,20 +159,27 @@ public class SessionLogic : ILogic
     /// Deferred sessions keyed by the stage that should wait for them.
     /// </param>
     /// <param name="executionData">The execution data that receives the finalized session results.</param>
-    private void MaterializeDeferredSessionsForStage(int stage,
-        IDictionary<int, List<Task<SessionData?>>> blockingSessionsByTargetStage, ExecutionData executionData)
+    private void MaterializeDeferredSessionsForStage(
+        int stage,
+        IDictionary<int, List<Task<SessionData?>>> blockingSessionsByTargetStage,
+        ExecutionData executionData
+    )
     {
         if (!blockingSessionsByTargetStage.Remove(stage, out var blockers))
             return;
 
         _context.Logger.LogDebug(
             "Waiting for {BlockingSessionCount} deferred session(s) before starting stage {Stage}",
-            blockers.Count, stage);
+            blockers.Count,
+            stage
+        );
         Task.WhenAll(blockers).GetAwaiter().GetResult();
         executionData.SessionDatas.AddRange(MaterializeSessionResults(blockers));
         _context.Logger.LogDebug(
             "Materialized {BlockingSessionCount} deferred session result(s) before stage {Stage}",
-            blockers.Count, stage);
+            blockers.Count,
+            stage
+        );
     }
 
     /// <summary>
@@ -172,8 +198,11 @@ public class SessionLogic : ILogic
     /// A deferred session still starts immediately in its own <see cref="ISession.SessionStage" />.
     /// Only publication of its result is postponed.
     /// </remarks>
-    private List<Task<SessionData?>> StartSessionsForCurrentStage(IEnumerable<ISession> stageSessions,
-        ExecutionData executionData, IDictionary<int, List<Task<SessionData?>>> blockingSessionsByTargetStage)
+    private List<Task<SessionData?>> StartSessionsForCurrentStage(
+        IEnumerable<ISession> stageSessions,
+        ExecutionData executionData,
+        IDictionary<int, List<Task<SessionData?>>> blockingSessionsByTargetStage
+    )
     {
         var immediateSessionsInThisStage = new List<Task<SessionData?>>();
 
@@ -192,7 +221,10 @@ public class SessionLogic : ILogic
             blockingSessionsByTargetStage[targetStage].Add(sessionTask);
             _context.Logger.LogDebug(
                 "Deferred session {SessionName} started in stage {SessionStage} and will block stage {TargetStage}",
-                session.Name, session.SessionStage, targetStage);
+                session.Name,
+                session.SessionStage,
+                targetStage
+            );
         }
 
         return immediateSessionsInThisStage;
@@ -210,10 +242,15 @@ public class SessionLogic : ILogic
     /// points at a stage that is not present in the execution plan.
     /// </remarks>
     private static void MaterializeRemainingDeferredSessions(
-        IDictionary<int, List<Task<SessionData?>>> blockingSessionsByTargetStage, ExecutionData executionData)
+        IDictionary<int, List<Task<SessionData?>>> blockingSessionsByTargetStage,
+        ExecutionData executionData
+    )
     {
-        blockingSessionsByTargetStage.Select(stageToSessions => stageToSessions.Value)
-            .ForEach(sessionTasks => executionData.SessionDatas.AddRange(MaterializeSessionResults(sessionTasks)));
+        blockingSessionsByTargetStage
+            .Select(stageToSessions => stageToSessions.Value)
+            .ForEach(sessionTasks =>
+                executionData.SessionDatas.AddRange(MaterializeSessionResults(sessionTasks))
+            );
     }
 
     /// <summary>
@@ -222,7 +259,9 @@ public class SessionLogic : ILogic
     /// </summary>
     /// <param name="sessionTasks">The completed or awaitable session tasks to materialize.</param>
     /// <returns>The produced session results, preserving task enumeration order.</returns>
-    private static IEnumerable<SessionData?> MaterializeSessionResults(IEnumerable<Task<SessionData?>> sessionTasks)
+    private static IEnumerable<SessionData?> MaterializeSessionResults(
+        IEnumerable<Task<SessionData?>> sessionTasks
+    )
     {
         return sessionTasks.Select(sessionTask => sessionTask.GetAwaiter().GetResult());
     }
@@ -238,7 +277,10 @@ public class SessionLogic : ILogic
     /// can rely on the interface's default bridge while truly asynchronous implementations can avoid
     /// blocking worker threads.
     /// </remarks>
-    private static Task<SessionData?> StartSessionAsync(ISession session, ExecutionData executionData)
+    private static Task<SessionData?> StartSessionAsync(
+        ISession session,
+        ExecutionData executionData
+    )
     {
         return session.RunAsync(executionData);
     }

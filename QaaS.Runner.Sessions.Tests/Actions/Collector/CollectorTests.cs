@@ -21,24 +21,39 @@ public class CollectorTests
     private void InitFetcher()
     {
         _fetcher = new Mock<IFetcher>();
-        _fetcher.Setup(f => f.Collect(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-            .Returns(expectedBody.Select(d => new DetailedData<object>{Body = d, Timestamp = DateTime.UtcNow, MetaData = new MetaData()}));
+        _fetcher
+            .Setup(f => f.Collect(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Returns(
+                expectedBody.Select(d => new DetailedData<object>
+                {
+                    Body = d,
+                    Timestamp = DateTime.UtcNow,
+                    MetaData = new MetaData(),
+                })
+            );
     }
-    
+
     private Sessions.Actions.Collectors.Collector InitCollector(
         IFetcher fetcher,
         int endTimeOffset,
         DateTime sessionTime,
-        int sessionLength)
+        int sessionLength
+    )
     {
         var collector = new Sessions.Actions.Collectors.Collector(
             "test collector",
             fetcher,
-            new DataFilter {Body = true, Timestamp = false, MetaData = false},
+            new DataFilter
+            {
+                Body = true,
+                Timestamp = false,
+                MetaData = false,
+            },
             0,
             endTimeOffset,
             1,
-            NullLogger.Instance);
+            NullLogger.Instance
+        );
         collector.SetCollectionTimes(sessionTime, sessionTime.AddSeconds(sessionLength));
         return collector;
     }
@@ -52,21 +67,28 @@ public class CollectorTests
         var sw = Stopwatch.StartNew();
         var sessionStartTime = DateTime.UtcNow;
         const int sessionLength = 0;
-        var collector = InitCollector(_fetcher!.Object, endTimeOffset, sessionStartTime , sessionLength);
+        var collector = InitCollector(
+            _fetcher!.Object,
+            endTimeOffset,
+            sessionStartTime,
+            sessionLength
+        );
 
         // Act
         var collectedData = collector.Act();
         sw.Stop();
 
-        var receivedBody =
-            collectedData.Output!.Select(cd => cd!.Body).Order();
-        var allMetadataFiltered =
-            collectedData.Output!.All(cd => cd!.MetaData == null);
-        var allTimestampFiltered =
-            collectedData.Output!.All(cd => cd!.Timestamp == new DateTime?());
-        
+        var receivedBody = collectedData.Output!.Select(cd => cd!.Body).Order();
+        var allMetadataFiltered = collectedData.Output!.All(cd => cd!.MetaData == null);
+        var allTimestampFiltered = collectedData.Output!.All(cd =>
+            cd!.Timestamp == new DateTime?()
+        );
+
         // Assert
-        Assert.That(sessionStartTime.AddMilliseconds(sw.ElapsedMilliseconds) >= sessionStartTime.AddSeconds(sessionLength).AddMilliseconds(endTimeOffset));
+        Assert.That(
+            sessionStartTime.AddMilliseconds(sw.ElapsedMilliseconds)
+                >= sessionStartTime.AddSeconds(sessionLength).AddMilliseconds(endTimeOffset)
+        );
         CollectionAssert.AreEqual(receivedBody, expectedBody);
         Assert.That(allMetadataFiltered, Is.True);
         Assert.That(allTimestampFiltered, Is.True);
@@ -83,7 +105,8 @@ public class CollectorTests
             100,
             0,
             1,
-            NullLogger.Instance);
+            NullLogger.Instance
+        );
         var now = DateTime.UtcNow;
         collector.SetCollectionTimes(now, now);
 

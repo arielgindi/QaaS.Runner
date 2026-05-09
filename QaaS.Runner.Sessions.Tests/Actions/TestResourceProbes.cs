@@ -6,14 +6,14 @@ using QaaS.Framework.SDK.Session.SessionDataObjects;
 
 namespace QaaS.Runner.Sessions.Tests.Actions;
 
-public class TestResourceProbes
-{
-    
-}
+public class TestResourceProbes { }
 
 internal class TestProbe : BaseProbe<object>
 {
-    public override void Run(IImmutableList<SessionData> sessionDataList, IImmutableList<DataSource> dataSourceList)
+    public override void Run(
+        IImmutableList<SessionData> sessionDataList,
+        IImmutableList<DataSource> dataSourceList
+    )
     {
         Context.Logger.LogDebug("Probe ran successfully");
     }

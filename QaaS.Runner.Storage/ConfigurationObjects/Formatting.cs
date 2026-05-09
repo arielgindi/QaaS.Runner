@@ -6,5 +6,5 @@
 public enum Formatting
 {
     Indented,
-    None
+    None,
 }

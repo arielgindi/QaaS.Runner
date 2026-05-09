@@ -108,7 +108,8 @@ public class SessionLogicTests
         var stage2Session = new Mock<ISession>();
         stage2Session.SetupGet(s => s.SessionStage).Returns(2);
         stage2Session.SetupGet(s => s.RunUntilStage).Returns((int?)null);
-        stage2Session.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        stage2Session
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns(() =>
             {
                 runOrder.Enqueue("stage-2");
@@ -118,17 +119,18 @@ public class SessionLogicTests
         var stage1Session = new Mock<ISession>();
         stage1Session.SetupGet(s => s.SessionStage).Returns(1);
         stage1Session.SetupGet(s => s.RunUntilStage).Returns((int?)null);
-        stage1Session.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        stage1Session
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns(() =>
             {
                 runOrder.Enqueue("stage-1");
                 return Task.FromResult<SessionData?>(stage1SessionData);
             });
 
-        var sessionLogic = new SessionLogic([stage2Session.Object, stage1Session.Object], new InternalContext
-        {
-            Logger = Globals.Logger
-        });
+        var sessionLogic = new SessionLogic(
+            [stage2Session.Object, stage1Session.Object],
+            new InternalContext { Logger = Globals.Logger }
+        );
         var executionData = new ExecutionData();
 
         // Act
@@ -150,7 +152,8 @@ public class SessionLogicTests
 
         blockingSession.SetupGet(s => s.SessionStage).Returns(1);
         blockingSession.SetupGet(s => s.RunUntilStage).Returns(2);
-        blockingSession.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        blockingSession
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns(() =>
             {
                 Thread.Sleep(60);
@@ -160,17 +163,20 @@ public class SessionLogicTests
 
         blockedStageSession.SetupGet(s => s.SessionStage).Returns(2);
         blockedStageSession.SetupGet(s => s.RunUntilStage).Returns((int?)null);
-        blockedStageSession.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        blockedStageSession
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns(() =>
             {
                 Assert.That(Interlocked.CompareExchange(ref blockerCompleted, 0, 0), Is.EqualTo(1));
-                return Task.FromResult<SessionData?>(new SessionData { Name = "BlockedStageSession" });
+                return Task.FromResult<SessionData?>(
+                    new SessionData { Name = "BlockedStageSession" }
+                );
             });
 
-        var sessionLogic = new SessionLogic([blockingSession.Object, blockedStageSession.Object], new InternalContext
-        {
-            Logger = Globals.Logger
-        });
+        var sessionLogic = new SessionLogic(
+            [blockingSession.Object, blockedStageSession.Object],
+            new InternalContext { Logger = Globals.Logger }
+        );
         var executionData = new ExecutionData();
 
         // Act
@@ -192,7 +198,8 @@ public class SessionLogicTests
         sessionA.SetupGet(s => s.Name).Returns("SessionA");
         sessionA.SetupGet(s => s.SessionStage).Returns(0);
         sessionA.SetupGet(s => s.RunUntilStage).Returns(1);
-        sessionA.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        sessionA
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns(async () =>
             {
                 await Task.Delay(40);
@@ -203,7 +210,8 @@ public class SessionLogicTests
         sessionB.SetupGet(s => s.Name).Returns("SessionB");
         sessionB.SetupGet(s => s.SessionStage).Returns(1);
         sessionB.SetupGet(s => s.RunUntilStage).Returns((int?)null);
-        sessionB.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        sessionB
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns<ExecutionData>(executionData =>
             {
                 Assert.That(executionData.SessionDatas.Count, Is.EqualTo(1));
@@ -211,19 +219,27 @@ public class SessionLogicTests
                 return Task.FromResult<SessionData?>(sessionBData);
             });
 
-        var sessionLogic = new SessionLogic([sessionA.Object, sessionB.Object], new InternalContext
-        {
-            Logger = Globals.Logger
-        });
+        var sessionLogic = new SessionLogic(
+            [sessionA.Object, sessionB.Object],
+            new InternalContext { Logger = Globals.Logger }
+        );
         var executionData = new ExecutionData();
 
         sessionLogic.Run(executionData);
 
         Assert.That(executionData.SessionDatas, Has.Count.EqualTo(2));
-        Assert.That(executionData.SessionDatas.Count(sessionData => ReferenceEquals(sessionData, sessionAData)),
-            Is.EqualTo(1));
-        Assert.That(executionData.SessionDatas.Count(sessionData => ReferenceEquals(sessionData, sessionBData)),
-            Is.EqualTo(1));
+        Assert.That(
+            executionData.SessionDatas.Count(sessionData =>
+                ReferenceEquals(sessionData, sessionAData)
+            ),
+            Is.EqualTo(1)
+        );
+        Assert.That(
+            executionData.SessionDatas.Count(sessionData =>
+                ReferenceEquals(sessionData, sessionBData)
+            ),
+            Is.EqualTo(1)
+        );
     }
 
     [Test]
@@ -236,17 +252,21 @@ public class SessionLogicTests
         var blockingSession = new Mock<ISession>();
         blockingSession.SetupGet(s => s.SessionStage).Returns(1);
         blockingSession.SetupGet(s => s.RunUntilStage).Returns(99);
-        blockingSession.Setup(s => s.RunAsync(It.IsAny<ExecutionData>())).ReturnsAsync(blockingSessionData);
+        blockingSession
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+            .ReturnsAsync(blockingSessionData);
 
         var regularSession = new Mock<ISession>();
         regularSession.SetupGet(s => s.SessionStage).Returns(1);
         regularSession.SetupGet(s => s.RunUntilStage).Returns((int?)null);
-        regularSession.Setup(s => s.RunAsync(It.IsAny<ExecutionData>())).ReturnsAsync(regularSessionData);
+        regularSession
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+            .ReturnsAsync(regularSessionData);
 
-        var sessionLogic = new SessionLogic([blockingSession.Object, regularSession.Object], new InternalContext
-        {
-            Logger = Globals.Logger
-        });
+        var sessionLogic = new SessionLogic(
+            [blockingSession.Object, regularSession.Object],
+            new InternalContext { Logger = Globals.Logger }
+        );
         var executionData = new ExecutionData();
 
         // Act
@@ -270,7 +290,8 @@ public class SessionLogicTests
         stage0SessionA.SetupGet(s => s.Name).Returns("Stage0-A");
         stage0SessionA.SetupGet(s => s.SessionStage).Returns(0);
         stage0SessionA.SetupGet(s => s.RunUntilStage).Returns((int?)null);
-        stage0SessionA.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        stage0SessionA
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns(async () =>
             {
                 await Task.Delay(50);
@@ -282,7 +303,8 @@ public class SessionLogicTests
         stage0SessionB.SetupGet(s => s.Name).Returns("Stage0-B");
         stage0SessionB.SetupGet(s => s.SessionStage).Returns(0);
         stage0SessionB.SetupGet(s => s.RunUntilStage).Returns((int?)null);
-        stage0SessionB.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        stage0SessionB
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns(async () =>
             {
                 await Task.Delay(20);
@@ -294,10 +316,14 @@ public class SessionLogicTests
         stage1Session.SetupGet(s => s.Name).Returns("Stage1");
         stage1Session.SetupGet(s => s.SessionStage).Returns(1);
         stage1Session.SetupGet(s => s.RunUntilStage).Returns((int?)null);
-        stage1Session.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        stage1Session
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns<ExecutionData>(executionData =>
             {
-                Assert.That(Interlocked.CompareExchange(ref firstStageCompletedCount, 0, 0), Is.EqualTo(2));
+                Assert.That(
+                    Interlocked.CompareExchange(ref firstStageCompletedCount, 0, 0),
+                    Is.EqualTo(2)
+                );
                 Assert.That(executionData.SessionDatas, Has.Count.EqualTo(2));
                 Assert.That(executionData.SessionDatas, Contains.Item(stage0SessionAData));
                 Assert.That(executionData.SessionDatas, Contains.Item(stage0SessionBData));
@@ -306,7 +332,8 @@ public class SessionLogicTests
 
         var sessionLogic = new SessionLogic(
             [stage0SessionA.Object, stage0SessionB.Object, stage1Session.Object],
-            new InternalContext { Logger = Globals.Logger });
+            new InternalContext { Logger = Globals.Logger }
+        );
         var executionData = new ExecutionData();
 
         sessionLogic.Run(executionData);
@@ -327,7 +354,8 @@ public class SessionLogicTests
         deferredSession.SetupGet(s => s.Name).Returns("Deferred");
         deferredSession.SetupGet(s => s.SessionStage).Returns(0);
         deferredSession.SetupGet(s => s.RunUntilStage).Returns(2);
-        deferredSession.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        deferredSession
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns(async () =>
             {
                 await Task.Delay(75);
@@ -339,10 +367,14 @@ public class SessionLogicTests
         intermediateSession.SetupGet(s => s.Name).Returns("Intermediate");
         intermediateSession.SetupGet(s => s.SessionStage).Returns(1);
         intermediateSession.SetupGet(s => s.RunUntilStage).Returns((int?)null);
-        intermediateSession.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        intermediateSession
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns<ExecutionData>(executionData =>
             {
-                Assert.That(Interlocked.CompareExchange(ref deferredCompleted, 0, 0), Is.EqualTo(0));
+                Assert.That(
+                    Interlocked.CompareExchange(ref deferredCompleted, 0, 0),
+                    Is.EqualTo(0)
+                );
                 Assert.That(executionData.SessionDatas, Is.Empty);
                 return Task.FromResult<SessionData?>(intermediateSessionData);
             });
@@ -351,10 +383,14 @@ public class SessionLogicTests
         blockedSession.SetupGet(s => s.Name).Returns("Blocked");
         blockedSession.SetupGet(s => s.SessionStage).Returns(2);
         blockedSession.SetupGet(s => s.RunUntilStage).Returns((int?)null);
-        blockedSession.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        blockedSession
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .Returns<ExecutionData>(executionData =>
             {
-                Assert.That(Interlocked.CompareExchange(ref deferredCompleted, 0, 0), Is.EqualTo(1));
+                Assert.That(
+                    Interlocked.CompareExchange(ref deferredCompleted, 0, 0),
+                    Is.EqualTo(1)
+                );
                 Assert.That(executionData.SessionDatas, Has.Count.EqualTo(2));
                 Assert.That(executionData.SessionDatas, Contains.Item(deferredSessionData));
                 Assert.That(executionData.SessionDatas, Contains.Item(intermediateSessionData));
@@ -363,18 +399,31 @@ public class SessionLogicTests
 
         var sessionLogic = new SessionLogic(
             [deferredSession.Object, intermediateSession.Object, blockedSession.Object],
-            new InternalContext { Logger = Globals.Logger });
+            new InternalContext { Logger = Globals.Logger }
+        );
         var executionData = new ExecutionData();
 
         sessionLogic.Run(executionData);
 
         Assert.That(executionData.SessionDatas, Has.Count.EqualTo(3));
-        Assert.That(executionData.SessionDatas.Count(sessionData => ReferenceEquals(sessionData, deferredSessionData)),
-            Is.EqualTo(1));
-        Assert.That(executionData.SessionDatas.Count(sessionData => ReferenceEquals(sessionData, intermediateSessionData)),
-            Is.EqualTo(1));
-        Assert.That(executionData.SessionDatas.Count(sessionData => ReferenceEquals(sessionData, blockedSessionData)),
-            Is.EqualTo(1));
+        Assert.That(
+            executionData.SessionDatas.Count(sessionData =>
+                ReferenceEquals(sessionData, deferredSessionData)
+            ),
+            Is.EqualTo(1)
+        );
+        Assert.That(
+            executionData.SessionDatas.Count(sessionData =>
+                ReferenceEquals(sessionData, intermediateSessionData)
+            ),
+            Is.EqualTo(1)
+        );
+        Assert.That(
+            executionData.SessionDatas.Count(sessionData =>
+                ReferenceEquals(sessionData, blockedSessionData)
+            ),
+            Is.EqualTo(1)
+        );
     }
 
     [Test]
@@ -382,7 +431,10 @@ public class SessionLogicTests
     {
         var sessionData = new SessionData { Name = "SyncSession" };
         var session = new SyncOnlySession(sessionData);
-        var sessionLogic = new SessionLogic([session], new InternalContext { Logger = Globals.Logger });
+        var sessionLogic = new SessionLogic(
+            [session],
+            new InternalContext { Logger = Globals.Logger }
+        );
         var executionData = new ExecutionData();
 
         sessionLogic.Run(executionData);
@@ -400,24 +452,33 @@ public class SessionLogicTests
         session.SetupGet(s => s.Name).Returns("SessionA");
         session.SetupGet(s => s.SessionStage).Returns(0);
         session.SetupGet(s => s.RunUntilStage).Returns((int?)null);
-        session.Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
+        session
+            .Setup(s => s.RunAsync(It.IsAny<ExecutionData>()))
             .ReturnsAsync(new SessionData { Name = "SessionA" });
 
-        var sessionLogic = new SessionLogic([session.Object], new InternalContext { Logger = logger });
+        var sessionLogic = new SessionLogic(
+            [session.Object],
+            new InternalContext { Logger = logger }
+        );
         var executionData = new ExecutionData();
 
         sessionLogic.Run(executionData);
 
-        var informationMessages = logger.Entries
-            .Where(entry => entry.LogLevel == LogLevel.Information)
+        var informationMessages = logger
+            .Entries.Where(entry => entry.LogLevel == LogLevel.Information)
             .Select(entry => entry.Message)
             .ToArray();
 
-        Assert.That(informationMessages,
-            Contains.Item("Starting session stage 0 with 1 session(s): SessionA"));
-        Assert.That(informationMessages,
-            Has.None.Matches<string>(message => message.StartsWith("Finished session stage 0",
-                StringComparison.Ordinal)));
+        Assert.That(
+            informationMessages,
+            Contains.Item("Starting session stage 0 with 1 session(s): SessionA")
+        );
+        Assert.That(
+            informationMessages,
+            Has.None.Matches<string>(message =>
+                message.StartsWith("Finished session stage 0", StringComparison.Ordinal)
+            )
+        );
     }
 
     private sealed class SyncOnlySession(SessionData sessionData) : ISession
@@ -438,7 +499,8 @@ public class SessionLogicTests
     {
         public List<LogEntry> Entries { get; } = [];
 
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull
+        public IDisposable BeginScope<TState>(TState state)
+            where TState : notnull
         {
             return NoOpScope.Instance;
         }
@@ -448,8 +510,13 @@ public class SessionLogicTests
             return true;
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-            Func<TState, Exception?, string> formatter)
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter
+        )
         {
             Entries.Add(new LogEntry(logLevel, formatter(state, exception)));
         }
@@ -458,9 +525,7 @@ public class SessionLogicTests
         {
             public static readonly NoOpScope Instance = new();
 
-            public void Dispose()
-            {
-            }
+            public void Dispose() { }
         }
     }
 

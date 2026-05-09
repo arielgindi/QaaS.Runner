@@ -23,8 +23,12 @@ public class StorageLogicTests
         var sessionDataList1 = new List<SessionData> { mockSessionData1, mockSessionData2 };
         var sessionDataList2 = new List<SessionData> { mockSessionData3 };
 
-        mockStorage1.Setup(s => s.Retrieve(It.IsAny<string>())).Returns(sessionDataList1.ToImmutableList());
-        mockStorage2.Setup(s => s.Retrieve(It.IsAny<string>())).Returns(sessionDataList2.ToImmutableList());
+        mockStorage1
+            .Setup(s => s.Retrieve(It.IsAny<string>()))
+            .Returns(sessionDataList1.ToImmutableList());
+        mockStorage2
+            .Setup(s => s.Retrieve(It.IsAny<string>()))
+            .Returns(sessionDataList2.ToImmutableList());
 
         var mockStorages = new List<IStorage> { mockStorage1.Object, mockStorage2.Object };
         var context = new InternalContext { CaseName = "TestCase", Logger = Globals.Logger };
@@ -79,7 +83,9 @@ public class StorageLogicTests
         var sessionData2 = new SessionData { Name = "DuplicateSession" };
 
         var sessionDataList = new List<SessionData> { sessionData1 };
-        mockStorage1.Setup(s => s.Retrieve(It.IsAny<string>())).Returns(sessionDataList.ToImmutableList());
+        mockStorage1
+            .Setup(s => s.Retrieve(It.IsAny<string>()))
+            .Returns(sessionDataList.ToImmutableList());
 
         var mockStorages = new List<IStorage> { mockStorage1.Object };
         var context = new InternalContext { CaseName = "TestCase", Logger = Globals.Logger };

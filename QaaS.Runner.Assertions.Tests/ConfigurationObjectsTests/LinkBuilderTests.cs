@@ -24,10 +24,9 @@ public class LinkBuilderTests
         var config = new KibanaLinkConfig
         {
             Url = "https://kibana.local",
-            DataViewId = "data-view"
+            DataViewId = "data-view",
         };
-        var builder = new LinkBuilder()
-            .Configure(config);
+        var builder = new LinkBuilder().Configure(config);
 
         Assert.That(builder.Configuration, Is.SameAs(config));
     }
@@ -38,10 +37,9 @@ public class LinkBuilderTests
         var config = new PrometheusLinkConfig
         {
             Url = "https://prometheus.local",
-            Expressions = ["up"]
+            Expressions = ["up"],
         };
-        var builder = new LinkBuilder()
-            .Configure(config);
+        var builder = new LinkBuilder().Configure(config);
 
         Assert.That(builder.Configuration, Is.SameAs(config));
     }
@@ -52,10 +50,9 @@ public class LinkBuilderTests
         var config = new GrafanaLinkConfig
         {
             Url = "https://grafana.local",
-            DashboardId = "dashboard-id"
+            DashboardId = "dashboard-id",
         };
-        var builder = new LinkBuilder()
-            .Configure(config);
+        var builder = new LinkBuilder().Configure(config);
 
         Assert.That(builder.Configuration, Is.SameAs(config));
     }
@@ -65,7 +62,9 @@ public class LinkBuilderTests
     {
         var builder = new LinkBuilder();
 
-        Assert.Throws<InvalidOperationException>(() => builder.UpdateConfiguration(new { Url = "https://link.local" }));
+        Assert.Throws<InvalidOperationException>(() =>
+            builder.UpdateConfiguration(new { Url = "https://link.local" })
+        );
     }
 
     [Test]
@@ -92,14 +91,14 @@ public class LinkBuilderTests
     {
         var builder = new LinkBuilder()
             .Named("kibana-link")
-            .Configure(new KibanaLinkConfig
-            {
-                Url = "https://kibana.local",
-                DataViewId = "data-view"
-            });
+            .Configure(
+                new KibanaLinkConfig { Url = "https://kibana.local", DataViewId = "data-view" }
+            );
 
         var result = builder.Build();
-        var link = result.GetLink([new KeyValuePair<DateTime, DateTime>(DateTime.UtcNow, DateTime.UtcNow)]);
+        var link = result.GetLink([
+            new KeyValuePair<DateTime, DateTime>(DateTime.UtcNow, DateTime.UtcNow),
+        ]);
 
         Assert.That(result, Is.TypeOf<KibanaLink>());
         Assert.That(link.Key, Is.EqualTo("kibana-link"));
@@ -108,12 +107,9 @@ public class LinkBuilderTests
     [Test]
     public void Build_WithPrometheusConfig_ReturnsPrometheusLink()
     {
-        var builder = new LinkBuilder()
-            .Configure(new PrometheusLinkConfig
-            {
-                Url = "https://prometheus.local",
-                Expressions = ["up"]
-            });
+        var builder = new LinkBuilder().Configure(
+            new PrometheusLinkConfig { Url = "https://prometheus.local", Expressions = ["up"] }
+        );
 
         var result = builder.Build();
 
@@ -123,12 +119,9 @@ public class LinkBuilderTests
     [Test]
     public void Build_WithGrafanaConfig_ReturnsGrafanaLink()
     {
-        var builder = new LinkBuilder()
-            .Configure(new GrafanaLinkConfig
-            {
-                Url = "https://grafana.local",
-                DashboardId = "dashboard-id"
-            });
+        var builder = new LinkBuilder().Configure(
+            new GrafanaLinkConfig { Url = "https://grafana.local", DashboardId = "dashboard-id" }
+        );
 
         var result = builder.Build();
 
@@ -138,14 +131,12 @@ public class LinkBuilderTests
     [Test]
     public void Build_WithoutConfiguredName_UsesConfigTypeName()
     {
-        var builder = new LinkBuilder()
-            .Configure(new KibanaLinkConfig
-            {
-                Url = "https://kibana.local",
-                DataViewId = "data-view"
-            });
+        var builder = new LinkBuilder().Configure(
+            new KibanaLinkConfig { Url = "https://kibana.local", DataViewId = "data-view" }
+        );
 
-        var link = builder.Build()
+        var link = builder
+            .Build()
             .GetLink([new KeyValuePair<DateTime, DateTime>(DateTime.UtcNow, DateTime.UtcNow)]);
 
         Assert.That(link.Key, Does.Contain(nameof(KibanaLinkConfig)));
@@ -159,13 +150,13 @@ public class LinkBuilderTests
             Kibana = new KibanaLinkConfig
             {
                 Url = "https://kibana.local",
-                DataViewId = "data-view"
+                DataViewId = "data-view",
             },
             Prometheus = new PrometheusLinkConfig
             {
                 Url = "https://prometheus.local",
-                Expressions = ["up"]
-            }
+                Expressions = ["up"],
+            },
         };
 
         Assert.Throws<InvalidOperationException>(() => builder.Build());
@@ -175,20 +166,19 @@ public class LinkBuilderTests
     public void Configure_WhenCalledMultipleTimes_ResetsPreviousConfiguration()
     {
         var builder = new LinkBuilder()
-            .Configure(new KibanaLinkConfig
-            {
-                Url = "https://kibana.local",
-                DataViewId = "data-view"
-            })
-            .Configure(new GrafanaLinkConfig
-            {
-                Url = "https://grafana.local",
-                DashboardId = "dashboard-id"
-            });
+            .Configure(
+                new KibanaLinkConfig { Url = "https://kibana.local", DataViewId = "data-view" }
+            )
+            .Configure(
+                new GrafanaLinkConfig
+                {
+                    Url = "https://grafana.local",
+                    DashboardId = "dashboard-id",
+                }
+            );
 
         var result = builder.Build();
 
         Assert.That(result, Is.TypeOf<GrafanaLink>());
     }
 }
-

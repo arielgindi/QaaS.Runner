@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Reflection;
 using Autofac;
 using Microsoft.Extensions.Configuration;
@@ -81,12 +84,24 @@ public class ExecutionBuilderTests
             Assert.That(execution.TemplateLogic, Is.Not.Null);
             Assert.That(execution.DataSourceLogic, Is.Not.Null);
             Assert.That(execution.StorageLogic, Is.Not.Null);
-            Assert.That(typeof(Execution)
-                .GetProperty("Type", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-                .GetValue(execution), Is.EqualTo(ExecutionType.Run));
-            Assert.That(typeof(Execution)
-                .GetProperty("Context", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-                .GetValue(execution), Is.Not.Null);
+            Assert.That(
+                typeof(Execution)
+                    .GetProperty(
+                        "Type",
+                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                    )!
+                    .GetValue(execution),
+                Is.EqualTo(ExecutionType.Run)
+            );
+            Assert.That(
+                typeof(Execution)
+                    .GetProperty(
+                        "Context",
+                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                    )!
+                    .GetValue(execution),
+                Is.Not.Null
+            );
         });
     }
 
@@ -94,12 +109,14 @@ public class ExecutionBuilderTests
     public void Build_WithSessionWithoutConfiguredStage_AssignsIndexAsDefaultStage()
     {
         var builder = new ExecutionBuilder()
-            .AddSession(new SessionBuilder
-            {
-                Name = "session-without-stage",
-                Stage = null,
-                Probes = []
-            })
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "session-without-stage",
+                    Stage = null,
+                    Probes = [],
+                }
+            )
             .ExecutionType(ExecutionType.Template)
             .SetExecutionId("exec-stage")
             .SetCase("case-stage")
@@ -122,18 +139,17 @@ public class ExecutionBuilderTests
             Assertions = null,
             Storages = null,
             DataSources = null,
-            Links = null
+            Links = null,
         };
 
         Assert.DoesNotThrow(() =>
         {
             builder.UpdateSession("missing", new SessionBuilder());
             builder.RemoveSession("missing");
-            builder.UpdateAssertion("missing", new AssertionBuilder
-            {
-                AssertionInstance = null!,
-                Reporter = null!
-            });
+            builder.UpdateAssertion(
+                "missing",
+                new AssertionBuilder { AssertionInstance = null!, Reporter = null! }
+            );
             builder.RemoveAssertion("missing");
             builder.UpdateStorageAt(0, new StorageBuilder());
             builder.RemoveStorageAt(0);
@@ -153,10 +169,7 @@ public class ExecutionBuilderTests
     [Test]
     public void ReadStorages_WhenStoragesAreNull_ReturnsEmptyCollection()
     {
-        var builder = new ExecutionBuilder
-        {
-            Storages = null
-        };
+        var builder = new ExecutionBuilder { Storages = null };
 
         var storages = builder.Storages;
 
@@ -166,10 +179,7 @@ public class ExecutionBuilderTests
     [Test]
     public void ReadSessions_WhenSessionsAreNull_ReturnsEmptyCollection()
     {
-        var builder = new ExecutionBuilder
-        {
-            Sessions = null
-        };
+        var builder = new ExecutionBuilder { Sessions = null };
 
         Assert.That(builder.Sessions, Is.Null);
     }
@@ -179,30 +189,34 @@ public class ExecutionBuilderTests
     {
         const string sharedProbeName = "shared-probe";
         var builder = new ExecutionBuilder()
-            .AddSession(new SessionBuilder
-            {
-                Name = "session-1",
-                Stage = 0,
-                Probes =
-                [
-                    new ProbeBuilder()
-                        .Named(sharedProbeName)
-                        .HookNamed(nameof(FirstTestProbe))
-                        .Configure(new ProbeMarkerConfig { Marker = "first-config" })
-                ]
-            })
-            .AddSession(new SessionBuilder
-            {
-                Name = "session-2",
-                Stage = 1,
-                Probes =
-                [
-                    new ProbeBuilder()
-                        .Named(sharedProbeName)
-                        .HookNamed(nameof(SecondTestProbe))
-                        .Configure(new ProbeMarkerConfig { Marker = "second-config" })
-                ]
-            })
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "session-1",
+                    Stage = 0,
+                    Probes =
+                    [
+                        new ProbeBuilder()
+                            .Named(sharedProbeName)
+                            .HookNamed(nameof(FirstTestProbe))
+                            .Configure(new ProbeMarkerConfig { Marker = "first-config" }),
+                    ],
+                }
+            )
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "session-2",
+                    Stage = 1,
+                    Probes =
+                    [
+                        new ProbeBuilder()
+                            .Named(sharedProbeName)
+                            .HookNamed(nameof(SecondTestProbe))
+                            .Configure(new ProbeMarkerConfig { Marker = "second-config" }),
+                    ],
+                }
+            )
             .ExecutionType(ExecutionType.Run)
             .SetExecutionId("probe-scope")
             .SetCase("probe-scope-case")
@@ -226,30 +240,34 @@ public class ExecutionBuilderTests
         const string sharedProbeName = "SharedProbe";
         var logger = new CapturingLogger();
         var builder = new ExecutionBuilder()
-            .AddSession(new SessionBuilder
-            {
-                Name = "session-a",
-                Stage = 0,
-                Probes =
-                [
-                    new ProbeBuilder()
-                        .Named(sharedProbeName)
-                        .HookNamed(nameof(FirstTestProbe))
-                        .Configure(new ProbeMarkerConfig { Marker = "first-config" })
-                ]
-            })
-            .AddSession(new SessionBuilder
-            {
-                Name = "session-b",
-                Stage = 1,
-                Probes =
-                [
-                    new ProbeBuilder()
-                        .Named(sharedProbeName)
-                        .HookNamed(nameof(FirstTestProbe))
-                        .Configure(new ProbeMarkerConfig { Marker = "second-config" })
-                ]
-            })
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "session-a",
+                    Stage = 0,
+                    Probes =
+                    [
+                        new ProbeBuilder()
+                            .Named(sharedProbeName)
+                            .HookNamed(nameof(FirstTestProbe))
+                            .Configure(new ProbeMarkerConfig { Marker = "first-config" }),
+                    ],
+                }
+            )
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "session-b",
+                    Stage = 1,
+                    Probes =
+                    [
+                        new ProbeBuilder()
+                            .Named(sharedProbeName)
+                            .HookNamed(nameof(FirstTestProbe))
+                            .Configure(new ProbeMarkerConfig { Marker = "second-config" }),
+                    ],
+                }
+            )
             .ExecutionType(ExecutionType.Run)
             .SetExecutionId("probe-log-shape")
             .SetCase("probe-log-shape-case")
@@ -259,51 +277,70 @@ public class ExecutionBuilderTests
 
         var execution = builder.Build();
         var exitCode = execution.Start();
-        var messages = logger.Entries
-            .Where(entry => entry.LogLevel == LogLevel.Information)
+        var messages = logger
+            .Entries.Where(entry => entry.LogLevel == LogLevel.Information)
             .Select(entry => entry.Message)
             .ToArray();
 
         Assert.That(exitCode, Is.EqualTo(0));
         Assert.That(ProbeRunRecorder.GetRuns(), Has.Count.EqualTo(2));
-        Assert.That(messages.Count(message =>
-                message.Contains($"Found IProbe hook instance {nameof(FirstTestProbe)} in provided assembly",
-                    StringComparison.Ordinal)),
-            Is.EqualTo(1));
-        Assert.That(messages,
-            Contains.Item("Initializing Probe SharedProbe for session session-a with Hook type FirstTestProbe"));
-        Assert.That(messages,
-            Contains.Item("Initializing Probe SharedProbe for session session-b with Hook type FirstTestProbe"));
+        Assert.That(
+            messages.Count(message =>
+                message.Contains(
+                    $"Found IProbe hook instance {nameof(FirstTestProbe)} in provided assembly",
+                    StringComparison.Ordinal
+                )
+            ),
+            Is.EqualTo(1)
+        );
+        Assert.That(
+            messages,
+            Contains.Item(
+                "Initializing Probe SharedProbe for session session-a with Hook type FirstTestProbe"
+            )
+        );
+        Assert.That(
+            messages,
+            Contains.Item(
+                "Initializing Probe SharedProbe for session session-b with Hook type FirstTestProbe"
+            )
+        );
     }
 
     [Test]
     public void Start_WithProbeNamesThatWouldCollideWithoutScopedKeys_UsesDistinctProbeConfigurations()
     {
         var builder = new ExecutionBuilder()
-            .AddSession(new SessionBuilder
-            {
-                Name = "ab",
-                Stage = 0,
-                Probes =
-                [
-                    new ProbeBuilder()
-                        .Named("c")
-                        .HookNamed(nameof(FirstTestProbe))
-                        .Configure(new ProbeMarkerConfig { Marker = "first-collision-config" })
-                ]
-            })
-            .AddSession(new SessionBuilder
-            {
-                Name = "a",
-                Stage = 1,
-                Probes =
-                [
-                    new ProbeBuilder()
-                        .Named("bc")
-                        .HookNamed(nameof(SecondTestProbe))
-                        .Configure(new ProbeMarkerConfig { Marker = "second-collision-config" })
-                ]
-            })
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "ab",
+                    Stage = 0,
+                    Probes =
+                    [
+                        new ProbeBuilder()
+                            .Named("c")
+                            .HookNamed(nameof(FirstTestProbe))
+                            .Configure(new ProbeMarkerConfig { Marker = "first-collision-config" }),
+                    ],
+                }
+            )
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "a",
+                    Stage = 1,
+                    Probes =
+                    [
+                        new ProbeBuilder()
+                            .Named("bc")
+                            .HookNamed(nameof(SecondTestProbe))
+                            .Configure(
+                                new ProbeMarkerConfig { Marker = "second-collision-config" }
+                            ),
+                    ],
+                }
+            )
             .ExecutionType(ExecutionType.Run)
             .SetExecutionId("probe-collision")
             .SetCase("probe-collision-case")
@@ -325,16 +362,14 @@ public class ExecutionBuilderTests
     public void Build_WithProbeMissingName_ThrowsInvalidConfigurationsException()
     {
         var builder = new ExecutionBuilder()
-            .AddSession(new SessionBuilder
-            {
-                Name = "session-missing-probe-name",
-                Stage = 0,
-                Probes =
-                [
-                    new ProbeBuilder()
-                        .HookNamed(nameof(FirstTestProbe))
-                ]
-            })
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "session-missing-probe-name",
+                    Stage = 0,
+                    Probes = [new ProbeBuilder().HookNamed(nameof(FirstTestProbe))],
+                }
+            )
             .ExecutionType(ExecutionType.Template)
             .SetExecutionId("invalid-probe-name")
             .SetCase("invalid-probe-name-case")
@@ -349,29 +384,37 @@ public class ExecutionBuilderTests
     public void Build_WithDuplicateMockerCommandNames_ThrowsInvalidConfigurationsException()
     {
         var builder = new ExecutionBuilder()
-            .AddSession(new SessionBuilder
-            {
-                Name = "session-with-duplicate-mocker-commands",
-                Stage = 0,
-                Probes = [],
-                MockerCommands =
-                [
-                    new MockerCommandBuilder()
-                        .Named("duplicate-command")
-                        .WithServerName("server-a")
-                        .Configure(new MockerCommandConfig
-                        {
-                            TriggerAction = new Qaas.Mocker.CommunicationObjects.ConfigurationObjects.Command.TriggerAction()
-                        }),
-                    new MockerCommandBuilder()
-                        .Named("duplicate-command")
-                        .WithServerName("server-b")
-                        .Configure(new MockerCommandConfig
-                        {
-                            TriggerAction = new Qaas.Mocker.CommunicationObjects.ConfigurationObjects.Command.TriggerAction()
-                        })
-                ]
-            })
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "session-with-duplicate-mocker-commands",
+                    Stage = 0,
+                    Probes = [],
+                    MockerCommands =
+                    [
+                        new MockerCommandBuilder()
+                            .Named("duplicate-command")
+                            .WithServerName("server-a")
+                            .Configure(
+                                new MockerCommandConfig
+                                {
+                                    TriggerAction =
+                                        new Qaas.Mocker.CommunicationObjects.ConfigurationObjects.Command.TriggerAction(),
+                                }
+                            ),
+                        new MockerCommandBuilder()
+                            .Named("duplicate-command")
+                            .WithServerName("server-b")
+                            .Configure(
+                                new MockerCommandConfig
+                                {
+                                    TriggerAction =
+                                        new Qaas.Mocker.CommunicationObjects.ConfigurationObjects.Command.TriggerAction(),
+                                }
+                            ),
+                    ],
+                }
+            )
             .ExecutionType(ExecutionType.Template)
             .SetExecutionId("duplicate-mocker-command")
             .SetCase("duplicate-mocker-command-case")
@@ -385,10 +428,9 @@ public class ExecutionBuilderTests
     [Test]
     public void Build_WithLoadedContextWithoutMetadata_RecordsBothValidationErrorsOnce()
     {
-        var context = CreateLoadedContext(new Dictionary<string, string?>
-        {
-            ["Sessions:0:Name"] = "context-session"
-        });
+        var context = CreateLoadedContext(
+            new Dictionary<string, string?> { ["Sessions:0:Name"] = "context-session" }
+        );
         var builder = new ExecutionBuilder(context, ExecutionType.Run, null, null, null, null);
 
         Assert.Throws<InvalidConfigurationsException>(() => builder.Build());
@@ -397,60 +439,81 @@ public class ExecutionBuilderTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(errorMessages.Count(message => message == "MetaData - The Team field is required."),
-                Is.EqualTo(1));
-            Assert.That(errorMessages.Count(message => message == "MetaData - The System field is required."),
-                Is.EqualTo(1));
+            Assert.That(
+                errorMessages.Count(message => message == "MetaData - The Team field is required."),
+                Is.EqualTo(1)
+            );
+            Assert.That(
+                errorMessages.Count(message =>
+                    message == "MetaData - The System field is required."
+                ),
+                Is.EqualTo(1)
+            );
         });
     }
 
     [Test]
     public void Build_WithLoadedContextWithPartialMetadata_RecordsEachValidationErrorOnce()
     {
-        var context = CreateLoadedContext(new Dictionary<string, string?>
-        {
-            ["MetaData:System"] = "QaaS",
-            ["Sessions:0:Name"] = "context-session"
-        });
+        var context = CreateLoadedContext(
+            new Dictionary<string, string?>
+            {
+                ["MetaData:System"] = "QaaS",
+                ["Sessions:0:Name"] = "context-session",
+            }
+        );
         var builder = new ExecutionBuilder(context, ExecutionType.Run, null, null, null, null);
 
         Assert.Throws<InvalidConfigurationsException>(() => builder.Build());
 
         var errorMessages = GetValidationErrorMessages(builder);
 
-        Assert.That(errorMessages.Count(message => message == "MetaData - The Team field is required."), Is.EqualTo(1));
+        Assert.That(
+            errorMessages.Count(message => message == "MetaData - The Team field is required."),
+            Is.EqualTo(1)
+        );
     }
 
     [Test]
     public void Constructor_WithInvalidRabbitMqTargets_BindsBothTargetsIntoNestedBuilders()
     {
-        var context = CreateLoadedContext(new Dictionary<string, string?>
-        {
-            ["MetaData:Team"] = "Smoke",
-            ["MetaData:System"] = "QaaS",
-            ["Sessions:0:Name"] = "rabbit-session",
-            ["Sessions:0:Publishers:0:Name"] = "publisher",
-            ["Sessions:0:Publishers:0:DataSourceNames:0"] = "source",
-            ["Sessions:0:Publishers:0:RabbitMq:Host"] = "localhost",
-            ["Sessions:0:Publishers:0:RabbitMq:ExchangeName"] = "exchange",
-            ["Sessions:0:Publishers:0:RabbitMq:QueueName"] = "queue",
-            ["Sessions:0:Consumers:0:Name"] = "consumer",
-            ["Sessions:0:Consumers:0:TimeoutMs"] = "1000",
-            ["Sessions:0:Consumers:0:RabbitMq:Host"] = "localhost",
-            ["Sessions:0:Consumers:0:RabbitMq:ExchangeName"] = "exchange",
-            ["Sessions:0:Consumers:0:RabbitMq:QueueName"] = "queue"
-        });
+        var context = CreateLoadedContext(
+            new Dictionary<string, string?>
+            {
+                ["MetaData:Team"] = "Smoke",
+                ["MetaData:System"] = "QaaS",
+                ["Sessions:0:Name"] = "rabbit-session",
+                ["Sessions:0:Publishers:0:Name"] = "publisher",
+                ["Sessions:0:Publishers:0:DataSourceNames:0"] = "source",
+                ["Sessions:0:Publishers:0:RabbitMq:Host"] = "localhost",
+                ["Sessions:0:Publishers:0:RabbitMq:ExchangeName"] = "exchange",
+                ["Sessions:0:Publishers:0:RabbitMq:QueueName"] = "queue",
+                ["Sessions:0:Consumers:0:Name"] = "consumer",
+                ["Sessions:0:Consumers:0:TimeoutMs"] = "1000",
+                ["Sessions:0:Consumers:0:RabbitMq:Host"] = "localhost",
+                ["Sessions:0:Consumers:0:RabbitMq:ExchangeName"] = "exchange",
+                ["Sessions:0:Consumers:0:RabbitMq:QueueName"] = "queue",
+            }
+        );
 
         var builder = new ExecutionBuilder(context, ExecutionType.Run, null, null, null, null);
         var session = builder.Sessions.Single();
         var publisher = session.Publishers!.Single();
         var consumer = session.Consumers!.Single();
-        var publisherRabbitMq = (RabbitMqSenderConfig?)typeof(QaaS.Runner.Sessions.Actions.Publishers.Builders.PublisherBuilder)
-            .GetProperty("RabbitMq", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .GetValue(publisher);
-        var consumerRabbitMq = (RabbitMqReaderConfig?)typeof(QaaS.Runner.Sessions.Actions.Consumers.Builders.ConsumerBuilder)
-            .GetProperty("RabbitMq", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .GetValue(consumer);
+        var publisherRabbitMq = (RabbitMqSenderConfig?)
+            typeof(QaaS.Runner.Sessions.Actions.Publishers.Builders.PublisherBuilder)
+                .GetProperty(
+                    "RabbitMq",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                )!
+                .GetValue(publisher);
+        var consumerRabbitMq = (RabbitMqReaderConfig?)
+            typeof(QaaS.Runner.Sessions.Actions.Consumers.Builders.ConsumerBuilder)
+                .GetProperty(
+                    "RabbitMq",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                )!
+                .GetValue(consumer);
 
         Assert.Multiple(() =>
         {
@@ -466,15 +529,17 @@ public class ExecutionBuilderTests
     [Test]
     public void Constructor_WithConfiguredStages_BindsStageDefinitionsFromLoadedContext()
     {
-        var context = CreateLoadedContext(new Dictionary<string, string?>
-        {
-            ["MetaData:Team"] = "Smoke",
-            ["MetaData:System"] = "QaaS",
-            ["Sessions:0:Name"] = "stage-session",
-            ["Sessions:0:Stages:0:StageNumber"] = "1",
-            ["Sessions:0:Stages:0:TimeoutBefore"] = "25",
-            ["Sessions:0:Stages:0:TimeoutAfter"] = "50"
-        });
+        var context = CreateLoadedContext(
+            new Dictionary<string, string?>
+            {
+                ["MetaData:Team"] = "Smoke",
+                ["MetaData:System"] = "QaaS",
+                ["Sessions:0:Name"] = "stage-session",
+                ["Sessions:0:Stages:0:StageNumber"] = "1",
+                ["Sessions:0:Stages:0:TimeoutBefore"] = "25",
+                ["Sessions:0:Stages:0:TimeoutAfter"] = "50",
+            }
+        );
 
         var builder = new ExecutionBuilder(context, ExecutionType.Template, null, null, null, null);
         var session = builder.Sessions.Single();
@@ -491,15 +556,17 @@ public class ExecutionBuilderTests
     [Test]
     public void Constructor_WithConsumerInitialTimeout_BindsInitialTimeoutFromLoadedContext()
     {
-        var context = CreateLoadedContext(new Dictionary<string, string?>
-        {
-            ["MetaData:Team"] = "Smoke",
-            ["MetaData:System"] = "QaaS",
-            ["Sessions:0:Name"] = "timeout-session",
-            ["Sessions:0:Consumers:0:Name"] = "consumer",
-            ["Sessions:0:Consumers:0:TimeoutMs"] = "1000",
-            ["Sessions:0:Consumers:0:InitialTimeoutMs"] = "7000"
-        });
+        var context = CreateLoadedContext(
+            new Dictionary<string, string?>
+            {
+                ["MetaData:Team"] = "Smoke",
+                ["MetaData:System"] = "QaaS",
+                ["Sessions:0:Name"] = "timeout-session",
+                ["Sessions:0:Consumers:0:Name"] = "consumer",
+                ["Sessions:0:Consumers:0:TimeoutMs"] = "1000",
+                ["Sessions:0:Consumers:0:InitialTimeoutMs"] = "7000",
+            }
+        );
 
         var builder = new ExecutionBuilder(context, ExecutionType.Template, null, null, null, null);
         var consumer = builder.Sessions.Single().Consumers!.Single();
@@ -514,71 +581,105 @@ public class ExecutionBuilderTests
     [Test]
     public void Build_WithInvalidNestedRabbitMqTargets_ThrowsInvalidConfigurationsException()
     {
-        var directRabbitMqValidationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
-        var directRabbitMqIsValid = ValidationUtils.TryValidateObjectRecursive(new RabbitMqSenderConfig
-        {
-            Host = "localhost",
-            ExchangeName = "exchange",
-            QueueName = "queue"
-        }, directRabbitMqValidationResults);
+        var directRabbitMqValidationResults =
+            new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+        var directRabbitMqIsValid = ValidationUtils.TryValidateObjectRecursive(
+            new RabbitMqSenderConfig
+            {
+                Host = "localhost",
+                ExchangeName = "exchange",
+                QueueName = "queue",
+            },
+            directRabbitMqValidationResults
+        );
 
         Assert.That(directRabbitMqIsValid, Is.False);
-        Assert.That(directRabbitMqValidationResults.Any(result => result.ErrorMessage?.Contains("field must be empty when QueueName is configured") == true),
-            Is.True);
+        Assert.That(
+            directRabbitMqValidationResults.Any(result =>
+                result.ErrorMessage?.Contains("field must be empty when QueueName is configured")
+                == true
+            ),
+            Is.True
+        );
 
-        var context = CreateLoadedContext(new Dictionary<string, string?>
-        {
-            ["MetaData:Team"] = "Smoke",
-            ["MetaData:System"] = "QaaS",
-            ["Sessions:0:Name"] = "rabbit-session",
-            ["Sessions:0:Publishers:0:Name"] = "publisher",
-            ["Sessions:0:Publishers:0:DataSourceNames:0"] = "source",
-            ["Sessions:0:Publishers:0:RabbitMq:Host"] = "localhost",
-            ["Sessions:0:Publishers:0:RabbitMq:ExchangeName"] = "exchange",
-            ["Sessions:0:Publishers:0:RabbitMq:QueueName"] = "queue",
-            ["Sessions:0:Consumers:0:Name"] = "consumer",
-            ["Sessions:0:Consumers:0:TimeoutMs"] = "1000",
-            ["Sessions:0:Consumers:0:RabbitMq:Host"] = "localhost",
-            ["Sessions:0:Consumers:0:RabbitMq:ExchangeName"] = "exchange",
-            ["Sessions:0:Consumers:0:RabbitMq:QueueName"] = "queue"
-        });
+        var context = CreateLoadedContext(
+            new Dictionary<string, string?>
+            {
+                ["MetaData:Team"] = "Smoke",
+                ["MetaData:System"] = "QaaS",
+                ["Sessions:0:Name"] = "rabbit-session",
+                ["Sessions:0:Publishers:0:Name"] = "publisher",
+                ["Sessions:0:Publishers:0:DataSourceNames:0"] = "source",
+                ["Sessions:0:Publishers:0:RabbitMq:Host"] = "localhost",
+                ["Sessions:0:Publishers:0:RabbitMq:ExchangeName"] = "exchange",
+                ["Sessions:0:Publishers:0:RabbitMq:QueueName"] = "queue",
+                ["Sessions:0:Consumers:0:Name"] = "consumer",
+                ["Sessions:0:Consumers:0:TimeoutMs"] = "1000",
+                ["Sessions:0:Consumers:0:RabbitMq:Host"] = "localhost",
+                ["Sessions:0:Consumers:0:RabbitMq:ExchangeName"] = "exchange",
+                ["Sessions:0:Consumers:0:RabbitMq:QueueName"] = "queue",
+            }
+        );
 
         var builder = new ExecutionBuilder(context, ExecutionType.Run, null, null, null, null);
         var session = builder.Sessions.Single();
         var publisher = session.Publishers!.Single();
         Assert.Throws<InvalidConfigurationsException>(() => builder.Build());
-        var validationResults = (IReadOnlyList<System.ComponentModel.DataAnnotations.ValidationResult>)typeof(ExecutionBuilder)
-            .GetField("_validationResults", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(builder)!;
+        var validationResults =
+            (IReadOnlyList<System.ComponentModel.DataAnnotations.ValidationResult>)
+                typeof(ExecutionBuilder)
+                    .GetField("_validationResults", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .GetValue(builder)!;
 
         Assert.Multiple(() =>
         {
-            Assert.That(validationResults.Any(result =>
-                    result.ErrorMessage?.Contains("Sessions:0:Publishers:0:RabbitMq", StringComparison.Ordinal) == true &&
-                    result.ErrorMessage.Contains("QueueName is configured", StringComparison.Ordinal)),
-                Is.True);
-            Assert.That(validationResults.Any(result =>
-                    result.ErrorMessage?.Contains("Sessions:0:Consumers:0:RabbitMq", StringComparison.Ordinal) == true &&
-                    result.ErrorMessage.Contains("QueueName is configured", StringComparison.Ordinal)),
-                Is.True);
+            Assert.That(
+                validationResults.Any(result =>
+                    result.ErrorMessage?.Contains(
+                        "Sessions:0:Publishers:0:RabbitMq",
+                        StringComparison.Ordinal
+                    ) == true
+                    && result.ErrorMessage.Contains(
+                        "QueueName is configured",
+                        StringComparison.Ordinal
+                    )
+                ),
+                Is.True
+            );
+            Assert.That(
+                validationResults.Any(result =>
+                    result.ErrorMessage?.Contains(
+                        "Sessions:0:Consumers:0:RabbitMq",
+                        StringComparison.Ordinal
+                    ) == true
+                    && result.ErrorMessage.Contains(
+                        "QueueName is configured",
+                        StringComparison.Ordinal
+                    )
+                ),
+                Is.True
+            );
         });
     }
 
     [Test]
     public void Build_WithChunkOnlyPublisherMissingChunkConfiguration_ThrowsInvalidConfigurationsException()
     {
-        var builder = CreateExecutionBuilderWithPublisher(new PublisherBuilder
+        var builder = CreateExecutionBuilderWithPublisher(
+            new PublisherBuilder
             {
                 Name = "elastic-publisher",
-                DataSourceNames = ["payload"]
-            }
-            .Configure(new ElasticSenderConfig
-            {
-                Url = "http://localhost:9200",
-                Username = "elastic",
-                Password = "password",
-                IndexName = "session-data"
-            }));
+                DataSourceNames = ["payload"],
+            }.Configure(
+                new ElasticSenderConfig
+                {
+                    Url = "http://localhost:9200",
+                    Username = "elastic",
+                    Password = "password",
+                    IndexName = "session-data",
+                }
+            )
+        );
 
         Assert.Throws<InvalidConfigurationsException>(() => builder.Build());
     }
@@ -586,17 +687,11 @@ public class ExecutionBuilderTests
     [Test]
     public void Build_WithSingleOnlyPublisherConfiguredWithChunkConfiguration_ThrowsInvalidConfigurationsException()
     {
-        var builder = CreateExecutionBuilderWithPublisher(new PublisherBuilder
-            {
-                Name = "rabbit-publisher",
-                DataSourceNames = ["payload"]
-            }
-            .WithChunks(new Chunks { ChunkSize = 64 })
-            .Configure(new RabbitMqSenderConfig
-            {
-                Host = "localhost",
-                QueueName = "queue"
-            }));
+        var builder = CreateExecutionBuilderWithPublisher(
+            new PublisherBuilder { Name = "rabbit-publisher", DataSourceNames = ["payload"] }
+                .WithChunks(new Chunks { ChunkSize = 64 })
+                .Configure(new RabbitMqSenderConfig { Host = "localhost", QueueName = "queue" })
+        );
 
         Assert.Throws<InvalidConfigurationsException>(() => builder.Build());
     }
@@ -607,14 +702,18 @@ public class ExecutionBuilderTests
         var builder = new ExecutionBuilder
         {
             Storages = [new StorageBuilder()],
-            Links = [new LinkBuilder()]
+            Links = [new LinkBuilder()],
         };
 
         Assert.Multiple(() =>
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => builder.UpdateStorageAt(-1, new StorageBuilder()));
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                builder.UpdateStorageAt(-1, new StorageBuilder())
+            );
             Assert.Throws<ArgumentOutOfRangeException>(() => builder.RemoveStorageAt(5));
-            Assert.Throws<ArgumentOutOfRangeException>(() => builder.UpdateLinkAt(-1, new LinkBuilder()));
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                builder.UpdateLinkAt(-1, new LinkBuilder())
+            );
             Assert.Throws<ArgumentOutOfRangeException>(() => builder.RemoveLinkAt(5));
         });
     }
@@ -636,8 +735,8 @@ public class ExecutionBuilderTests
                             .HookNamed(nameof(FirstTestProbe))
                             .Configure(new ProbeMarkerConfig { Marker = "configured" }),
                         new ProbeBuilder().Named("missing-hook"),
-                        new ProbeBuilder().HookNamed(nameof(SecondTestProbe))
-                    ]
+                        new ProbeBuilder().HookNamed(nameof(SecondTestProbe)),
+                    ],
                 },
                 new SessionBuilder
                 {
@@ -646,14 +745,16 @@ public class ExecutionBuilderTests
                     [
                         new ProbeBuilder()
                             .Named("missing-session")
-                            .HookNamed(nameof(FirstTestProbe))
-                    ]
-                }
-            ]
+                            .HookNamed(nameof(FirstTestProbe)),
+                    ],
+                },
+            ],
         };
 
-        var method = typeof(ExecutionBuilder)
-            .GetMethod("BuildProbeHookData", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var method = typeof(ExecutionBuilder).GetMethod(
+            "BuildProbeHookData",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
         var hookData = ((System.Collections.IEnumerable)method.Invoke(builder, [])!)
             .Cast<object>()
             .ToList();
@@ -661,10 +762,14 @@ public class ExecutionBuilderTests
         Assert.That(hookData, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(hookData[0].GetType().GetProperty("Type")!.GetValue(hookData[0]),
-                Is.EqualTo(nameof(FirstTestProbe)));
-            Assert.That(hookData[0].GetType().GetProperty("Name")!.GetValue(hookData[0]),
-                Is.EqualTo(ProbeBuilder.BuildScopedHookName("valid-session", "valid-probe")));
+            Assert.That(
+                hookData[0].GetType().GetProperty("Type")!.GetValue(hookData[0]),
+                Is.EqualTo(nameof(FirstTestProbe))
+            );
+            Assert.That(
+                hookData[0].GetType().GetProperty("Name")!.GetValue(hookData[0]),
+                Is.EqualTo(ProbeBuilder.BuildScopedHookName("valid-session", "valid-probe"))
+            );
         });
     }
 
@@ -673,34 +778,32 @@ public class ExecutionBuilderTests
     {
         var builder = new ExecutionBuilder
         {
-            Sessions =
-            [
-                new SessionBuilder
-                {
-                    Name = null,
-                    Probes =
-                    [
-                        new ProbeBuilder()
-                    ]
-                }
-            ]
+            Sessions = [new SessionBuilder { Name = null, Probes = [new ProbeBuilder()] }],
         };
 
         typeof(ExecutionBuilder)
             .GetMethod("ValidateProbeDefinitions", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(builder, []);
-        var validationResults = (IReadOnlyList<System.ComponentModel.DataAnnotations.ValidationResult>)typeof(ExecutionBuilder)
-            .GetField("_validationResults", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(builder)!;
+        var validationResults =
+            (IReadOnlyList<System.ComponentModel.DataAnnotations.ValidationResult>)
+                typeof(ExecutionBuilder)
+                    .GetField("_validationResults", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .GetValue(builder)!;
 
         Assert.Multiple(() =>
         {
-            Assert.That(validationResults.Select(result => result.ErrorMessage),
-                Has.One.EqualTo("Session name is required when configuring probes."));
-            Assert.That(validationResults.Select(result => result.ErrorMessage),
-                Has.One.EqualTo("Probe name is required for session ''."));
-            Assert.That(validationResults.Select(result => result.ErrorMessage),
-                Has.One.EqualTo("Probe type is required for probe '' in session ''."));
+            Assert.That(
+                validationResults.Select(result => result.ErrorMessage),
+                Has.One.EqualTo("Session name is required when configuring probes.")
+            );
+            Assert.That(
+                validationResults.Select(result => result.ErrorMessage),
+                Has.One.EqualTo("Probe name is required for session ''.")
+            );
+            Assert.That(
+                validationResults.Select(result => result.ErrorMessage),
+                Has.One.EqualTo("Probe type is required for probe '' in session ''.")
+            );
         });
     }
 
@@ -708,52 +811,91 @@ public class ExecutionBuilderTests
     public void DeduplicateValidationResults_RemovesDuplicateMessagesAndMemberNames()
     {
         var builder = new ExecutionBuilder();
-        var validationResultsField = typeof(ExecutionBuilder)
-            .GetField("_validationResults", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var validationResults = (List<System.ComponentModel.DataAnnotations.ValidationResult>)validationResultsField.GetValue(builder)!;
-        validationResults.Add(new System.ComponentModel.DataAnnotations.ValidationResult("duplicate", ["A"]));
-        validationResults.Add(new System.ComponentModel.DataAnnotations.ValidationResult("duplicate", ["A"]));
-        validationResults.Add(new System.ComponentModel.DataAnnotations.ValidationResult("distinct", ["B"]));
+        var validationResultsField = typeof(ExecutionBuilder).GetField(
+            "_validationResults",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
+        var validationResults =
+            (List<System.ComponentModel.DataAnnotations.ValidationResult>)
+                validationResultsField.GetValue(builder)!;
+        validationResults.Add(
+            new System.ComponentModel.DataAnnotations.ValidationResult("duplicate", ["A"])
+        );
+        validationResults.Add(
+            new System.ComponentModel.DataAnnotations.ValidationResult("duplicate", ["A"])
+        );
+        validationResults.Add(
+            new System.ComponentModel.DataAnnotations.ValidationResult("distinct", ["B"])
+        );
 
         typeof(ExecutionBuilder)
-            .GetMethod("DeduplicateValidationResults", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetMethod(
+                "DeduplicateValidationResults",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!
             .Invoke(builder, []);
 
-        Assert.That(validationResults.Select(result => result.ErrorMessage),
-            Is.EqualTo(new[] { "duplicate", "distinct" }));
+        Assert.That(
+            validationResults.Select(result => result.ErrorMessage),
+            Is.EqualTo(new[] { "duplicate", "distinct" })
+        );
     }
 
     [Test]
     public void DeduplicateValidationResults_WithSingleItem_DoesNothing()
     {
         var builder = new ExecutionBuilder();
-        var validationResultsField = typeof(ExecutionBuilder)
-            .GetField("_validationResults", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var validationResults = (List<System.ComponentModel.DataAnnotations.ValidationResult>)validationResultsField.GetValue(builder)!;
+        var validationResultsField = typeof(ExecutionBuilder).GetField(
+            "_validationResults",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
+        var validationResults =
+            (List<System.ComponentModel.DataAnnotations.ValidationResult>)
+                validationResultsField.GetValue(builder)!;
         validationResults.Add(new System.ComponentModel.DataAnnotations.ValidationResult("single"));
 
         typeof(ExecutionBuilder)
-            .GetMethod("DeduplicateValidationResults", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetMethod(
+                "DeduplicateValidationResults",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!
             .Invoke(builder, []);
 
-        Assert.That(validationResults.Select(result => result.ErrorMessage), Is.EqualTo(new[] { "single" }));
+        Assert.That(
+            validationResults.Select(result => result.ErrorMessage),
+            Is.EqualTo(new[] { "single" })
+        );
     }
 
     [Test]
     public void DeduplicateValidationResults_WithAlreadyDistinctItems_LeavesCollectionUntouched()
     {
         var builder = new ExecutionBuilder();
-        var validationResultsField = typeof(ExecutionBuilder)
-            .GetField("_validationResults", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var validationResults = (List<System.ComponentModel.DataAnnotations.ValidationResult>)validationResultsField.GetValue(builder)!;
-        validationResults.Add(new System.ComponentModel.DataAnnotations.ValidationResult("first", ["A"]));
-        validationResults.Add(new System.ComponentModel.DataAnnotations.ValidationResult("second", ["B"]));
+        var validationResultsField = typeof(ExecutionBuilder).GetField(
+            "_validationResults",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
+        var validationResults =
+            (List<System.ComponentModel.DataAnnotations.ValidationResult>)
+                validationResultsField.GetValue(builder)!;
+        validationResults.Add(
+            new System.ComponentModel.DataAnnotations.ValidationResult("first", ["A"])
+        );
+        validationResults.Add(
+            new System.ComponentModel.DataAnnotations.ValidationResult("second", ["B"])
+        );
 
         typeof(ExecutionBuilder)
-            .GetMethod("DeduplicateValidationResults", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetMethod(
+                "DeduplicateValidationResults",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!
             .Invoke(builder, []);
 
-        Assert.That(validationResults.Select(result => result.ErrorMessage), Is.EqualTo(new[] { "first", "second" }));
+        Assert.That(
+            validationResults.Select(result => result.ErrorMessage),
+            Is.EqualTo(new[] { "first", "second" })
+        );
     }
 
     [Test]
@@ -764,10 +906,18 @@ public class ExecutionBuilderTests
 
         try
         {
-            var dataSources = ((System.Collections.IEnumerable)typeof(ExecutionBuilder)
-                    .GetMethod("BuildDataSources", BindingFlags.Instance | BindingFlags.NonPublic, null,
-                        Type.EmptyTypes, null)!
-                    .Invoke(builder, [])!)
+            var dataSources = (
+                (System.Collections.IEnumerable)
+                    typeof(ExecutionBuilder)
+                        .GetMethod(
+                            "BuildDataSources",
+                            BindingFlags.Instance | BindingFlags.NonPublic,
+                            null,
+                            Type.EmptyTypes,
+                            null
+                        )!
+                        .Invoke(builder, [])!
+            )
                 .Cast<object>()
                 .ToList();
 
@@ -788,9 +938,10 @@ public class ExecutionBuilderTests
             .GetMethod("InitializeContext", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(builder, []);
 
-        var context = (InternalContext)typeof(ExecutionBuilder).BaseType!
-            .GetField("Context", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(builder)!;
+        var context = (InternalContext)
+            typeof(ExecutionBuilder)
+                .BaseType!.GetField("Context", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(builder)!;
         Assert.Multiple(() =>
         {
             Assert.That(context, Is.Not.Null);
@@ -808,32 +959,42 @@ public class ExecutionBuilderTests
             Sessions = null,
             Assertions = null,
             Links = null,
-            Storages = null
+            Storages = null,
         };
-        builder.WithMetadata(new MetaDataConfig
-        {
-            Team = "Smoke",
-            System = "QaaS"
-        });
+        builder.WithMetadata(new MetaDataConfig { Team = "Smoke", System = "QaaS" });
 
         typeof(ExecutionBuilder)
             .GetMethod("InitializeContext", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(builder, []);
         typeof(ExecutionBuilder)
-            .GetMethod("FilterConfigurationsBasedOnFlags", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetMethod(
+                "FilterConfigurationsBasedOnFlags",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!
             .Invoke(builder, []);
         typeof(ExecutionBuilder)
-            .GetMethod("StoreRenderedConfigurationTemplate", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetMethod(
+                "StoreRenderedConfigurationTemplate",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!
             .Invoke(builder, []);
 
         Assert.Multiple(() =>
         {
             Assert.That(builder.Assertions, Has.Length.EqualTo(0));
             Assert.That(builder.Sessions, Has.Length.EqualTo(0));
-            Assert.That(((InternalContext)typeof(ExecutionBuilder).BaseType!
-                    .GetField("Context", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .GetValue(builder)!)
-                .GetRenderedConfigurationTemplate(), Does.Contain("MetaData:"));
+            Assert.That(
+                (
+                    (InternalContext)
+                        typeof(ExecutionBuilder)
+                            .BaseType!.GetField(
+                                "Context",
+                                BindingFlags.Instance | BindingFlags.NonPublic
+                            )!
+                            .GetValue(builder)!
+                ).GetRenderedConfigurationTemplate(),
+                Does.Contain("MetaData:")
+            );
         });
     }
 
@@ -841,9 +1002,13 @@ public class ExecutionBuilderTests
     public void ValidateCollection_WithNullCollectionAndNullItems_DoesNotAddValidationResults()
     {
         var builder = new ExecutionBuilder();
-        var validationResultsField = typeof(ExecutionBuilder)
-            .GetField("_validationResults", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var validationResults = (List<System.ComponentModel.DataAnnotations.ValidationResult>)validationResultsField.GetValue(builder)!;
+        var validationResultsField = typeof(ExecutionBuilder).GetField(
+            "_validationResults",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
+        var validationResults =
+            (List<System.ComponentModel.DataAnnotations.ValidationResult>)
+                validationResultsField.GetValue(builder)!;
 
         typeof(ExecutionBuilder)
             .GetMethod("ValidateCollection", BindingFlags.Instance | BindingFlags.NonPublic)!
@@ -852,7 +1017,17 @@ public class ExecutionBuilderTests
         typeof(ExecutionBuilder)
             .GetMethod("ValidateCollection", BindingFlags.Instance | BindingFlags.NonPublic)!
             .MakeGenericMethod(typeof(MetaDataConfig))
-            .Invoke(builder, [new MetaDataConfig?[] { null, new() { Team = "Smoke", System = "QaaS" } }, "MetaData"]);
+            .Invoke(
+                builder,
+                [
+                    new MetaDataConfig?[]
+                    {
+                        null,
+                        new() { Team = "Smoke", System = "QaaS" },
+                    },
+                    "MetaData",
+                ]
+            );
 
         Assert.That(validationResults, Is.Empty);
     }
@@ -860,28 +1035,38 @@ public class ExecutionBuilderTests
     [Test]
     public void Build_WithLoadedContextGlobalDictionary_MergesExistingAndConfiguredEntries()
     {
-        var context = CreateLoadedContext(new Dictionary<string, string?>
-        {
-            ["MetaData:Team"] = "Smoke",
-            ["MetaData:System"] = "QaaS"
-        });
+        var context = CreateLoadedContext(
+            new Dictionary<string, string?>
+            {
+                ["MetaData:Team"] = "Smoke",
+                ["MetaData:System"] = "QaaS",
+            }
+        );
         context.InternalGlobalDict = new Dictionary<string, object?>
         {
             ["existing"] = "old",
-            ["shared"] = "context-value"
+            ["shared"] = "context-value",
         };
 
-        var builder = new ExecutionBuilder(context, ExecutionType.Template, null, null, null, null)
-            .WithGlobalDict(new Dictionary<string, object?>
-            {
-                ["shared"] = "builder-value",
-                ["added"] = 123
-            });
+        var builder = new ExecutionBuilder(
+            context,
+            ExecutionType.Template,
+            null,
+            null,
+            null,
+            null
+        ).WithGlobalDict(
+            new Dictionary<string, object?> { ["shared"] = "builder-value", ["added"] = 123 }
+        );
 
         var execution = builder.Build();
-        var executionContext = (InternalContext)typeof(Execution)
-            .GetProperty("Context", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .GetValue(execution)!;
+        var executionContext = (InternalContext)
+            typeof(Execution)
+                .GetProperty(
+                    "Context",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                )!
+                .GetValue(execution)!;
 
         Assert.Multiple(() =>
         {
@@ -899,26 +1084,36 @@ public class ExecutionBuilderTests
             Sessions = null,
             Assertions = null,
             Storages = null,
-            DataSources = null
+            DataSources = null,
         };
         using var scope = new ContainerBuilder().Build().BeginLifetimeScope();
 
-        var builtDataSources = (System.Collections.IEnumerable)typeof(ExecutionBuilder)
-            .GetMethod("BuildDataSources", BindingFlags.Instance | BindingFlags.NonPublic, null,
-                [typeof(ILifetimeScope)], null)!
-            .Invoke(builder, [scope])!;
-        var builtSessions = (System.Collections.IEnumerable)typeof(ExecutionBuilder)
-            .GetMethod("BuildSessions", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .Invoke(builder, [scope])!;
-        var builtAssertions = (System.Collections.IEnumerable)typeof(ExecutionBuilder)
-            .GetMethod("BuildAssertions", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .Invoke(builder, [scope])!;
-        var builtReports = (System.Collections.IEnumerable)typeof(ExecutionBuilder)
-            .GetMethod("BuildReports", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .Invoke(builder, [])!;
-        var builtStorages = (System.Collections.IEnumerable)typeof(ExecutionBuilder)
-            .GetMethod("BuildStorages", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .Invoke(builder, [])!;
+        var builtDataSources = (System.Collections.IEnumerable)
+            typeof(ExecutionBuilder)
+                .GetMethod(
+                    "BuildDataSources",
+                    BindingFlags.Instance | BindingFlags.NonPublic,
+                    null,
+                    [typeof(ILifetimeScope)],
+                    null
+                )!
+                .Invoke(builder, [scope])!;
+        var builtSessions = (System.Collections.IEnumerable)
+            typeof(ExecutionBuilder)
+                .GetMethod("BuildSessions", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(builder, [scope])!;
+        var builtAssertions = (System.Collections.IEnumerable)
+            typeof(ExecutionBuilder)
+                .GetMethod("BuildAssertions", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(builder, [scope])!;
+        var builtReports = (System.Collections.IEnumerable)
+            typeof(ExecutionBuilder)
+                .GetMethod("BuildReports", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(builder, [])!;
+        var builtStorages = (System.Collections.IEnumerable)
+            typeof(ExecutionBuilder)
+                .GetMethod("BuildStorages", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(builder, [])!;
 
         Assert.Multiple(() =>
         {
@@ -938,9 +1133,15 @@ public class ExecutionBuilderTests
 
         var exception = Assert.Throws<TargetInvocationException>(() =>
             typeof(ExecutionBuilder)
-                .GetMethod("BuildDataSources", BindingFlags.Instance | BindingFlags.NonPublic, null, Type.EmptyTypes,
-                    null)!
-                .Invoke(builder, []));
+                .GetMethod(
+                    "BuildDataSources",
+                    BindingFlags.Instance | BindingFlags.NonPublic,
+                    null,
+                    Type.EmptyTypes,
+                    null
+                )!
+                .Invoke(builder, [])
+        );
 
         Assert.That(exception!.InnerException, Is.TypeOf<InvalidOperationException>());
     }
@@ -954,7 +1155,7 @@ public class ExecutionBuilderTests
         {
             Name = "test-session",
             Stage = 0,
-            Probes = []
+            Probes = [],
         };
         builder.AddSession(sessionBuilder);
 
@@ -964,30 +1165,44 @@ public class ExecutionBuilderTests
             Name = "test-assertion",
             Assertion = "Equals",
             AssertionInstance = null,
-            Reporter = null
+            Reporter = null,
         }.HookNamed(nameof(TestAssertion));
         builder.AddAssertion(assertionBuilder);
 
         // Add valid storage builder
-        var storageBuilder = new StorageBuilder().Configure(new S3Config
-        {
-            StorageBucket = "bucket",
-            ServiceURL = "https://s3.test",
-            AccessKey = "access",
-            SecretKey = "secret"
-        });
+        var storageBuilder = new StorageBuilder().Configure(
+            new S3Config
+            {
+                StorageBucket = "bucket",
+                ServiceURL = "https://s3.test",
+                AccessKey = "access",
+                SecretKey = "secret",
+            }
+        );
         builder.AddStorage(storageBuilder);
 
         // Add valid link builder
         var linkBuilder = new LinkBuilder()
-            { Grafana = new GrafanaLinkConfig { DashboardId = "dash-id", Url = "https://grafa.com", Variables = [] } };
+        {
+            Grafana = new GrafanaLinkConfig
+            {
+                DashboardId = "dash-id",
+                Url = "https://grafa.com",
+                Variables = [],
+            },
+        };
         builder.AddLink(linkBuilder);
 
         // Add valid data source builder
-        var dataSourceBuilder = new DataSourceBuilder().Named("test-datasource").HookNamed("TestGenerator");
+        var dataSourceBuilder = new DataSourceBuilder()
+            .Named("test-datasource")
+            .HookNamed("TestGenerator");
         builder.AddDataSource(dataSourceBuilder);
 
-        return builder.SetExecutionId("test").SetCase("valid").WithLogger(Globals.Logger)
+        return builder
+            .SetExecutionId("test")
+            .SetCase("valid")
+            .WithLogger(Globals.Logger)
             .WithMetadata(new MetaDataConfig { Team = "Smoke", System = "QaaS" })
             .WithGlobalDict(new Dictionary<string, object?>());
     }
@@ -995,13 +1210,15 @@ public class ExecutionBuilderTests
     private ExecutionBuilder CreateExecutionBuilderWithPublisher(PublisherBuilder publisherBuilder)
     {
         return new ExecutionBuilder()
-            .AddSession(new SessionBuilder
-            {
-                Name = "publisher-session",
-                Stage = 0,
-                Publishers = [publisherBuilder],
-                Probes = []
-            })
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "publisher-session",
+                    Stage = 0,
+                    Publishers = [publisherBuilder],
+                    Probes = [],
+                }
+            )
             .AddDataSource(new DataSourceBuilder().Named("payload").HookNamed("TestGenerator"))
             .ExecutionType(ExecutionType.Act)
             .SetExecutionId("publisher-validation")
@@ -1020,14 +1237,14 @@ public class ExecutionBuilderTests
         {
             Name = "duplicate-name",
             Stage = 0,
-            Probes = []
+            Probes = [],
         };
 
         var sessionBuilder2 = new SessionBuilder
         {
             Name = "duplicate-name", // Same name as above - will cause validation error
             Stage = 1,
-            Probes = []
+            Probes = [],
         };
 
         builder.AddSession(sessionBuilder1);
@@ -1039,12 +1256,16 @@ public class ExecutionBuilderTests
             Name = "test-assertion",
             Assertion = "Equals",
             AssertionInstance = null,
-            Reporter = null
+            Reporter = null,
         }.HookNamed(nameof(TestAssertion));
         builder.AddAssertion(assertionBuilder);
 
-        return builder.ExecutionType(ExecutionType.Run).SetExecutionId("test").SetCase("invalid")
-            .WithLogger(Globals.Logger).WithGlobalDict(new Dictionary<string, object?>())
+        return builder
+            .ExecutionType(ExecutionType.Run)
+            .SetExecutionId("test")
+            .SetCase("invalid")
+            .WithLogger(Globals.Logger)
+            .WithGlobalDict(new Dictionary<string, object?>())
             .WithMetadata(new MetaDataConfig { System = "QaaS", Team = "Smoke" });
     }
 
@@ -1054,16 +1275,20 @@ public class ExecutionBuilderTests
         {
             Logger = Globals.Logger,
             RootConfiguration = configuration,
-            InternalRunningSessions = new RunningSessions(new Dictionary<string, RunningSessionData<object, object>>()),
-            InternalGlobalDict = new Dictionary<string, object?>()
+            InternalRunningSessions = new RunningSessions(
+                new Dictionary<string, RunningSessionData<object, object>>()
+            ),
+            InternalGlobalDict = new Dictionary<string, object?>(),
         };
     }
 
     private static List<string> GetValidationErrorMessages(ExecutionBuilder builder)
     {
-        var validationResults = (IReadOnlyList<System.ComponentModel.DataAnnotations.ValidationResult>)typeof(ExecutionBuilder)
-            .GetField("_validationResults", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(builder)!;
+        var validationResults =
+            (IReadOnlyList<System.ComponentModel.DataAnnotations.ValidationResult>)
+                typeof(ExecutionBuilder)
+                    .GetField("_validationResults", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .GetValue(builder)!;
 
         return validationResults
             .Select(result => result.ErrorMessage)
@@ -1073,9 +1298,7 @@ public class ExecutionBuilderTests
 
     private static InternalContext CreateLoadedContext(Dictionary<string, string?> values)
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(values)
-            .Build();
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
         return CreateLoadedContext(configuration);
     }
 
@@ -1083,7 +1306,8 @@ public class ExecutionBuilderTests
     {
         public List<LogEntry> Entries { get; } = [];
 
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull
+        public IDisposable BeginScope<TState>(TState state)
+            where TState : notnull
         {
             return NoOpScope.Instance;
         }
@@ -1093,8 +1317,13 @@ public class ExecutionBuilderTests
             return true;
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-            Func<TState, Exception?, string> formatter)
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter
+        )
         {
             Entries.Add(new LogEntry(logLevel, formatter(state, exception)));
         }
@@ -1103,15 +1332,69 @@ public class ExecutionBuilderTests
         {
             public static readonly NoOpScope Instance = new();
 
-            public void Dispose()
-            {
-            }
+            public void Dispose() { }
         }
     }
 
     private sealed record LogEntry(LogLevel LogLevel, string Message);
+
+    // R-14: ExecutionBuilder implements IDisposable; Dispose must not throw.
+    [Test]
+    public void ExecutionBuilder_Dispose_DoesNotThrow()
+    {
+        var builder = CreateValidExecutionBuilder();
+        Assert.DoesNotThrow(() => builder.Dispose(), "ExecutionBuilder.Dispose() must not throw");
+    }
+
+    // R-15: BuildProbeHookData emits ValidationResult for misconfigured probes.
+    [Test]
+    public void BuildProbeHookData_WhenProbeMissingType_AddsValidationResult()
+    {
+        var builder = new ExecutionBuilder()
+            .AddSession(
+                new SessionBuilder
+                {
+                    Name = "probe-session",
+                    Stage = 0,
+                    Probes =
+                    [
+                        new ProbeBuilder().Named("missing-type"), // no .ProbeNamed() — Probe is null
+                    ],
+                }
+            )
+            .ExecutionType(ExecutionType.Template)
+            .SetExecutionId("probe-test")
+            .SetCase("probe-case")
+            .WithLogger(Globals.Logger)
+            .WithGlobalDict(new Dictionary<string, object?>())
+            .WithMetadata(new MetaDataConfig { Team = "Smoke", System = "QaaS" });
+
+        // Build triggers BuildProbeHookData; the misconfigured probe must produce a validation result
+        // and the execution must be invalid (since no assertion reporter etc. is configured here — just check
+        // that the ValidationResult was surfaced rather than silently skipped).
+        var validationResultsField = typeof(ExecutionBuilder).GetField(
+            "_validationResults",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        )!;
+        var validationResults = (List<ValidationResult>)validationResultsField.GetValue(builder)!;
+
+        // Trigger BuildProbeHookData by calling the private method directly (it is lazy-registered in Autofac,
+        // so we invoke it via reflection to verify without doing a full Build).
+        var buildProbeHookDataMethod = typeof(ExecutionBuilder).GetMethod(
+            "BuildProbeHookData",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        )!;
+        var hookData = (
+            (System.Collections.IEnumerable)buildProbeHookDataMethod.Invoke(builder, null)!
+        )
+            .Cast<object>()
+            .ToList();
+
+        Assert.That(
+            validationResults,
+            Has.Count.GreaterThanOrEqualTo(1),
+            "A ValidationResult must be added for the probe missing its type (R-15 fix)"
+        );
+        Assert.That(hookData, Is.Empty, "The misconfigured probe must not yield a HookData item");
+    }
 }
-
-
-
-

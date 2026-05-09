@@ -32,15 +32,19 @@ public static class FileSystemExtensions
         if (Path.IsPathRooted(path))
             throw new InvalidOperationException($"Path '{path}' must be relative.");
 
-        var segments = path.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
-            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var segments = path.Split(
+            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+        );
 
         if (segments.Any(segment => segment is "." or ".."))
             throw new InvalidOperationException($"Path '{path}' contains traversal segments.");
 
         var sanitizedSegments = segments
-            .Select(segment => MakeValidPathSegment(segment) ?? throw new InvalidOperationException(
-                $"Path segment '{segment}' is invalid."))
+            .Select(segment =>
+                MakeValidPathSegment(segment)
+                ?? throw new InvalidOperationException($"Path segment '{segment}' is invalid.")
+            )
             .ToArray();
 
         return sanitizedSegments.Length == 0 ? string.Empty : Path.Join(sanitizedSegments);
@@ -56,7 +60,11 @@ public static class FileSystemExtensions
 
         var fullRootPath = Path.GetFullPath(rootPath);
         var combinedPath = fullRootPath;
-        foreach (var segment in segments.Where(segment => !string.IsNullOrWhiteSpace(segment)).Cast<string>())
+        foreach (
+            var segment in segments
+                .Where(segment => !string.IsNullOrWhiteSpace(segment))
+                .Cast<string>()
+        )
         {
             combinedPath = Path.Combine(combinedPath, segment);
         }
@@ -65,14 +73,26 @@ public static class FileSystemExtensions
         var comparison = OperatingSystem.IsWindows()
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
-        var normalizedRootPath = fullRootPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var normalizedRootPath = fullRootPath.TrimEnd(
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar
+        );
 
-        if (!string.Equals(fullCombinedPath, normalizedRootPath, comparison) &&
-            !fullCombinedPath.StartsWith(normalizedRootPath + Path.DirectorySeparatorChar, comparison) &&
-            !fullCombinedPath.StartsWith(normalizedRootPath + Path.AltDirectorySeparatorChar, comparison))
+        if (
+            !string.Equals(fullCombinedPath, normalizedRootPath, comparison)
+            && !fullCombinedPath.StartsWith(
+                normalizedRootPath + Path.DirectorySeparatorChar,
+                comparison
+            )
+            && !fullCombinedPath.StartsWith(
+                normalizedRootPath + Path.AltDirectorySeparatorChar,
+                comparison
+            )
+        )
         {
             throw new InvalidOperationException(
-                $"Resolved path '{fullCombinedPath}' escapes configured root '{fullRootPath}'.");
+                $"Resolved path '{fullCombinedPath}' escapes configured root '{fullRootPath}'."
+            );
         }
 
         return fullCombinedPath;
@@ -86,14 +106,13 @@ public static class FileSystemExtensions
         if (name.Length == 0)
             return name;
 
-        var sanitized = new string(name.Select(ch => Path.GetInvalidFileNameChars().Contains(ch) ? '_' : ch).ToArray())
-            .TrimEnd('.', ' ');
+        var sanitized = new string(
+            name.Select(ch => Path.GetInvalidFileNameChars().Contains(ch) ? '_' : ch).ToArray()
+        ).TrimEnd('.', ' ');
 
         if (sanitized.Length == 0)
             return "_";
 
-        return sanitized is "." or ".."
-            ? sanitized.Replace('.', '_')
-            : sanitized;
+        return sanitized is "." or ".." ? sanitized.Replace('.', '_') : sanitized;
     }
 }

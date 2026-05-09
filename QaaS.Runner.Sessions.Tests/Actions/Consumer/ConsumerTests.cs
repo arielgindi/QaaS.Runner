@@ -36,19 +36,48 @@ public class ConsumerTests
     private BaseConsumer CreateConsumer(
         IReader? reader,
         IChunkReader? chunkReader,
-        int numOfMsgToSend = 100)
+        int numOfMsgToSend = 100
+    )
     {
         return reader != null
-            ? new Sessions.Actions.Consumers.Consumer("TestConsumer", reader, new TimeSpan(1),
-                null, 1, new CountPolicy(numOfMsgToSend),
-                new DataFilter { Body = true, MetaData = false, Timestamp = false },
-                SerializationType.Binary, null, Globals.Logger)
-            : chunkReader != null
-                ? new ChunkConsumer("TestConsumer", chunkReader, new TimeSpan(1), null, 1,
+                ? new Sessions.Actions.Consumers.Consumer(
+                    "TestConsumer",
+                    reader,
+                    new TimeSpan(1),
+                    null,
+                    1,
                     new CountPolicy(numOfMsgToSend),
-                    new DataFilter { Body = true, MetaData = false, Timestamp = false },
-                    SerializationType.Binary, null, Globals.Logger)
-                : throw new TestCanceledException("Test cancelled due to missing reader for Consumer initiation");
+                    new DataFilter
+                    {
+                        Body = true,
+                        MetaData = false,
+                        Timestamp = false,
+                    },
+                    SerializationType.Binary,
+                    null,
+                    Globals.Logger
+                )
+            : chunkReader != null
+                ? new ChunkConsumer(
+                    "TestConsumer",
+                    chunkReader,
+                    new TimeSpan(1),
+                    null,
+                    1,
+                    new CountPolicy(numOfMsgToSend),
+                    new DataFilter
+                    {
+                        Body = true,
+                        MetaData = false,
+                        Timestamp = false,
+                    },
+                    SerializationType.Binary,
+                    null,
+                    Globals.Logger
+                )
+            : throw new TestCanceledException(
+                "Test cancelled due to missing reader for Consumer initiation"
+            );
     }
 
     [Test]
@@ -69,8 +98,7 @@ public class ConsumerTests
     public void TestAct_ConsumerReturnsNull_BreaksAfterOneCall()
     {
         // Arrange
-        _reader!.Setup(s => s.Read(It.IsAny<TimeSpan>()))
-            .Returns((DetailedData<object>?)null);
+        _reader!.Setup(s => s.Read(It.IsAny<TimeSpan>())).Returns((DetailedData<object>?)null);
         var consumer = CreateConsumer(_reader.Object, null);
 
         // Act
@@ -87,7 +115,8 @@ public class ConsumerTests
         const int numOfMsgToRead = 200;
         const int chunkSize = 2;
         var consumer = CreateConsumer(null, _chunkReader!.Object, numOfMsgToRead * chunkSize);
-        _chunkReader.Setup(r => r.ReadChunk(It.IsAny<TimeSpan>()))
+        _chunkReader
+            .Setup(r => r.ReadChunk(It.IsAny<TimeSpan>()))
             .Returns(Enumerable.Repeat(new DetailedData<object>(), numOfMsgToRead * chunkSize));
 
         // Act
@@ -97,7 +126,6 @@ public class ConsumerTests
         _chunkReader.Verify(r => r.ReadChunk(It.IsAny<TimeSpan>()), Times.Once);
         Assert.That(consumedData.Output!.Count, Is.EqualTo(numOfMsgToRead * chunkSize));
     }
-
 
     [Test]
     public void TestExportRunningCommunicationData_ReceivesRcdToExport_ExportTheGivenDataToTheRcd()
@@ -112,7 +140,12 @@ public class ConsumerTests
         consumer.Act();
 
         // Arrange
-        var receivedAmount = context.InternalRunningSessions.RunningSessionsDict[sessionName].Outputs![0].Data.Count;
+        var receivedAmount = context
+            .InternalRunningSessions
+            .RunningSessionsDict[sessionName]
+            .Outputs![0]
+            .Data
+            .Count;
         _reader.Verify(r => r.Read(It.IsAny<TimeSpan>()), Times.Exactly(receivedAmount));
     }
 
@@ -129,11 +162,17 @@ public class ConsumerTests
             new DataFilter(),
             SerializationType.Json,
             null,
-            Globals.Logger);
+            Globals.Logger
+        );
 
-        var runningData = (RunningCommunicationData<object>)typeof(BaseConsumer)
-            .GetField("RunningCommunicationData", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(consumer)!;
+        var runningData =
+            (RunningCommunicationData<object>)
+                typeof(BaseConsumer)
+                    .GetField(
+                        "RunningCommunicationData",
+                        BindingFlags.Instance | BindingFlags.NonPublic
+                    )!
+                    .GetValue(consumer)!;
 
         Assert.That(runningData.SerializationType, Is.EqualTo(SerializationType.Json));
     }
@@ -151,11 +190,17 @@ public class ConsumerTests
             new DataFilter(),
             SerializationType.Json,
             null,
-            Globals.Logger);
+            Globals.Logger
+        );
 
-        var runningData = (RunningCommunicationData<object>)typeof(BaseConsumer)
-            .GetField("RunningCommunicationData", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(consumer)!;
+        var runningData =
+            (RunningCommunicationData<object>)
+                typeof(BaseConsumer)
+                    .GetField(
+                        "RunningCommunicationData",
+                        BindingFlags.Instance | BindingFlags.NonPublic
+                    )!
+                    .GetValue(consumer)!;
 
         Assert.That(runningData.SerializationType, Is.EqualTo(SerializationType.Json));
     }
@@ -175,10 +220,15 @@ public class ConsumerTests
             new DataFilter(),
             SerializationType.Json,
             null,
-            logger);
+            logger
+        );
 
-        Assert.That(logger.Messages,
-            Contains.Item("Initializing Consumer TestConsumer with Reader type NamedReader and Deserializer Json"));
+        Assert.That(
+            logger.Messages,
+            Contains.Item(
+                "Initializing Consumer TestConsumer with Reader type NamedReader and Deserializer Json"
+            )
+        );
     }
 
     [Test]
@@ -187,12 +237,15 @@ public class ConsumerTests
         var payload = new BinaryPayload { Value = "deserialized" };
         var serializer = SerializerFactory.BuildSerializer(SerializationType.Binary)!;
         var reader = new Mock<IReader>();
-        reader.Setup(instance => instance.Read(It.IsAny<TimeSpan>()))
-            .Returns(new DetailedData<object>
-            {
-                Body = serializer.Serialize(payload),
-                MetaData = new MetaData()
-            });
+        reader
+            .Setup(instance => instance.Read(It.IsAny<TimeSpan>()))
+            .Returns(
+                new DetailedData<object>
+                {
+                    Body = serializer.Serialize(payload),
+                    MetaData = new MetaData(),
+                }
+            );
         reader.Setup(instance => instance.GetSerializationType()).Returns(SerializationType.Binary);
         var consumer = new Sessions.Actions.Consumers.Consumer(
             "BinaryConsumer",
@@ -201,10 +254,16 @@ public class ConsumerTests
             null,
             1,
             new CountPolicy(1),
-            new DataFilter { Body = true, MetaData = true, Timestamp = true },
+            new DataFilter
+            {
+                Body = true,
+                MetaData = true,
+                Timestamp = true,
+            },
             SerializationType.Binary,
             null,
-            Globals.Logger);
+            Globals.Logger
+        );
 
         var actData = consumer.Act();
 
@@ -221,13 +280,21 @@ public class ConsumerTests
     {
         var observedTimeouts = new List<TimeSpan>();
         var reader = new Mock<IReader>();
-        reader.Setup(instance => instance.Read(It.IsAny<TimeSpan>()))
+        reader
+            .Setup(instance => instance.Read(It.IsAny<TimeSpan>()))
             .Callback<TimeSpan>(timeout => observedTimeouts.Add(timeout))
-            .Returns((TimeSpan timeout) => observedTimeouts.Count switch
-            {
-                1 => new DetailedData<object> { Body = Serialise("first-message"), MetaData = new MetaData() },
-                _ => null
-            });
+            .Returns(
+                (TimeSpan timeout) =>
+                    observedTimeouts.Count switch
+                    {
+                        1 => new DetailedData<object>
+                        {
+                            Body = Serialise("first-message"),
+                            MetaData = new MetaData(),
+                        },
+                        _ => null,
+                    }
+            );
         reader.Setup(instance => instance.GetSerializationType()).Returns(SerializationType.Binary);
 
         var consumer = new Sessions.Actions.Consumers.Consumer(
@@ -237,20 +304,25 @@ public class ConsumerTests
             TimeSpan.FromMilliseconds(250),
             1,
             new CountPolicy(2),
-            new DataFilter { Body = true, MetaData = true, Timestamp = true },
+            new DataFilter
+            {
+                Body = true,
+                MetaData = true,
+                Timestamp = true,
+            },
             SerializationType.Binary,
             null,
-            Globals.Logger);
+            Globals.Logger
+        );
 
         var actData = consumer.Act();
 
         Assert.Multiple(() =>
         {
-            Assert.That(observedTimeouts, Is.EqualTo(new[]
-            {
-                TimeSpan.FromMilliseconds(250),
-                TimeSpan.FromMilliseconds(25)
-            }));
+            Assert.That(
+                observedTimeouts,
+                Is.EqualTo(new[] { TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(25) })
+            );
             Assert.That(actData.Output, Has.Count.EqualTo(1));
         });
     }
@@ -260,7 +332,8 @@ public class ConsumerTests
     {
         var observedTimeouts = new List<TimeSpan>();
         var reader = new Mock<IReader>();
-        reader.Setup(instance => instance.Read(It.IsAny<TimeSpan>()))
+        reader
+            .Setup(instance => instance.Read(It.IsAny<TimeSpan>()))
             .Callback<TimeSpan>(timeout => observedTimeouts.Add(timeout))
             .Returns((DetailedData<object>?)null);
         reader.Setup(instance => instance.GetSerializationType()).Returns(SerializationType.Binary);
@@ -272,32 +345,31 @@ public class ConsumerTests
             TimeSpan.FromMilliseconds(250),
             1,
             new CountPolicy(2),
-            new DataFilter { Body = true, MetaData = true, Timestamp = true },
+            new DataFilter
+            {
+                Body = true,
+                MetaData = true,
+                Timestamp = true,
+            },
             SerializationType.Binary,
             null,
-            Globals.Logger);
+            Globals.Logger
+        );
 
         var actData = consumer.Act();
 
         Assert.Multiple(() =>
         {
-            Assert.That(observedTimeouts, Is.EqualTo(new[]
-            {
-                TimeSpan.FromMilliseconds(250)
-            }));
+            Assert.That(observedTimeouts, Is.EqualTo(new[] { TimeSpan.FromMilliseconds(250) }));
             Assert.That(actData.Output, Is.Empty);
         });
     }
 
     private sealed class NamedReader : IReader
     {
-        public void Connect()
-        {
-        }
+        public void Connect() { }
 
-        public void Disconnect()
-        {
-        }
+        public void Disconnect() { }
 
         public SerializationType? GetSerializationType()
         {
@@ -314,7 +386,8 @@ public class ConsumerTests
     {
         public List<string> Messages { get; } = [];
 
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull
+        public IDisposable BeginScope<TState>(TState state)
+            where TState : notnull
         {
             return NoOpScope.Instance;
         }
@@ -324,8 +397,13 @@ public class ConsumerTests
             return true;
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-            Func<TState, Exception?, string> formatter)
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter
+        )
         {
             Messages.Add(formatter(state, exception));
         }
@@ -334,9 +412,7 @@ public class ConsumerTests
         {
             public static readonly NoOpScope Instance = new();
 
-            public void Dispose()
-            {
-            }
+            public void Dispose() { }
         }
     }
 
@@ -350,6 +426,8 @@ public class ConsumerTests
     {
         var serializer = SerializerFactory.BuildSerializer(SerializationType.Binary)!;
         return serializer.Serialize(value) as byte[]
-               ?? throw new InvalidOperationException("Failed to serialize test data using binary serializer.");
+            ?? throw new InvalidOperationException(
+                "Failed to serialize test data using binary serializer."
+            );
     }
 }

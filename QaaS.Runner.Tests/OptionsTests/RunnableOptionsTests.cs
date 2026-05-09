@@ -11,7 +11,10 @@ public class RunnableOptionsTests
     [TestCase(typeof(AssertOptions), ExecutionType.Assert)]
     [TestCase(typeof(RunOptions), ExecutionType.Run)]
     [TestCase(typeof(TemplateOptions), ExecutionType.Template)]
-    public void GetExecutionType_ReturnsExpectedExecutionType(Type optionType, ExecutionType expectedExecutionType)
+    public void GetExecutionType_ReturnsExpectedExecutionType(
+        Type optionType,
+        ExecutionType expectedExecutionType
+    )
     {
         var option = (BaseOptions)Activator.CreateInstance(optionType)!;
 
@@ -49,26 +52,26 @@ public class RunnableOptionsTests
     [Test]
     public void AssertableOptions_WhenAutoServeIsEnabled_UsesDefaultResultsFolder()
     {
-        var options = new RunOptions
-        {
-            AutoServeTestResults = true
-        };
+        var options = new RunOptions { AutoServeTestResults = true };
 
         Assert.Multiple(() =>
         {
             Assert.That(options.AutoServeTestResults, Is.True);
-            Assert.That(options.ServeResultsFolder, Is.EqualTo(AssertableOptions.DefaultServeResultsFolder));
-            Assert.That(options.GetServeResultsFolderOrDefault(), Is.EqualTo(AssertableOptions.DefaultServeResultsFolder));
+            Assert.That(
+                options.ServeResultsFolder,
+                Is.EqualTo(AssertableOptions.DefaultServeResultsFolder)
+            );
+            Assert.That(
+                options.GetServeResultsFolderOrDefault(),
+                Is.EqualTo(AssertableOptions.DefaultServeResultsFolder)
+            );
         });
     }
 
     [Test]
     public void ExecuteOptions_WhenCustomServeResultsFolderIsProvided_PreservesIt()
     {
-        var options = new ExecuteOptions
-        {
-            ServeResultsFolder = "allure-report"
-        };
+        var options = new ExecuteOptions { ServeResultsFolder = "allure-report" };
 
         Assert.Multiple(() =>
         {

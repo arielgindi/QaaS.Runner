@@ -19,13 +19,16 @@ public class KibanaLinkBuilderTests
             linkName = "test";
 
         // Arrange
-        var builder = new KibanaLink(linkName, new KibanaLinkConfig
-        {
-            Url = url,
-            TimestampField = timeStampField,
-            DataViewId = dataViewId,
-            KqlQuery = kqlQuery
-        });
+        var builder = new KibanaLink(
+            linkName,
+            new KibanaLinkConfig
+            {
+                Url = url,
+                TimestampField = timeStampField,
+                DataViewId = dataViewId,
+                KqlQuery = kqlQuery,
+            }
+        );
         var startTimeOne = new DateTime(2023, 11, 19, 1, 1, 1);
         var endTimeOne = new DateTime(2023, 11, 19, 6, 6, 6);
 
@@ -33,12 +36,13 @@ public class KibanaLinkBuilderTests
         var endTimeTwo = new DateTime(2023, 11, 20, 6, 6, 6);
 
         // Act
-        var fullUrl = builder
-            .GetLink(new List<KeyValuePair<DateTime, DateTime>>
+        var fullUrl = builder.GetLink(
+            new List<KeyValuePair<DateTime, DateTime>>
             {
                 new(startTimeOne, endTimeOne),
-                new(startTimeTwo, endTimeTwo)
-            });
+                new(startTimeTwo, endTimeTwo),
+            }
+        );
 
         // Assert
         StringAssert.Contains(url, fullUrl.Value);

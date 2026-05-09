@@ -28,5 +28,5 @@ public enum AssertionSeverity
     /// <summary>
     ///     Most important assertion severity.
     /// </summary>
-    Blocker
+    Blocker,
 }
