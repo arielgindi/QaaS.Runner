@@ -159,21 +159,30 @@ jobs:
           # We therefore allow a non-zero exit and instead validate that:
           #   1) the coverage XML was produced and is non-empty;
           #   2) every test assembly reported "Passed!" (no Failed: > 0).
-          # Redirect to a file (cmd-level redirection) instead of piping through
-          # Tee-Object. pwsh's object pipeline buffers child-process stdout/stderr
-          # in memory until the child exits; on Windows GHA runners this deadlocks
-          # the dotnet-coverage child when it produces a lot of output before
-          # Sessions.Tests Process.Kill terminates.
+          # Run dotnet-coverage as a child process with a hard wall-clock timeout.
+          # Sessions.Tests Process.Kill teardown produces a non-zero exit, which
+          # we tolerate; if dotnet-coverage itself stalls (observed on GHA Windows
+          # with no test output for >9 min while the same command runs in 30 s
+          # locally) we kill it and validate the cobertura artifact directly.
           $logPath = Join-Path "${{ env.COVERAGE_RESULTS_DIRECTORY }}" "coverage-collect.log"
-          $cmd = "dotnet-coverage collect dotnet test ${{ env.PROJECT_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-build --maxcpucount -f cobertura -o `"${{ env.COVERAGE_RESULTS_PATH }}`" > `"$logPath`" 2>&1"
-          cmd.exe /c $cmd
-          $exit = $LASTEXITCODE
-          if (Test-Path $logPath) {
-            Get-Content $logPath | ForEach-Object { Write-Host $_ }
-          } else {
-            Write-Host "No coverage-collect.log produced."
+          $errPath = Join-Path "${{ env.COVERAGE_RESULTS_DIRECTORY }}" "coverage-collect.err.log"
+          $args = @(
+            'collect', 'dotnet', 'test', '${{ env.PROJECT_PATH }}',
+            '--configuration', '${{ env.CONFIGURATION }}',
+            '--no-restore', '--no-build', '--maxcpucount',
+            '-f', 'cobertura', '-o', '${{ env.COVERAGE_RESULTS_PATH }}'
+          )
+          $proc = Start-Process -FilePath 'dotnet-coverage' -ArgumentList $args -NoNewWindow -PassThru -RedirectStandardOutput $logPath -RedirectStandardError $errPath
+          $timeoutMs = 10 * 60 * 1000
+          if (-not $proc.WaitForExit($timeoutMs)) {
+            Write-Host "::warning::dotnet-coverage exceeded $($timeoutMs/1000)s — killing."
+            try { $proc.Kill($true) } catch { Write-Host "Kill threw: $_" }
+            $proc.WaitForExit(30 * 1000) | Out-Null
           }
+          $exit = $proc.ExitCode
           Write-Host "dotnet-coverage exit code: $exit (non-zero tolerated when cobertura present)."
+          if (Test-Path $logPath) { Get-Content $logPath | ForEach-Object { Write-Host $_ } }
+          if (Test-Path $errPath) { Get-Content $errPath | ForEach-Object { Write-Host "STDERR: $_" } }
 
           if (-not (Test-Path "${{ env.COVERAGE_RESULTS_PATH }}")) {
             throw "Coverage XML was not produced at ${{ env.COVERAGE_RESULTS_PATH }}."
@@ -184,7 +193,9 @@ jobs:
           }
           Write-Host "Cobertura artifact size: $($coverageInfo.Length) bytes."
 
-          $captured = if (Test-Path $logPath) { Get-Content $logPath } else { @() }
+          $captured = @()
+          if (Test-Path $logPath) { $captured += Get-Content $logPath }
+          if (Test-Path $errPath) { $captured += Get-Content $errPath }
           $failed = $captured | Where-Object { $_ -match 'Failed!\s*-\s*Failed:\s*([1-9]\d*)' }
           if ($failed) {
             throw "One or more test assemblies reported failures: $failed"
