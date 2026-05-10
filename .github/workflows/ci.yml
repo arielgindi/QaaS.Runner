@@ -159,8 +159,21 @@ jobs:
           # We therefore allow a non-zero exit and instead validate that:
           #   1) the coverage XML was produced and is non-empty;
           #   2) every test assembly reported "Passed!" (no Failed: > 0).
-          $output = dotnet-coverage collect dotnet test ${{ env.PROJECT_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-build --maxcpucount -f cobertura -o "${{ env.COVERAGE_RESULTS_PATH }}" 2>&1 | Tee-Object -Variable captured
-          $captured | ForEach-Object { Write-Host $_ }
+          # Redirect to a file (cmd-level redirection) instead of piping through
+          # Tee-Object. pwsh's object pipeline buffers child-process stdout/stderr
+          # in memory until the child exits; on Windows GHA runners this deadlocks
+          # the dotnet-coverage child when it produces a lot of output before
+          # Sessions.Tests Process.Kill terminates.
+          $logPath = Join-Path "${{ env.COVERAGE_RESULTS_DIRECTORY }}" "coverage-collect.log"
+          $cmd = "dotnet-coverage collect dotnet test ${{ env.PROJECT_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-build --maxcpucount -f cobertura -o `"${{ env.COVERAGE_RESULTS_PATH }}`" > `"$logPath`" 2>&1"
+          cmd.exe /c $cmd
+          $exit = $LASTEXITCODE
+          if (Test-Path $logPath) {
+            Get-Content $logPath | ForEach-Object { Write-Host $_ }
+          } else {
+            Write-Host "No coverage-collect.log produced."
+          }
+          Write-Host "dotnet-coverage exit code: $exit (non-zero tolerated when cobertura present)."
 
           if (-not (Test-Path "${{ env.COVERAGE_RESULTS_PATH }}")) {
             throw "Coverage XML was not produced at ${{ env.COVERAGE_RESULTS_PATH }}."
@@ -171,6 +184,7 @@ jobs:
           }
           Write-Host "Cobertura artifact size: $($coverageInfo.Length) bytes."
 
+          $captured = if (Test-Path $logPath) { Get-Content $logPath } else { @() }
           $failed = $captured | Where-Object { $_ -match 'Failed!\s*-\s*Failed:\s*([1-9]\d*)' }
           if ($failed) {
             throw "One or more test assemblies reported failures: $failed"
