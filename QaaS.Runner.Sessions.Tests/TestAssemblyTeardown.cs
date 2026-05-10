@@ -31,8 +31,19 @@ public sealed class TestAssemblyTeardown
 
         // librdkafka native threads cannot be forcibly joined from managed code
         // and keep the process alive long after every NUnit assertion has flushed.
-        // Hard-exit so the testhost terminates promptly. Coverage data has already
-        // been written to disk by dotnet-coverage's data sink at this point.
-        System.Environment.Exit(0);
+        // Environment.Exit() runs finalizers — librdkafka's native finalizers
+        // themselves block on those threads, so the hang just moves. Use
+        // Process.Kill() which skips finalizers and terminates immediately.
+        // Coverage data has already been written to disk by dotnet-coverage's
+        // per-testhost data sink before this teardown runs.
+        try
+        {
+            System.Diagnostics.Process.GetCurrentProcess().Kill();
+        }
+        catch
+        {
+            // Fallback if Kill is denied for any reason — let the runtime exit
+            // normally; the only consequence is a slow shutdown.
+        }
     }
 }
