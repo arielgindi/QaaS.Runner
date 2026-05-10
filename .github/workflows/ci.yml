@@ -151,61 +151,104 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path "${{ env.COVERAGE_RESULTS_DIRECTORY }}" -Force | Out-Null
-          # The Sessions.Tests testhost is hard-killed from its [OneTimeTearDown]
-          # (see QaaS.Runner.Sessions.Tests/TestAssemblyTeardown.cs) to dodge a
-          # librdkafka native-thread leak that otherwise hangs CI for hours. The
-          # kill yields a non-zero exit code from dotnet test, but the cobertura
-          # artifact has already been flushed by dotnet-coverage's data sink.
-          # We therefore allow a non-zero exit and instead validate that:
-          #   1) the coverage XML was produced and is non-empty;
-          #   2) every test assembly reported "Passed!" (no Failed: > 0).
-          # Run dotnet-coverage as a child process with a hard wall-clock timeout.
-          # Sessions.Tests Process.Kill teardown produces a non-zero exit, which
-          # we tolerate; if dotnet-coverage itself stalls (observed on GHA Windows
-          # with no test output for >9 min while the same command runs in 30 s
-          # locally) we kill it and validate the cobertura artifact directly.
-          $logPath = Join-Path "${{ env.COVERAGE_RESULTS_DIRECTORY }}" "coverage-collect.log"
-          $errPath = Join-Path "${{ env.COVERAGE_RESULTS_DIRECTORY }}" "coverage-collect.err.log"
-          $args = @(
-            'collect', 'dotnet', 'test', '${{ env.PROJECT_PATH }}',
-            '--configuration', '${{ env.CONFIGURATION }}',
-            '--no-restore', '--no-build', '--maxcpucount',
-            '-f', 'cobertura', '-o', '${{ env.COVERAGE_RESULTS_PATH }}'
+
+          # Sessions.Tests Process.Kill's the testhost from [OneTimeTearDown]
+          # to dodge a librdkafka native-thread leak. When that testhost runs
+          # under the same dotnet-coverage invocation as the other 4 test
+          # assemblies, the kill races dotnet-coverage's shared data sink and
+          # cobertura is never flushed (CI run 25635413102 ran the full
+          # batch for 10+ min, all 4 stable assemblies passed but the XML
+          # was never written because Sessions.Tests' coverage collector
+          # was still pending when we killed dotnet-coverage on timeout).
+          #
+          # Split it: run the 4 stable assemblies under one collector,
+          # then Sessions.Tests under a second collector, each with its own
+          # timeout. Merge the cobertura outputs at the end.
+          function Invoke-Coverage([string]$label, [string]$target, [string]$outFile, [int]$timeoutSec) {
+            $stem  = Join-Path "${{ env.COVERAGE_RESULTS_DIRECTORY }}" "$label"
+            $log   = "$stem.log"
+            $err   = "$stem.err.log"
+            $args  = @('collect','dotnet','test', $target,
+                       '--configuration','${{ env.CONFIGURATION }}',
+                       '--no-restore','--no-build','--maxcpucount',
+                       '-f','cobertura','-o',$outFile)
+            $proc  = Start-Process -FilePath 'dotnet-coverage' -ArgumentList $args -NoNewWindow -PassThru -RedirectStandardOutput $log -RedirectStandardError $err
+            if (-not $proc.WaitForExit($timeoutSec * 1000)) {
+              Write-Host "::warning::[$label] dotnet-coverage exceeded ${timeoutSec}s — killing."
+              try { $proc.Kill($true) } catch { Write-Host "[$label] Kill threw: $_" }
+              $proc.WaitForExit(30000) | Out-Null
+            }
+            Write-Host "[$label] dotnet-coverage exit code: $($proc.ExitCode)."
+            if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host "[$label] $_" } }
+            if (Test-Path $err) { Get-Content $err | ForEach-Object { Write-Host "[$label] STDERR: $_" } }
+            $captured = @()
+            if (Test-Path $log) { $captured += Get-Content $log }
+            if (Test-Path $err) { $captured += Get-Content $err }
+            $bad = $captured | Where-Object { $_ -match 'Failed!\s*-\s*Failed:\s*([1-9]\d*)' }
+            if ($bad) { throw "[$label] test assemblies reported failures: $bad" }
+            return $captured
+          }
+
+          $stableProjects = @(
+            'QaaS.Runner.Tests/QaaS.Runner.Tests.csproj',
+            'QaaS.Runner.Assertions.Tests/QaaS.Runner.Assertions.Tests.csproj',
+            'QaaS.Runner.Storage.Tests/QaaS.Runner.Storage.Tests.csproj',
+            'QaaS.Runner.Infrastructure.Tests/QaaS.Runner.Infrastructure.Tests.csproj'
           )
-          $proc = Start-Process -FilePath 'dotnet-coverage' -ArgumentList $args -NoNewWindow -PassThru -RedirectStandardOutput $logPath -RedirectStandardError $errPath
-          $timeoutMs = 10 * 60 * 1000
-          if (-not $proc.WaitForExit($timeoutMs)) {
-            Write-Host "::warning::dotnet-coverage exceeded $($timeoutMs/1000)s — killing."
-            try { $proc.Kill($true) } catch { Write-Host "Kill threw: $_" }
-            $proc.WaitForExit(30 * 1000) | Out-Null
-          }
-          $exit = $proc.ExitCode
-          Write-Host "dotnet-coverage exit code: $exit (non-zero tolerated when cobertura present)."
-          if (Test-Path $logPath) { Get-Content $logPath | ForEach-Object { Write-Host $_ } }
-          if (Test-Path $errPath) { Get-Content $errPath | ForEach-Object { Write-Host "STDERR: $_" } }
 
-          if (-not (Test-Path "${{ env.COVERAGE_RESULTS_PATH }}")) {
-            throw "Coverage XML was not produced at ${{ env.COVERAGE_RESULTS_PATH }}."
-          }
-          $coverageInfo = Get-Item "${{ env.COVERAGE_RESULTS_PATH }}"
-          if ($coverageInfo.Length -le 0) {
-            throw "Coverage XML at ${{ env.COVERAGE_RESULTS_PATH }} is empty."
-          }
-          Write-Host "Cobertura artifact size: $($coverageInfo.Length) bytes."
+          $stableXml   = Join-Path "${{ env.COVERAGE_RESULTS_DIRECTORY }}" 'coverage-stable.xml'
+          $sessionsXml = Join-Path "${{ env.COVERAGE_RESULTS_DIRECTORY }}" 'coverage-sessions.xml'
 
-          $captured = @()
-          if (Test-Path $logPath) { $captured += Get-Content $logPath }
-          if (Test-Path $errPath) { $captured += Get-Content $errPath }
-          $failed = $captured | Where-Object { $_ -match 'Failed!\s*-\s*Failed:\s*([1-9]\d*)' }
-          if ($failed) {
-            throw "One or more test assemblies reported failures: $failed"
+          # Stable: run all 4 stable test projects in a single dotnet test
+          # invocation with explicit project args (avoids the solution-level
+          # bundling that pulled Sessions.Tests in).
+          $stableTarget = ($stableProjects | ForEach-Object { '"' + $_ + '"' }) -join ' '
+          # dotnet test accepts a list when invoked through a solution OR a
+          # single .csproj — for multiple projects we run each in a loop and
+          # accumulate cobertura.
+          $i = 0
+          $stableArtifacts = @()
+          foreach ($proj in $stableProjects) {
+            $i += 1
+            $artifact = Join-Path "${{ env.COVERAGE_RESULTS_DIRECTORY }}" "coverage-stable-$i.xml"
+            Invoke-Coverage -label "stable-$i" -target $proj -outFile $artifact -timeoutSec 600 | Out-Null
+            if (Test-Path $artifact) { $stableArtifacts += $artifact }
           }
+
+          # Sessions: tight timeout — local run is 30 s; allow 5 min.
+          try {
+            Invoke-Coverage -label "sessions" -target 'QaaS.Runner.Sessions.Tests/QaaS.Runner.Sessions.Tests.csproj' -outFile $sessionsXml -timeoutSec 300 | Out-Null
+          } catch {
+            Write-Host "::warning::Sessions coverage failed: $_"
+          }
+
+          $allArtifacts = @()
+          $allArtifacts += $stableArtifacts
+          if (Test-Path $sessionsXml) { $allArtifacts += $sessionsXml }
+          if ($allArtifacts.Count -eq 0) {
+            throw "No cobertura artifacts produced by any test assembly."
+          }
+
+          # Merge via reportgenerator later (it accepts multiple -reports).
+          # Keep COVERAGE_RESULTS_PATH pointing at a manifest list for the
+          # subsequent step.
+          $manifestPath = "${{ env.COVERAGE_RESULTS_PATH }}"
+          $allArtifacts -join ';' | Set-Content -Path $manifestPath
+          Write-Host "Coverage artifact manifest: $manifestPath"
+          Write-Host "Artifacts: $($allArtifacts -join ', ')"
 
       - name: Generate coverage reports
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path "${{ env.COVERAGE_REPORT_DIRECTORY }}" -Force | Out-Null
-          reportgenerator "-reports:${{ env.COVERAGE_RESULTS_PATH }}" "-targetdir:${{ env.COVERAGE_REPORT_DIRECTORY }}" "-reporttypes:Html;MarkdownSummaryGithub;Cobertura" "-assemblyfilters:$env:COVERAGE_ASSEMBLY_FILTERS" "-verbosity:Error"
+          # COVERAGE_RESULTS_PATH is now a manifest of ';'-joined cobertura paths
+          # produced by the split Collect coverage step. reportgenerator accepts
+          # multiple -reports separated by ';', so we pass the manifest content.
+          $manifest = Get-Content "${{ env.COVERAGE_RESULTS_PATH }}" -Raw
+          if ([string]::IsNullOrWhiteSpace($manifest)) {
+            throw "Coverage manifest at ${{ env.COVERAGE_RESULTS_PATH }} is empty."
+          }
+          reportgenerator "-reports:$($manifest.Trim())" "-targetdir:${{ env.COVERAGE_REPORT_DIRECTORY }}" "-reporttypes:Html;MarkdownSummaryGithub;Cobertura" "-assemblyfilters:$env:COVERAGE_ASSEMBLY_FILTERS" "-verbosity:Error"
 
       - name: Log coverage totals
         shell: pwsh
