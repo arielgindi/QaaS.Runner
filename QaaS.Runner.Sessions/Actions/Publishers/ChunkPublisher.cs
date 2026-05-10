@@ -69,6 +69,21 @@ public sealed class ChunkPublisher : BasePublisher
         _chunkSender?.GetSerializationType() ?? SerializationType;
 
     /// <inheritdoc />
+    public override void Dispose()
+    {
+        try
+        {
+            (_chunkSender as IDisposable)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Error disposing chunk sender for publisher {Name}", Name);
+        }
+
+        base.Dispose();
+    }
+
+    /// <inheritdoc />
     internal override InternalCommunicationData<object> Act()
     {
         _chunkSender?.Connect();

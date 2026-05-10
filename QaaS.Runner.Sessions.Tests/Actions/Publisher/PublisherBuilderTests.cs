@@ -537,6 +537,7 @@ public class PublisherBuilderTests
         // Assert
         Assert.That(sender, Is.Not.Null);
         Assert.That(chunkSender, Is.Null);
+        publisher?.Dispose();
     }
 
     [Test]
@@ -568,6 +569,7 @@ public class PublisherBuilderTests
         // Assert
         Assert.That(chunkSender, Is.Not.Null);
         Assert.That(sender, Is.Null);
+        publisher?.Dispose();
     }
 
     [Test]

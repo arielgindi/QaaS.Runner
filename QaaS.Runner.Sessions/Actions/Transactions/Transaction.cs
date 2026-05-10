@@ -152,6 +152,22 @@ public class Transaction : StagedAction
         );
     }
 
+    /// <inheritdoc />
+    public override void Dispose()
+    {
+        try
+        {
+            (_transactor as IDisposable)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Error disposing transactor for transaction {Name}", Name);
+        }
+
+        _parallelismSemaphore?.Dispose();
+        base.Dispose();
+    }
+
     internal override InternalCommunicationData<object> Act()
     {
         // transaction initializes both input and output

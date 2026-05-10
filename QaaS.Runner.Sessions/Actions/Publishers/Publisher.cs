@@ -66,6 +66,21 @@ public sealed class Publisher : BasePublisher
         _sender?.GetSerializationType() ?? SerializationType;
 
     /// <inheritdoc />
+    public override void Dispose()
+    {
+        try
+        {
+            (_sender as IDisposable)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Error disposing sender for publisher {Name}", Name);
+        }
+
+        base.Dispose();
+    }
+
+    /// <inheritdoc />
     internal override InternalCommunicationData<object> Act()
     {
         _sender?.Connect();

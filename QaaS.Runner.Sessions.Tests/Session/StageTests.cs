@@ -48,34 +48,34 @@ public class StageTests
             Outputs = [],
         };
 
-        _stage!.AddCommunication(
-            new PublisherBuilder()
-                .Configure(
-                    new KafkaTopicSenderConfig
-                    {
-                        TopicName = "test",
-                        Username = "testUser",
-                        Password = "SHHHHHH",
-                        HostNames = ["h1-prod", "h2-test"],
-                    }
-                )
-                .Build(_context!, [], _sessionName)!
-        );
-        _stage.AddCommunication(
-            new ConsumerBuilder()
-                .WithTimeout(1000)
-                .Configure(
-                    new KafkaTopicReaderConfig
-                    {
-                        TopicName = "test",
-                        Username = "testUser",
-                        Password = "SHHHHHH",
-                        HostNames = ["h1-prod", "h2-test"],
-                        GroupId = "1",
-                    }
-                )
-                .Build(_context!, [], _sessionName)!
-        );
+        var publisher = new PublisherBuilder()
+            .Configure(
+                new KafkaTopicSenderConfig
+                {
+                    TopicName = "test",
+                    Username = "testUser",
+                    Password = "SHHHHHH",
+                    HostNames = ["h1-prod", "h2-test"],
+                }
+            )
+            .Build(_context!, [], _sessionName)!;
+        _stage!.AddCommunication(publisher);
+
+        var consumer = new ConsumerBuilder()
+            .WithTimeout(1000)
+            .Configure(
+                new KafkaTopicReaderConfig
+                {
+                    TopicName = "test",
+                    Username = "testUser",
+                    Password = "SHHHHHH",
+                    HostNames = ["h1-prod", "h2-test"],
+                    GroupId = "1",
+                }
+            )
+            .Build(_context!, [], _sessionName)!;
+        _stage.AddCommunication(consumer);
+
         _stage.AddCommunication(
             new TransactionBuilder()
                 .WithTimeout(1000)
@@ -119,6 +119,9 @@ public class StageTests
             Is.EqualTo(exportedNumOfOutputRcd),
             "Test Failed: the number of output rcd that were loaded was not 2!"
         );
+
+        publisher.Dispose();
+        consumer.Dispose();
     }
 
     [Test]

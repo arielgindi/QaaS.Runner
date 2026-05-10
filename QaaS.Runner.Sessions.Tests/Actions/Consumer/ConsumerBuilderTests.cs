@@ -573,6 +573,7 @@ public class ConsumerBuilderTests
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Name, Is.EqualTo("TestConsumer"));
+        result.Dispose();
     }
 
     [Test]
@@ -605,6 +606,7 @@ public class ConsumerBuilderTests
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Name, Is.EqualTo("TestConsumer"));
+        result.Dispose();
     }
 
     [Test]
@@ -864,6 +866,7 @@ public class ConsumerBuilderTests
         var result = builder.Build(Globals.GetContextWithMetadata(), _actionFailures, _sessionName);
 
         Assert.That(result, Is.InstanceOf(expectedType));
+        result?.Dispose();
     }
 
     [Test]

@@ -82,6 +82,21 @@ public sealed class Consumer : BaseConsumer
         return resultedRunData;
     }
 
+    /// <inheritdoc />
+    public override void Dispose()
+    {
+        try
+        {
+            (_reader as IDisposable)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Error disposing reader for consumer {Name}", Name);
+        }
+
+        base.Dispose();
+    }
+
     private bool TryReadAndLog(InternalCommunicationData<object> actData, TimeSpan timeout)
     {
         var readData = _reader!.Read(timeout);

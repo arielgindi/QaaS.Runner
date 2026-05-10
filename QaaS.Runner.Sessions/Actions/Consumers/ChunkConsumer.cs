@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using QaaS.Framework.Policies;
 using QaaS.Framework.Protocols.Protocols;
 using QaaS.Framework.SDK.Session;
@@ -49,6 +49,21 @@ public sealed class ChunkConsumer : BaseConsumer
             Name = Name,
             SerializationType = GetCommunicationSerializationType(),
         };
+    }
+
+    /// <inheritdoc />
+    public override void Dispose()
+    {
+        try
+        {
+            (_chunkReader as IDisposable)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Error disposing chunk reader for consumer {Name}", Name);
+        }
+
+        base.Dispose();
     }
 
     internal override InternalCommunicationData<object> Act()
