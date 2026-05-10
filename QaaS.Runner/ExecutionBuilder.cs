@@ -1597,11 +1597,16 @@ public class ExecutionBuilder() : BaseExecutionBuilder<InternalContext, Executio
         return reporterTypes.Length == 0 ? "None" : string.Join(", ", reporterTypes);
     }
 
+    private bool _disposed;
+
     /// <summary>
-    /// Disposes the root Autofac container created by this builder.
+    /// Disposes the root Autofac container created by this builder. Idempotent.
     /// </summary>
     public void Dispose()
     {
+        if (_disposed)
+            return;
+        _disposed = true;
         _container.Dispose();
         GC.SuppressFinalize(this);
     }
