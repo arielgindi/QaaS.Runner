@@ -9,13 +9,17 @@ namespace QaaS.Runner.Sessions.Tests;
 /// which spawns <c>librdkafka</c> background threads at construction time.
 /// Even after the action classes <c>Dispose</c> their underlying readers/senders,
 /// <c>librdkafka</c> keeps DNS-resolution and broker-bootstrap threads alive past
-/// the assertion phase, which causes vstest's <c>--blame-hang-timeout</c> to fire
-/// after all tests have already passed (CI run 25632684123: 377 tests passed in
-/// 21s, blame fired 5 min later, Test Run Aborted with exit code 1).
+/// the assertion phase. Tried strategies:
+/// <list type="bullet">
+/// <item><description><c>Environment.Exit(0)</c> — runs managed finalizers; librdkafka SafeHandle
+/// finalizers themselves block on the native threads, so the hang moves rather than resolving.</description></item>
+/// <item><description><c>Process.Kill()</c> — skips finalizers and terminates immediately. Exit
+/// code is non-zero but the cobertura artifact is already flushed by then. The CI workflow
+/// tolerates non-zero exit when the coverage XML is present.</description></item>
+/// </list>
 ///
-/// Production assemblies are unaffected by this teardown: the runner shuts down
-/// via its own dispose chain. Only the <c>Sessions.Tests</c> testhost is short-
-/// circuited so CI accepts the already-emitted coverage file.
+/// Production assemblies are unaffected: the runner shuts down via its own dispose chain.
+/// Only the <c>Sessions.Tests</c> testhost is short-circuited so CI can complete.
 /// </summary>
 [SetUpFixture]
 public sealed class TestAssemblyTeardown
@@ -29,21 +33,13 @@ public sealed class TestAssemblyTeardown
             System.GC.WaitForPendingFinalizers();
         }
 
-        // librdkafka native threads cannot be forcibly joined from managed code
-        // and keep the process alive long after every NUnit assertion has flushed.
-        // Environment.Exit() runs finalizers — librdkafka's native finalizers
-        // themselves block on those threads, so the hang just moves. Use
-        // Process.Kill() which skips finalizers and terminates immediately.
-        // Coverage data has already been written to disk by dotnet-coverage's
-        // per-testhost data sink before this teardown runs.
         try
         {
             System.Diagnostics.Process.GetCurrentProcess().Kill();
         }
         catch
         {
-            // Fallback if Kill is denied for any reason — let the runtime exit
-            // normally; the only consequence is a slow shutdown.
+            // Fallback if Kill is denied — let the runtime exit normally.
         }
     }
 }
