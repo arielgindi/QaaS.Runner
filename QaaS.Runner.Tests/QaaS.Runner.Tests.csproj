@@ -35,6 +35,20 @@
         <ProjectReference Include="..\QaaS.Runner.Infrastructure\QaaS.Runner.Infrastructure.csproj" />
     </ItemGroup>
 
+    <Target Name="BuildLooseConfiguratorFixture" BeforeTargets="Build">
+      <MSBuild Projects="..\QaaS.Runner.Tests.LooseConfigurator\QaaS.Runner.Tests.LooseConfigurator.csproj"
+               Targets="Restore;Build"
+               Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
+    </Target>
+
+    <Target Name="CopyLooseConfiguratorFixture" AfterTargets="Build">
+      <MSBuild Projects="..\QaaS.Runner.Tests.LooseConfigurator\QaaS.Runner.Tests.LooseConfigurator.csproj"
+               Targets="GetTargetPath"
+               Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)">
+        <Output TaskParameter="TargetOutputs" ItemName="LooseConfiguratorFixturePath" />
+      </MSBuild>
+      <Copy SourceFiles="@(LooseConfiguratorFixturePath)" DestinationFolder="$(TargetDir)" />
+    </Target>
 
     <ItemGroup>
       <None Update="TestData\executable.yaml">

@@ -44,6 +44,29 @@ public class ExecutionBuilderConfiguratorLoaderTests
             Is.False);
     }
 
+    [Test]
+    public void Load_WhenConfiguratorAssemblyIsLooseInBinFolder_LoadsIt()
+    {
+        const string looseConfiguratorAssemblyName = "QaaS.Runner.Tests.LooseConfigurator.dll";
+        const string looseConfiguratorFullName =
+            "QaaS.Runner.Tests.LooseConfigurator.LooseBinFolderConfigurator";
+        var looseConfiguratorPath = Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory,
+            looseConfiguratorAssemblyName);
+        var logger = Mock.Of<ILogger>();
+
+        Assert.That(looseConfiguratorPath, Does.Exist,
+            "The fixture assembly must be copied beside the test host without being referenced by the test project.");
+
+        var configurators = ExecutionBuilderConfiguratorLoader.Load(logger);
+
+        Assert.That(
+            configurators.Select(configurator => configurator.GetType().FullName),
+            Does.Contain(looseConfiguratorFullName),
+            "Configurator discovery should include plugin DLLs that are present in the bin folder even when " +
+            "they are not listed in the dependency manifest.");
+    }
+
     internal sealed class InternalEntryAssemblyConfigurator : IExecutionBuilderConfigurator
     {
         public void Configure(ExecutionBuilder executionBuilder)

@@ -22,7 +22,7 @@ internal static class ExecutionBuilderConfiguratorLoader
         return Load(
             logger,
             entryAssembly,
-            candidateAssemblies.SelectMany(assembly => GetLoadableTypes(assembly, logger)));
+            candidateAssemblies.SelectMany(GetLoadableTypes));
     }
 
     internal static IReadOnlyList<IExecutionBuilderConfigurator> Load(
@@ -39,7 +39,7 @@ internal static class ExecutionBuilderConfiguratorLoader
             .ToArray();
     }
 
-    private static IEnumerable<Type> GetLoadableTypes(Assembly assembly, ILogger logger)
+    private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
     {
         try
         {
@@ -47,10 +47,6 @@ internal static class ExecutionBuilderConfiguratorLoader
         }
         catch (ReflectionTypeLoadException exception)
         {
-            logger.LogDebug(
-                exception,
-                "Partially loaded assembly {AssemblyFullName} while scanning for configurators; continuing with the types that did load.",
-                assembly.FullName);
             return exception.Types.Where(type => type is not null)!;
         }
     }

@@ -16,7 +16,7 @@
     <NoWarn>$(NoWarn);CS8625</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
+  <PropertyGroup Condition="'$(OutputType)' == 'Exe'">
     <PublishReadyToRun>true</PublishReadyToRun>
     <PublishReadyToRunComposite>true</PublishReadyToRunComposite>
   </PropertyGroup>
