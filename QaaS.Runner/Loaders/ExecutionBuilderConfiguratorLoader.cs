@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.Extensions.Logging;
+using QaaS.Framework.Providers.Discovery;
 
 namespace QaaS.Runner.Loaders;
 
@@ -10,7 +11,7 @@ internal static class ExecutionBuilderConfiguratorLoader
         return Load(
             logger,
             Assembly.GetEntryAssembly(),
-            PluginAssemblyDiscovery.GetCandidateAssemblies(logger));
+            PluginAssemblyDiscovery.Discover(typeof(IExecutionBuilderConfigurator).Assembly, logger));
     }
 
     internal static IReadOnlyList<IExecutionBuilderConfigurator> Load(
