@@ -53,9 +53,10 @@ public sealed class IterableSerializableDataIterator
     ///     Otherwise <see cref="Parallel.ForEach"/> is bounded by
     ///     <see cref="ParallelOptions.MaxDegreeOfParallelism"/> so the worker count matches the
     ///     configured parallelism — no extra throttling primitive is needed at the call site.
-    ///     A single exception from the parallel body is unwrapped from its
-    ///     <see cref="AggregateException"/> so callers see the same exception type they would
-    ///     in sequential mode (e.g. <c>StopActionException</c>).
+    ///     Exceptions from the parallel body are unwrapped from <see cref="AggregateException"/>
+    ///     when all inner exceptions share the same type, so callers see the same exception type
+    ///     they would in sequential mode (e.g. <c>StopActionException</c>). Heterogeneous parallel
+    ///     failures propagate as <see cref="AggregateException"/> so no information is lost.
     /// </summary>
     public void ApplyToAll<TData>(IEnumerable<TData>? iterator, Action<TData> methodToApply,
         int? parallelism = null)
@@ -75,10 +76,25 @@ public sealed class IterableSerializableDataIterator
                 new ParallelOptions { MaxDegreeOfParallelism = parallelism.Value },
                 methodToApply);
         }
-        catch (AggregateException ex) when (ex.InnerExceptions.Count == 1)
+        catch (AggregateException ex) when (AllInnerExceptionsAreSameType(ex))
         {
+            // Either a single inner or many of the same type (e.g. several workers each
+            // throwing StopActionException). Rethrow the first so callers see the real
+            // type instead of the parallel wrapper. Heterogeneous failures (multiple
+            // distinct types) propagate as AggregateException — picking one would hide
+            // the others.
             ExceptionDispatchInfo.Capture(ex.InnerExceptions[0]).Throw();
         }
+    }
+
+    private static bool AllInnerExceptionsAreSameType(AggregateException aggregate)
+    {
+        if (aggregate.InnerExceptions.Count == 0) return false;
+        var firstType = aggregate.InnerExceptions[0].GetType();
+        for (var i = 1; i < aggregate.InnerExceptions.Count; i++)
+            if (aggregate.InnerExceptions[i].GetType() != firstType)
+                return false;
+        return true;
     }
 
     /// <summary>
