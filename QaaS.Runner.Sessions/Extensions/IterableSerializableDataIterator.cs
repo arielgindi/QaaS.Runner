@@ -66,6 +66,9 @@ public sealed class IterableSerializableDataIterator
     public void ApplyToAll<TData>(IEnumerable<TData>? iterator, Action<TData> methodToApply,
         int? parallelism = null)
     {
+        if (parallelism is { } p)
+            ArgumentOutOfRangeException.ThrowIfLessThan(p, 1, nameof(parallelism));
+
         iterator ??= IterateEnumerable().Cast<TData>();
 
         if (parallelism is null)
