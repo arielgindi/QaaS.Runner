@@ -41,6 +41,8 @@ public sealed class IterableSerializableDataIterator
     /// </summary>
     public IEnumerable<(Data<object> Original, Data<object> Serialized)> IterateWithOriginal()
     {
+        // Reset between Iteration passes so leftover entries don't shift the lookup indexes.
+        IteratedData.Clear();
         foreach (var item in _iterableData ?? [])
         {
             IteratedData.Add(item);
