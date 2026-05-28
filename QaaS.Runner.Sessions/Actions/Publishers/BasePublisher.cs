@@ -30,7 +30,6 @@ public abstract class BasePublisher : StagedAction
     private readonly ISerializer? _serializer;
     protected IEnumerable<Data<object>>? GeneratedData;
     protected IterableSerializableDataIterator IterableSerializableSaveIterator = default!;
-    protected SemaphoreSlim? ParallelismSemaphore;
 
     protected BasePublisher(string name, int stage, DataFilter dataFilter, string[]? dataSourceNames,
         string[]? dataSourcePatterns, int? parallelism, int iterations, bool loop, ulong sleepTimeMs,
@@ -42,7 +41,6 @@ public abstract class BasePublisher : StagedAction
         _dataSourcePatterns = dataSourcePatterns;
         _iterations = iterations;
         Parallelism = parallelism;
-        if (Parallelism != null) InitializeSemaphore(Parallelism.Value);
         _loop = loop;
         _sleepTimeMs = sleepTimeMs;
         SerializationType = serializationType;
@@ -70,18 +68,6 @@ public abstract class BasePublisher : StagedAction
             "Prepared publisher {ActionName}. DataSourceNames={DataSourceNames}, DataSourcePatterns={DataSourcePatterns}, Parallelism={Parallelism}",
             Name, _dataSourceNames == null ? "<none>" : string.Join(", ", _dataSourceNames),
             _dataSourcePatterns == null ? "<none>" : string.Join(", ", _dataSourcePatterns), Parallelism);
-    }
-
-    /// <summary>
-    /// Initializes the semaphore used to control the number of concurrent connections.
-    /// </summary>
-    /// <param name="connectionAcceptanceValue">Base value for connection acceptance.</param>
-    private void InitializeSemaphore(int connectionAcceptanceValue)
-    {
-        var maxConnections = connectionAcceptanceValue;
-        ParallelismSemaphore = new SemaphoreSlim(maxConnections, maxConnections);
-        Logger.LogDebug("Connection Acceptance Semaphore initiated with max parallelism of {MaxConnections}",
-            maxConnections);
     }
 
     /// <summary>

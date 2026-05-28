@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using QaaS.Framework.SDK.Session.DataObjects;
 using QaaS.Framework.Serialization.Serializers;
 
@@ -47,18 +48,37 @@ public sealed class IterableSerializableDataIterator
     }
 
     /// <summary>
-    ///     Iterate over the iterable data loaded into this iterator while saving the iterated data as is in `IteratedData`
-    ///     and returning the serialized data
+    ///     Applies <paramref name="methodToApply"/> to every item in <paramref name="iterator"/>.
+    ///     When <paramref name="parallelism"/> is <c>null</c> the iteration runs sequentially.
+    ///     Otherwise <see cref="Parallel.ForEach"/> is bounded by
+    ///     <see cref="ParallelOptions.MaxDegreeOfParallelism"/> so the worker count matches the
+    ///     configured parallelism — no extra throttling primitive is needed at the call site.
+    ///     A single exception from the parallel body is unwrapped from its
+    ///     <see cref="AggregateException"/> so callers see the same exception type they would
+    ///     in sequential mode (e.g. <c>StopActionException</c>).
     /// </summary>
-    /// <returns> The iterable enumerable with its items serialized </returns>
     public void ApplyToAll<TData>(IEnumerable<TData>? iterator, Action<TData> methodToApply,
-        bool parallel)
+        int? parallelism = null)
     {
         iterator ??= IterateEnumerable().Cast<TData>();
-        if (parallel) Parallel.ForEach(iterator, methodToApply);
-        else
-            foreach (var data in iterator)
-                methodToApply.Invoke(data);
+
+        if (parallelism is null)
+        {
+            foreach (var data in iterator) methodToApply(data);
+            return;
+        }
+
+        try
+        {
+            Parallel.ForEach(
+                iterator,
+                new ParallelOptions { MaxDegreeOfParallelism = parallelism.Value },
+                methodToApply);
+        }
+        catch (AggregateException ex) when (ex.InnerExceptions.Count == 1)
+        {
+            ExceptionDispatchInfo.Capture(ex.InnerExceptions[0]).Throw();
+        }
     }
 
     /// <summary>

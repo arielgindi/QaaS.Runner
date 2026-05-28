@@ -55,16 +55,7 @@ public sealed class Publisher : BasePublisher
         {
             IterableSerializableSaveIterator.ApplyToAll(dataToPublish, dataPair =>
             {
-                DetailedData<object>? sentData;
-                try
-                {
-                    ParallelismSemaphore?.Wait();
-                    sentData = _sender!.Send(dataPair.Serialized);
-                }
-                finally
-                {
-                    ParallelismSemaphore?.Release();
-                }
+                var sentData = _sender!.Send(dataPair.Serialized);
 
                 LogData(
                     actData,
@@ -72,7 +63,7 @@ public sealed class Publisher : BasePublisher
                 );
                 if (Policies?.RunChain() == false)
                     throw new StopActionException("Policy ruled to be stopped");
-            }, Parallelism != null);
+            }, Parallelism);
         }
         catch (StopActionException)
         {

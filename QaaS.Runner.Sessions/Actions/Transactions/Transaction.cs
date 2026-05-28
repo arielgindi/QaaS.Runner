@@ -31,7 +31,6 @@ public class Transaction : StagedAction
     private readonly int _iterations;
     private readonly bool _loop;
     private readonly int? _parallelism;
-    private readonly SemaphoreSlim? _parallelismSemaphore;
     private ulong _sleepTimeMs;
     private readonly DataFilter _outputDataFilter;
 
@@ -60,7 +59,6 @@ public class Transaction : StagedAction
         _dataSourcePatterns = dataSourcePatterns;
         _loop = loop;
         _parallelism = parallelism;
-        _parallelismSemaphore = parallelism is { } p ? new SemaphoreSlim(p, p) : null;
         _iterations = iterations;
         _serializationType = serializationType;
         _deserializationType = deserializationType;
@@ -158,16 +156,7 @@ public class Transaction : StagedAction
         {
             _iterableSerializableSaveIterator.ApplyToAll(indexedDataToTransact, item =>
             {
-                Tuple<DetailedData<object>, DetailedData<object>?> transactionData;
-                try
-                {
-                    _parallelismSemaphore?.Wait();
-                    transactionData = _transactor.Transact(item.data);
-                }
-                finally
-                {
-                    _parallelismSemaphore?.Release();
-                }
+                var transactionData = _transactor.Transact(item.data);
 
                 var iteratedDataItem =
                     _iterableSerializableSaveIterator.GetDataBeforeSerialization(item.pairIndex);
@@ -192,7 +181,7 @@ public class Transaction : StagedAction
 
                 if (Policies?.RunChain() == false)
                     throw new StopActionException("Policy ruled to be stopped");
-            }, _parallelism != null);
+            }, _parallelism);
         }
         catch (StopActionException)
         {

@@ -58,21 +58,12 @@ public sealed class ChunkPublisher : BasePublisher
         {
             IterableSerializableSaveIterator.ApplyToAll(chunks, chunk =>
             {
-                IReadOnlyList<DetailedData<object>> sentData;
-                try
-                {
-                    ParallelismSemaphore?.Wait();
-                    sentData = _chunkSender!.SendChunk(chunk.Select(item => item.Serialized)).ToArray();
-                }
-                finally
-                {
-                    ParallelismSemaphore?.Release();
-                }
+                var sentData = _chunkSender!.SendChunk(chunk.Select(item => item.Serialized)).ToArray();
 
-                if (sentData.Count != chunk.Length)
+                if (sentData.Length != chunk.Length)
                 {
                     throw new InvalidOperationException(
-                        $"Chunk publisher {Name} sent {chunk.Length} items but received {sentData.Count} responses.");
+                        $"Chunk publisher {Name} sent {chunk.Length} items but received {sentData.Length} responses.");
                 }
 
                 foreach (var pair in chunk.Zip(sentData, (originalAndSerialized, sentItem) => new
@@ -88,7 +79,7 @@ public sealed class ChunkPublisher : BasePublisher
 
                 if (Policies?.RunChain() == false)
                     throw new StopActionException("Policy ruled to be stopped");
-            }, Parallelism != null);
+            }, Parallelism);
         }
         catch (StopActionException)
         {
